@@ -1,0 +1,134 @@
+@model IReadOnlyList<NewHarian.Application.Orders.AdminOrderListItemDto>
+@{
+    ViewData["Title"] = "Đơn hàng";
+    Layout = "_AdminLayout";
+    var sort = (string)(ViewBag.Sort ?? "createdAt");
+    var dir = (string)(ViewBag.Dir ?? "desc");
+    DateOnly? from = ViewBag.From as DateOnly?;
+    DateOnly? to = ViewBag.To as DateOnly?;
+}
+
+<div class="admin-toolbar">
+    <h1>Đơn hàng</h1>
+</div>
+
+<form method="get" class="filter-bar filter-bar--row">
+    <input type="hidden" name="sort" value="@sort" />
+    <input type="hidden" name="dir" value="@dir" />
+    <select name="status" aria-label="Trạng thái">
+        <option value="">Trạng thái</option>
+        @foreach (NewHarian.Domain.Enums.OrderStatus s in Enum.GetValues(typeof(NewHarian.Domain.Enums.OrderStatus)))
+        {
+            if (ViewBag.Status as NewHarian.Domain.Enums.OrderStatus? == s)
+            {
+                <option value="@s" selected>@s</option>
+            }
+            else
+            {
+                <option value="@s">@s</option>
+            }
+        }
+    </select>
+    <select name="payment" aria-label="Thanh toán">
+        <option value="">Thanh toán</option>
+        @foreach (NewHarian.Domain.Enums.PaymentMethod p in Enum.GetValues(typeof(NewHarian.Domain.Enums.PaymentMethod)))
+        {
+            if (p == NewHarian.Domain.Enums.PaymentMethod.OnlineGateway) { continue; }
+            if (ViewBag.Payment as NewHarian.Domain.Enums.PaymentMethod? == p)
+            {
+                <option value="@p" selected>@p</option>
+            }
+            else
+            {
+                <option value="@p">@p</option>
+            }
+        }
+    </select>
+    <div class="filter-bar__field">
+        <label for="from">Từ ngày đặt</label>
+        <input id="from" type="date" name="from" value="@(from?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="filter-bar__field">
+        <label for="to">Đến</label>
+        <input id="to" type="date" name="to" value="@(to?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Mã đơn / tên / email / SĐT" class="form-control filter-bar__search" />
+    <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
+</form>
+
+@Html.AntiForgeryToken()
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <partial name="_SortableTh" model='new SortableThModel { Column = "orderNumber", Label = "Mã đơn", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "customer", Label = "Khách", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "total", Label = "Tổng", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "payment", Label = "PT TT", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "status", Label = "Status", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "createdAt", Label = "Ngày", CurrentSort = sort, CurrentDir = dir }' />
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var o in Model)
+    {
+        <tr data-id="@o.Id">
+            <td>@o.OrderNumber</td>
+            <td>@o.CustomerName<br /><span class="muted">@o.CustomerEmail</span></td>
+            <td>@o.Total.ToString("N0")đ</td>
+            <td>@o.PaymentMethod</td>
+            <td class="col-status">@o.Status</td>
+            <td>@o.CreatedAt.ToLocalTime().ToString("g")</td>
+            <td><button type="button" class="btn-icon btn-order-detail" data-id="@o.Id" title="Detail" aria-label="Detail"><i class="fa-solid fa-eye" aria-hidden="true"></i></button></td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />
+
+<div id="order-modal" class="admin-modal" hidden>
+    <div class="admin-modal__backdrop" data-close-modal></div>
+    <div class="admin-modal__panel modal__box modal__box--order-detail" id="order-modal-body"></div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+  const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+  const modal = document.getElementById('order-modal');
+  const body = document.getElementById('order-modal-body');
+  const open = async (id) => {
+    const res = await fetch('@Url.Action("Detail")?id=' + id);
+    body.innerHTML = await res.text();
+    modal.hidden = false;
+  };
+  document.querySelectorAll('.btn-order-detail').forEach(btn => btn.addEventListener('click', () => open(btn.dataset.id)));
+  modal?.addEventListener('click', e => {
+    if (e.target.matches('[data-close], [data-close-modal]')) modal.hidden = true;
+  });
+  body?.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const notes = body.querySelector('[name="internalNotes"]')?.value ?? '';
+    let url = '';
+    const fd = new FormData();
+    fd.append('__RequestVerificationToken', token);
+    fd.append('id', id);
+    fd.append('internalNotes', notes);
+    if (btn.dataset.action === 'confirm-cod') url = '@Url.Action("ConfirmCod")';
+    else if (btn.dataset.action === 'confirm-payment') url = '@Url.Action("ConfirmPayment")';
+    else if (btn.dataset.action === 'status') {
+      url = '@Url.Action("UpdateStatus")';
+      fd.append('status', btn.dataset.status);
+    } else return;
+    const res = await fetch(url, { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.ok) location.reload();
+    else alert(json.error || 'Lỗi');
+  });
+})();
+</script>
+}

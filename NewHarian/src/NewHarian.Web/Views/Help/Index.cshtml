@@ -1,0 +1,303 @@
+@{
+    ViewData["Title"] = "Hướng dẫn sử dụng";
+}
+
+<section class="page-hero">
+    <h1>Hướng dẫn sử dụng</h1>
+    <p class="muted">Dành cho khách hàng - mua sản phẩm, đặt lịch dịch vụ và theo dõi đơn hàng.</p>
+</section>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    <span>Hướng dẫn sử dụng</span>
+</nav>
+
+<main class="content-main content-main--full help-page">
+    <nav class="help-toc" aria-label="Mục lục">
+        <strong>Mục lục</strong>
+        <ol>
+            <li><a href="#quy-trinh">Quy trình bán hàng</a></li>
+            <li><a href="#buoc-1">Bước 1 - Chọn sản phẩm</a></li>
+            <li><a href="#buoc-2">Bước 2 - Chi tiết &amp; thêm giỏ</a></li>
+            <li><a href="#buoc-3">Bước 3 - Giỏ hàng</a></li>
+            <li><a href="#buoc-4">Bước 4 - Thanh toán</a></li>
+            <li><a href="#buoc-5">Bước 5 - Xác nhận đơn</a></li>
+            <li><a href="#buoc-6">Bước 6 - Đặt hàng thành công</a></li>
+            <li><a href="#buoc-7">Bước 7 - Tra cứu đơn</a></li>
+            <li><a href="#dat-lich">Đặt lịch dịch vụ</a></li>
+            <li><a href="#lien-he">Liên hệ</a></li>
+            <li><a href="#ung-tuyen">Ứng tuyển</a></li>
+            <li><a href="#faq">Câu hỏi thường gặp</a></li>
+        </ol>
+    </nav>
+
+    <section id="quy-trinh" class="help-section help-section--highlight">
+        <h2>Quy trình bán hàng khi dùng website</h2>
+        <p>Bạn <strong>không cần tạo tài khoản</strong>. Mua hàng theo 7 bước dưới đây; sau khi đặt, nhân viên sẽ liên hệ xác nhận trước khi giao.</p>
+
+        <ol class="help-flow">
+            <li>
+                <span class="help-flow__num">1</span>
+                <div>
+                    <strong>Chọn sản phẩm</strong>
+                    <span>Vào <a href="/products">Sản phẩm</a> hoặc dùng ô tìm kiếm.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">2</span>
+                <div>
+                    <strong>Chọn quy cách &amp; thêm giỏ</strong>
+                    <span>Chọn màu/quy cách, số lượng → <em>Thêm vào giỏ</em>.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">3</span>
+                <div>
+                    <strong>Kiểm tra giỏ hàng</strong>
+                    <span>Đổi số lượng hoặc xóa mặt hàng → <em>Thanh toán</em>.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">4</span>
+                <div>
+                    <strong>Điền giao hàng &amp; chọn thanh toán</strong>
+                    <span>COD (trả khi nhận) hoặc chuyển khoản ngân hàng.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">5</span>
+                <div>
+                    <strong>Xác nhận đơn</strong>
+                    <span>Rà soát thông tin → <em>Xác nhận đặt hàng</em>.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">6</span>
+                <div>
+                    <strong>Nhận mã đơn</strong>
+                    <span>Lưu mã dạng <code>HAR-ORDER-XXXX</code> và email xác nhận.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">7</span>
+                <div>
+                    <strong>Tra cứu &amp; chờ xác nhận</strong>
+                    <span>Vào <a href="/orders/track">Tra cứu đơn</a>; nhân viên gọi/email trước khi giao.</span>
+                </div>
+            </li>
+        </ol>
+
+        <div class="help-callout">
+            <strong>Sau khi đặt hàng xảy ra gì?</strong>
+            <ul>
+                <li><strong>COD:</strong> đơn ở trạng thái chờ xác nhận → nhân viên gọi/email → xác nhận → giao hàng → bạn trả tiền khi nhận.</li>
+                <li><strong>Chuyển khoản:</strong> chuyển đúng số tiền theo hướng dẫn trên trang thành công → nhân viên xác nhận đã nhận tiền → xử lý và giao hàng.</li>
+            </ul>
+        </div>
+
+        <h3 class="help-subflow-title">Luồng đặt lịch dịch vụ (không qua giỏ hàng)</h3>
+        <ol class="help-flow">
+            <li>
+                <span class="help-flow__num">A</span>
+                <div>
+                    <strong>Chọn dịch vụ</strong>
+                    <span>Vào <a href="/services">Dịch vụ</a> → mở dịch vụ cần đặt → <em>Đặt lịch</em>.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">B</span>
+                <div>
+                    <strong>Điền form &amp; gửi</strong>
+                    <span>Họ tên, email, điện thoại, ngày hẹn, buổi (Sáng/Chiều), địa chỉ nếu tại nhà → gửi yêu cầu.</span>
+                </div>
+            </li>
+            <li>
+                <span class="help-flow__num">C</span>
+                <div>
+                    <strong>Nhận mã đặt lịch</strong>
+                    <span>Lưu mã (ví dụ <code>#2</code>); nhân viên sẽ liên hệ xác nhận lịch.</span>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <section id="buoc-1" class="help-section">
+        <h2>Bước 1 - Chọn sản phẩm</h2>
+        <p>Vào menu <strong>Sản phẩm</strong>, dùng ô <strong>Tìm kiếm</strong>, hoặc mở biểu tượng <strong>giỏ hàng</strong> trên header khi đã thêm hàng.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/01-products.png" alt="Trang danh sách sản phẩm với chú thích chọn sản phẩm, tìm kiếm và giỏ hàng" width="1024" height="639" loading="lazy" />
+            <figcaption>① Chọn một sản phẩm trên danh sách · ② Tìm kiếm · ③ Giỏ hàng</figcaption>
+        </figure>
+    </section>
+
+    <section id="buoc-2" class="help-section">
+        <h2>Bước 2 - Chi tiết sản phẩm &amp; thêm vào giỏ</h2>
+        <p>Trên trang chi tiết: chọn <strong>quy cách / màu</strong>, nhập <strong>số lượng</strong>, rồi nhấn <strong>Thêm vào giỏ</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/02-product-detail.png" alt="Trang chi tiết sản phẩm với chú thích quy cách, số lượng và nút Thêm vào giỏ" width="1024" height="639" loading="lazy" />
+            <figcaption>① Chọn quy cách/màu · ② Số lượng · ③ Thêm vào giỏ</figcaption>
+        </figure>
+    </section>
+
+    <section id="buoc-3" class="help-section">
+        <h2>Bước 3 - Giỏ hàng</h2>
+        <p>Kiểm tra lại mặt hàng. Đổi số lượng rồi nhấn <strong>OK</strong>, hoặc <strong>Xóa</strong> nếu không cần. Khi sẵn sàng, nhấn <strong>Thanh toán</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/03-cart.png" alt="Trang giỏ hàng với chú thích số lượng, xóa và thanh toán" width="1024" height="639" loading="lazy" />
+            <figcaption>① Đổi số lượng + OK · ② Xóa · ③ Thanh toán</figcaption>
+        </figure>
+        <p class="muted">Phí vận chuyển được tính ở bước thanh toán khi bạn chọn tỉnh/thành.</p>
+    </section>
+
+    <section id="buoc-4" class="help-section">
+        <h2>Bước 4 - Thanh toán (điền thông tin)</h2>
+        <p>Điền điện thoại, địa chỉ giao hàng, tỉnh/thành, quận/huyện (nếu có). Chọn <strong>COD</strong> hoặc <strong>Chuyển khoản ngân hàng</strong>, rồi nhấn <strong>Tiếp tục</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/04-checkout.png" alt="Trang thanh toán với chú thích địa chỉ, phương thức thanh toán và phí ship" width="1024" height="639" loading="lazy" />
+            <figcaption>① Địa chỉ giao hàng · ② Phương thức thanh toán · ③ Tiếp tục · ④ Phí ship / miễn phí từ 1.000.000đ</figcaption>
+        </figure>
+    </section>
+
+    <section id="buoc-5" class="help-section">
+        <h2>Bước 5 - Xác nhận đơn hàng</h2>
+        <p>Rà soát họ tên, địa chỉ, phương thức thanh toán và tổng tiền. Nếu đúng, nhấn <strong>Xác nhận đặt hàng</strong>. Cần sửa thì chọn <strong>Quay lại sửa</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/05-confirm.png" alt="Trang xác nhận đơn hàng với chú thích kiểm tra thông tin và nút xác nhận" width="1024" height="639" loading="lazy" />
+            <figcaption>① Kiểm tra thông tin đơn · ② Xác nhận đặt hàng</figcaption>
+        </figure>
+    </section>
+
+    <section id="buoc-6" class="help-section">
+        <h2>Bước 6 - Đặt hàng thành công</h2>
+        <p>Giữ lại <strong>mã đơn</strong> (ví dụ <code>HAR-ORDER-0001</code>). Nhân viên sẽ gọi điện hoặc gửi email xác nhận trước khi giao hàng.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/06-success.png" alt="Trang đặt hàng thành công với chú thích mã đơn và nút tra cứu" width="1024" height="639" loading="lazy" />
+            <figcaption>① Lưu mã đơn · ② Tra cứu đơn</figcaption>
+        </figure>
+    </section>
+
+    <section id="buoc-7" class="help-section">
+        <h2>Bước 7 - Tra cứu đơn</h2>
+        <p>Vào menu <strong>Tra cứu đơn</strong> (hoặc <a href="/orders/track">/orders/track</a>). Nhập <strong>mã đơn</strong> và <strong>email</strong> đã dùng khi đặt hàng, rồi nhấn <strong>Tra cứu</strong> để xem trạng thái.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/07-track.png" alt="Trang tra cứu đơn với chú thích form và trạng thái" width="1024" height="758" loading="lazy" />
+            <figcaption>① Nhập mã đơn + email · ② Xem trạng thái đơn</figcaption>
+        </figure>
+    </section>
+
+    <section id="dat-lich" class="help-section help-section--highlight">
+        <h2>Đặt lịch dịch vụ</h2>
+        <p>Đặt lịch <strong>không đi qua giỏ hàng</strong>. Vào <a href="/services">Dịch vụ</a>, chọn dịch vụ, mở trang đặt lịch, điền form rồi gửi. Nhân viên sẽ liên hệ xác nhận.</p>
+
+        <h3>Điền form đặt lịch</h3>
+        <p>Điền email, điện thoại, <strong>ngày hẹn</strong>, <strong>buổi</strong> (Sáng/Chiều). Nếu dịch vụ tại nhà, địa chỉ là bắt buộc. Có thể thêm ghi chú. Nhấn nút gửi và chờ đến khi hết trạng thái “Đang xử lý…”.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/08-service-book.png" alt="Form đặt lịch dịch vụ với chú thích thông tin và nút gửi" width="1024" height="639" loading="lazy" />
+            <figcaption>① Điền thông tin đặt lịch · ② Gửi yêu cầu đặt lịch</figcaption>
+        </figure>
+
+        <h3>Đã nhận đặt lịch</h3>
+        <p>Giữ lại <strong>mã đặt lịch</strong> trên trang xác nhận (ví dụ <code>#2</code>) để đối chiếu khi nhân viên liên hệ.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/09-service-thanks.png" alt="Trang đã nhận đặt lịch với chú thích mã đặt lịch" width="1024" height="639" loading="lazy" />
+            <figcaption>① Lưu mã đặt lịch · ② Quay lại danh sách Dịch vụ</figcaption>
+        </figure>
+    </section>
+
+    <section id="lien-he" class="help-section">
+        <h2>Liên hệ</h2>
+        <p>Dùng trang <a href="/contact">Liên hệ</a> khi bạn cần hỏi thông tin, hỗ trợ đơn hàng, hoặc gửi yêu cầu chung (không phải mua hàng qua giỏ).</p>
+
+        <h3>Điền form</h3>
+        <p>Điền <em>Họ và tên</em>*, <em>Email</em>*, <em>Số điện thoại</em>, <em>Địa chỉ</em>, <em>Nội dung</em>* (tối thiểu 10 ký tự), rồi nhấn <strong>Xác nhận</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/10-contact-form.png" alt="Form liên hệ với chú thích các trường và nút Xác nhận" width="1024" height="642" loading="lazy" />
+            <figcaption>① Điền form liên hệ · ② Nhấn Xác nhận</figcaption>
+        </figure>
+
+        <h3>Xác nhận liên hệ</h3>
+        <p>Rà soát lại thông tin. Đúng thì nhấn <strong>Gửi</strong>; cần sửa thì chọn <strong>Quay lại sửa</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/11-contact-confirm.png" alt="Trang xác nhận liên hệ với chú thích nội dung và nút Gửi" width="1024" height="639" loading="lazy" />
+            <figcaption>① Kiểm tra thông tin · ② Gửi / Quay lại sửa</figcaption>
+        </figure>
+
+        <h3>Hoàn tất</h3>
+        <p>Trang “Cảm ơn bạn” xác nhận đã nhận tin nhắn; chúng tôi sẽ phản hồi sớm. Có thể nhấn <strong>Trang chủ</strong> để tiếp tục.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/12-contact-thanks.png" alt="Trang cảm ơn sau khi gửi liên hệ" width="1024" height="639" loading="lazy" />
+            <figcaption>① Đã gửi thành công · ② Về Trang chủ</figcaption>
+        </figure>
+    </section>
+
+    <section id="ung-tuyen" class="help-section">
+        <h2>Ứng tuyển</h2>
+        <p>Vào <a href="/careers">Tuyển dụng</a>, chọn tin tuyển dụng, nhấn <strong>Ứng tuyển</strong> để gửi hồ sơ hoặc hỏi đáp về vị trí.</p>
+
+        <h3>1. Chọn tin tuyển dụng</h3>
+        <p>Trên danh sách, chọn một tin để xem chi tiết.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/13-careers-list.png" alt="Danh sách tin tuyển dụng với chú thích chọn tin" width="1024" height="639" loading="lazy" />
+            <figcaption>① Chọn tin tuyển dụng</figcaption>
+        </figure>
+
+        <h3>2. Mở form ứng tuyển</h3>
+        <p>Đọc mô tả vị trí, rồi nhấn nút <strong>Ứng tuyển</strong> ở cuối trang chi tiết.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/14-careers-detail.png" alt="Chi tiết tin tuyển dụng với chú thích nút Ứng tuyển" width="1024" height="639" loading="lazy" />
+            <figcaption>① Nhấn Ứng tuyển</figcaption>
+        </figure>
+
+        <h3>3. Điền hồ sơ</h3>
+        <p>
+            Chọn <em>Loại</em>: <strong>Ứng tuyển</strong> hoặc <strong>Hỏi đáp tuyển dụng</strong>.
+            Điền Họ và tên*, Email*, và các trường khác (Giới tính, Tuổi, Tỉnh/Thành, địa chỉ, SĐT, Note…).
+            Với loại <strong>Ứng tuyển</strong>, đính kèm <em>CV / hồ sơ</em> (PDF, DOC, DOCX, JPG, PNG - tối đa 10MB), rồi nhấn <strong>Xác nhận</strong>.
+        </p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/15-careers-apply.png" alt="Form ứng tuyển với chú thích thông tin, CV và nút Xác nhận" width="1024" height="639" loading="lazy" />
+            <figcaption>① Điền thông tin + đính kèm CV · ② Nhấn Xác nhận</figcaption>
+        </figure>
+
+        <h3>4. Xác nhận hồ sơ</h3>
+        <p>Rà soát vị trí, loại hồ sơ, thông tin cá nhân và trạng thái CV. Đúng thì nhấn <strong>Gửi</strong>; cần sửa thì chọn <strong>Quay lại sửa</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/16-careers-confirm.png" alt="Trang xác nhận hồ sơ với chú thích nội dung và nút Gửi" width="1024" height="639" loading="lazy" />
+            <figcaption>① Kiểm tra hồ sơ · ② Gửi / Quay lại sửa</figcaption>
+        </figure>
+
+        <h3>5. Đã nhận hồ sơ</h3>
+        <p>Hồ sơ đã được gửi. Chúng tôi sẽ liên hệ nếu phù hợp. Bạn có thể quay lại <strong>Tuyển dụng</strong> hoặc <strong>Trang chủ</strong>.</p>
+        <figure class="help-figure">
+            <img src="~/help/guest/annotated/17-careers-thanks.png" alt="Trang đã nhận hồ sơ ứng tuyển" width="1024" height="639" loading="lazy" />
+            <figcaption>① Đã nhận hồ sơ · ② Tuyển dụng / Trang chủ</figcaption>
+        </figure>
+    </section>
+
+    <section id="faq" class="help-section">
+        <h2>Câu hỏi thường gặp</h2>
+        <dl class="help-faq">
+            <dt>Tôi có cần đăng ký tài khoản không?</dt>
+            <dd>Không. Bạn mua hàng với tư cách khách (guest) bằng thông tin liên hệ và địa chỉ giao hàng.</dd>
+
+            <dt>Phí vận chuyển tính thế nào?</dt>
+            <dd>Phí theo tỉnh/thành bạn chọn ở bước thanh toán. Đơn từ <strong>1.000.000đ</strong> trở lên được miễn phí vận chuyển (theo cấu hình hiện tại trên website).</dd>
+
+            <dt>COD và chuyển khoản khác nhau thế nào?</dt>
+            <dd><strong>COD:</strong> trả tiền khi nhận hàng; nhân viên xác nhận đơn trước. <strong>Chuyển khoản:</strong> chuyển tiền theo hướng dẫn sau khi đặt; nhân viên xác nhận đã nhận tiền rồi mới xử lý giao.</dd>
+
+            <dt>Làm sao theo dõi đơn sau khi đặt?</dt>
+            <dd>Dùng mã đơn + email tại trang <a href="/orders/track">Tra cứu đơn</a>. Bạn cũng nhận được email xác nhận (nếu hệ thống email đang hoạt động).</dd>
+
+            <dt>Đặt lịch dịch vụ có qua giỏ hàng không?</dt>
+            <dd>Không. Dịch vụ đặt lịch riêng tại mục <a href="/services">Dịch vụ</a>, không đi qua giỏ hàng / thanh toán sản phẩm.</dd>
+
+            <dt>Ứng tuyển cần CV không?</dt>
+            <dd>Nếu chọn loại <strong>Ứng tuyển</strong> thì cần đính kèm CV (tối đa 10MB). Loại <strong>Hỏi đáp tuyển dụng</strong> thì CV không bắt buộc.</dd>
+
+            <dt>Cần hỗ trợ thêm?</dt>
+            <dd>Gửi yêu cầu qua trang <a href="/contact">Liên hệ</a> hoặc dùng thông tin liên hệ ở chân trang.</dd>
+        </dl>
+    </section>
+</main>

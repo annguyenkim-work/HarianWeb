@@ -1,0 +1,20 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Preview hết hạn";
+}
+
+<div class="preview-banner" role="status">
+    <div class="preview-banner__inner">
+        <strong>Preview đã hết hạn</strong>
+        <span>- mở lại từ form sản phẩm bằng nút “Xem trước”.</span>
+    </div>
+</div>
+<style>
+  .preview-banner { background: #5a2a2a; color: #fff; padding: 0.65rem 1rem; }
+  .preview-banner__inner { max-width: 1100px; margin: 0 auto; }
+</style>
+<article style="max-width:720px;margin:2rem auto;padding:0 1rem">
+    <h1>Preview không còn khả dụng</h1>
+    <p>Snapshot xem trước chỉ giữ khoảng 30 phút. Quay lại trang Admin → Sản phẩm, mở form và bấm <strong>Xem trước</strong> lại.</p>
+    <p><a asp-area="Admin" asp-controller="Products" asp-action="Index">← Về danh sách sản phẩm</a></p>
+</article>

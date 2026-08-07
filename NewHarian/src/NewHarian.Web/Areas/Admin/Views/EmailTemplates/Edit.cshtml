@@ -1,0 +1,56 @@
+@model NewHarian.Application.Email.EmailTemplateEditDto
+@{
+    ViewData["Title"] = "Sửa mẫu email";
+}
+
+<div class="admin-toolbar">
+    <h1>Sửa mẫu email</h1>
+    <a class="btn-secondary" asp-action="Index">← Danh sách</a>
+</div>
+
+<p><strong>@Model.Name</strong> - <code>@Model.Code</code></p>
+<p class="muted">Placeholder có sẵn: <code>@Model.PlaceholdersHelp</code></p>
+<p class="muted">Ví dụ: viết <code>{{CustomerName}}</code> trong nội dung; khi gửi sẽ thay bằng tên khách.</p>
+
+<form asp-action="Edit" method="post" id="email-template-form" class="form-stack" style="max-width:960px">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <label>Tiêu đề email *
+        <input name="SubjectTemplate" class="form-control" value="@Model.SubjectTemplate" required maxlength="300" />
+    </label>
+
+    <label>Nội dung (rich text) *
+        <textarea name="BodyHtml" class="form-control richtext" rows="16">@Model.BodyHtml</textarea>
+    </label>
+
+    <div class="modal__actions" style="justify-content:flex-start">
+        <button type="submit" class="btn-primary">Lưu</button>
+        <a class="btn-secondary" asp-action="Index">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+(() => {
+  if (!window.tinymce) return;
+  tinymce.init({
+    selector: '#email-template-form textarea.richtext',
+    height: 420,
+    menubar: false,
+    plugins: 'lists link image table code',
+    toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',
+    branding: false,
+    convert_urls: false,
+    relative_urls: false,
+    valid_elements: '*[*]',
+    extended_valid_elements: 'img[src|alt|style|width|height],a[href|target|rel]'
+  });
+  document.getElementById('email-template-form')?.addEventListener('submit', () => {
+    if (window.tinymce) tinymce.triggerSave();
+  });
+})();
+</script>
+}

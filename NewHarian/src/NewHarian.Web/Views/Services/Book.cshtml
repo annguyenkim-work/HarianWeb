@@ -1,0 +1,50 @@
+@model NewHarian.Application.Catalog.ServiceBookingRequest
+@{
+    var product = (NewHarian.Application.Catalog.ProductDetailDto)ViewBag.Product;
+    ViewData["Title"] = Localizer["Products.BookCta"] + " - " + product.Name;
+}
+
+<nav class="breadcrumb">
+    <a asp-controller="Services" asp-action="Detail" asp-route-categorySlug="@product.CategorySlug" asp-route-productSlug="@product.Slug">@product.Name</a> /
+    <span>@Localizer["Products.BookCta"]</span>
+</nav>
+
+<h1>@Localizer["Products.BookCta"]: @product.Name</h1>
+
+<form asp-controller="Services" asp-action="SubmitBook"
+      asp-route-categorySlug="@product.CategorySlug"
+      asp-route-productSlug="@product.Slug"
+      method="post" class="form-stack"
+      data-submit-once
+      data-busy-label="@Localizer["Common.Processing"]">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <label>
+        @Localizer["Products.ServiceOption"]
+        <select asp-for="ServiceVariantId" class="form-control">
+            @foreach (var v in product.Variants)
+            {
+                <option value="@v.Id">@($"{v.Label}")</option>
+            }
+        </select>
+    </label>
+
+    <label>@Localizer["Book.Name"] <input asp-for="CustomerName" class="form-control" required /></label>
+    <label>@Localizer["Book.Email"] <input asp-for="CustomerEmail" type="email" class="form-control" required /></label>
+    <label>@Localizer["Book.Phone"] <input asp-for="CustomerPhone" class="form-control" required /></label>
+    <label>@Localizer["Book.Date"] <input asp-for="PreferredDate" type="date" class="form-control" required /></label>
+    <label>
+        @Localizer["Book.Time"]
+        <select asp-for="PreferredTime" class="form-control">
+            <option value="Sáng">Sáng</option>
+            <option value="Chiều">Chiều</option>
+        </select>
+    </label>
+    <label>@Localizer["Book.Address"] <input asp-for="ServiceAddress" class="form-control" /></label>
+    <label>@Localizer["Book.Notes"] <textarea asp-for="Notes" class="form-control" rows="3" maxlength="2000"></textarea></label>
+
+    <button type="submit" class="btn-primary">@Localizer["Book.Submit"]</button>
+</form>
+
+@await Html.PartialAsync("_SubmitOnce")

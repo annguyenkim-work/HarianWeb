@@ -1,0 +1,67 @@
+@model IReadOnlyList<NewHarian.Application.Posts.SitePostListItemDto>
+@using NewHarian.Domain.Enums
+@using NewHarian.Web.Areas.Admin
+@{
+    var kind = (PostKind)ViewBag.Kind;
+    Layout = "_AdminLayout";
+    var pager = ViewBag.Pager as AdminPagerModel;
+    var offset = pager?.Offset ?? 0;
+    var total = pager?.TotalCount ?? Model.Count;
+}
+
+<div class="admin-toolbar">
+    <h1>@ViewData["Title"]</h1>
+    <a class="btn-icon btn-primary" asp-action="Edit" asp-route-kind="@kind" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></a>
+</div>
+
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th class="sort-cell">Thứ tự</th>
+            <th>Tiêu đề</th>
+            <th>Slug</th>
+            <th>Publish</th>
+            <th>Ngày</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @for (var i = 0; i < Model.Count; i++)
+    {
+        var p = Model[i];
+        var abs = offset + i;
+        <tr>
+            <td class="sort-cell">
+                <div class="sort-controls">
+                    <span class="sort-controls__pos">@(abs + 1)</span>
+                    <form asp-action="Move" method="post" class="sort-controls__move">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <input type="hidden" name="kind" value="@kind" />
+                        <button name="direction" value="-1" type="submit" class="btn-icon" title="Up" aria-label="Up" @(abs == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                        <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(abs >= total - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                    </form>
+                </div>
+            </td>
+            <td>@p.Title</td>
+            <td><code>@p.Slug</code></td>
+            <td>@(p.IsPublished ? "Có" : "Nháp")</td>
+            <td>@(p.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</td>
+            <td class="actions">
+                <a class="btn-icon" asp-action="Edit" asp-route-kind="@kind" asp-route-id="@p.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></a>
+                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Xóa?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@p.Id" />
+                    <input type="hidden" name="kind" value="@kind" />
+                    <button type="submit" class="btn-icon btn-icon--danger" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />

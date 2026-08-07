@@ -1,0 +1,37 @@
+@model NewHarian.Application.Cms.CmsPageSaveRequest
+@{
+    ViewData["Title"] = "Thông tin trang";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-toolbar">
+    <h1>Thông tin trang</h1>
+    <a asp-action="Blocks" asp-route-id="@Model.Id" class="btn-secondary">Nội dung khối</a>
+    <a asp-action="Index" class="btn-link">← Danh sách trang</a>
+</div>
+
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+
+<form method="post" class="form-stack" style="max-width:720px">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <label><input asp-for="IsPublished" type="checkbox" /> Hiển thị công khai</label>
+
+    <h2>Tiếng Việt</h2>
+    <label>Tiêu đề trang * <input asp-for="TitleVi" class="form-control" required /></label>
+    <label>Tiêu đề SEO <input asp-for="MetaTitleVi" class="form-control" /></label>
+    <label>Mô tả SEO <textarea asp-for="MetaDescriptionVi" class="form-control" rows="2"></textarea></label>
+
+    <h2>English</h2>
+    <label>Page title <input asp-for="TitleEn" class="form-control" /></label>
+    <label>SEO title <input asp-for="MetaTitleEn" class="form-control" /></label>
+    <label>SEO description <textarea asp-for="MetaDescriptionEn" class="form-control" rows="2"></textarea></label>
+
+    <h2>日本語</h2>
+    <label>ページタイトル <input asp-for="TitleJa" class="form-control" /></label>
+    <label>SEOタイトル <input asp-for="MetaTitleJa" class="form-control" /></label>
+    <label>SEO説明 <textarea asp-for="MetaDescriptionJa" class="form-control" rows="2"></textarea></label>
+
+    <button type="submit" class="btn-primary">Lưu</button>
+</form>

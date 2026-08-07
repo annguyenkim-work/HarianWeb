@@ -1,0 +1,38 @@
+@model ErrorViewModel
+@{
+    var code = Model.StatusCode;
+    string titleKey;
+    string bodyKey;
+    if (code == 404)
+    {
+        titleKey = "Error.NotFoundTitle";
+        bodyKey = "Error.NotFoundBody";
+    }
+    else if (code >= 500)
+    {
+        titleKey = "Error.ServerTitle";
+        bodyKey = "Error.ServerBody";
+    }
+    else
+    {
+        titleKey = "Error.GenericTitle";
+        bodyKey = "Error.GenericBody";
+    }
+    ViewData["Title"] = Localizer[titleKey].Value;
+    ViewData["MetaDescription"] = Localizer[bodyKey].Value;
+}
+<section class="page-hero error-page__hero">
+    <p class="error-page__code">@code</p>
+    <h1>@Localizer[titleKey]</h1>
+</section>
+<main class="content-main content-main--full error-page">
+    <p class="error-page__body">@Localizer[bodyKey]</p>
+    @if (Model.ShowRequestId && code >= 500)
+    {
+        <p class="error-page__meta">@Localizer["Error.RequestId"]: <code>@Model.RequestId</code></p>
+    }
+    <p class="error-page__actions">
+        <a class="btn-primary" asp-controller="Home" asp-action="Index">@Localizer["Error.BackHome"]</a>
+        <a class="btn-secondary" asp-controller="Contact" asp-action="Index">@Localizer["Nav.Contact"]</a>
+    </p>
+</main>

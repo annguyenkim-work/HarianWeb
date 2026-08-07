@@ -1,0 +1,132 @@
+@model IReadOnlyList<NewHarian.Application.Catalog.ProductCardDto>
+@{
+    var q = ViewBag.Q as string ?? "";
+    var tag = ViewBag.Tag as string ?? "";
+    var tags = ViewBag.Tags as IReadOnlyList<NewHarian.Application.Catalog.TagChipDto>
+               ?? Array.Empty<NewHarian.Application.Catalog.TagChipDto>();
+    int page = ViewBag.Page is int p ? p : 1;
+    int total = ViewBag.Total is int t ? t : 0;
+    int pageSize = ViewBag.PageSize is int s ? s : 12;
+    int pages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+    ViewData["Title"] = Localizer["Search.Title"].Value;
+
+    string SearchUrl(string? nextQ, string? nextTag, int nextPage = 1)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(nextQ)) parts.Add("q=" + Uri.EscapeDataString(nextQ));
+        if (!string.IsNullOrWhiteSpace(nextTag)) parts.Add("tag=" + Uri.EscapeDataString(nextTag));
+        if (nextPage > 1) parts.Add("page=" + nextPage);
+        return "/products/search" + (parts.Count == 0 ? "" : "?" + string.Join("&", parts));
+    }
+}
+
+<nav class="breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a> /
+    <a asp-controller="Products" asp-action="Index">@Localizer["Nav.Products"]</a> /
+    <span>@Localizer["Search.Title"]</span>
+</nav>
+
+<h1>@Localizer["Search.Title"]</h1>
+
+<form method="get" action="/products/search" class="catalog-search">
+    <input type="search" name="q" value="@q" class="form-control" placeholder="@Localizer["Search.Hint"]" aria-label="@Localizer["Search.Title"]" />
+    @if (!string.IsNullOrWhiteSpace(tag))
+    {
+        <input type="hidden" name="tag" value="@tag" />
+    }
+    <button type="submit" class="btn-secondary">@Localizer["Search.Title"]</button>
+</form>
+
+@if (tags.Count > 0)
+{
+    <div class="tag-chips" aria-label="Tags">
+        <a class="tag-chip@(string.IsNullOrEmpty(tag) ? " is-active" : null)" href="@SearchUrl(q, null)">Tất cả</a>
+        @foreach (var tchip in tags)
+        {
+            var active = string.Equals(tchip.Slug, tag, StringComparison.OrdinalIgnoreCase);
+            <a class="tag-chip@(active ? " is-active" : null)" href="@SearchUrl(q, tchip.Slug)">@tchip.Name</a>
+        }
+    </div>
+}
+
+@if (string.IsNullOrWhiteSpace(q) && string.IsNullOrWhiteSpace(tag))
+{
+    <p class="muted">@Localizer["Search.Hint"]</p>
+}
+else
+{
+    <p class="muted">
+        @if (!string.IsNullOrWhiteSpace(q))
+        {
+            @Localizer["Search.ResultsFor"] <text>“@q”</text>
+        }
+        @if (!string.IsNullOrWhiteSpace(tag))
+        {
+            <text> · tag: @tag</text>
+        }
+        - @total
+    </p>
+}
+
+@if ((!string.IsNullOrWhiteSpace(q) || !string.IsNullOrWhiteSpace(tag)) && Model.Count == 0)
+{
+    <p>@Localizer["Search.NoResults"]</p>
+}
+else if (Model.Count > 0)
+{
+    <div class="card-grid">
+    @foreach (var item in Model)
+    {
+        <a class="card-link"
+           asp-controller="@CatalogNav.ControllerName(item.Kind)"
+           asp-action="Detail"
+           asp-route-categorySlug="@item.CategorySlug"
+           asp-route-productSlug="@item.Slug">
+            <div class="card">
+                @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                {
+                    <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
+                }
+                <h2>@item.Name</h2>
+                @if (!string.IsNullOrWhiteSpace(item.ShortDescription))
+                {
+                    <p class="card-short">@item.ShortDescription</p>
+                }
+                @if (item.Kind == NewHarian.Domain.Enums.CatalogKind.Service)
+                {
+                    <span class="badge">@Localizer["Products.BookLabel"]</span>
+                    @if (item.HidePrice)
+                    {
+                        <p class="price price--on-request">@Localizer["Products.PriceOnRequest"]</p>
+                    }
+                }
+                else if (item.HidePrice)
+                {
+                    <p class="price price--on-request">@Localizer["Products.PriceOnRequest"]</p>
+                }
+                else if (item.FromPrice is decimal price)
+                {
+                    <p class="price">@Localizer["Products.From"] @price.ToString("N0")đ</p>
+                }
+            </div>
+        </a>
+    }
+    </div>
+
+    @if (pages > 1)
+    {
+        <nav class="pager" aria-label="Search pages">
+            @for (var i = 1; i <= pages; i++)
+            {
+                if (i == page)
+                {
+                    <span class="pager__current">@i</span>
+                }
+                else
+                {
+                    <a href="@SearchUrl(q, tag, i)">@i</a>
+                }
+            }
+        </nav>
+    }
+}

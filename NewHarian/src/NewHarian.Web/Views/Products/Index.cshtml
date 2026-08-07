@@ -1,0 +1,28 @@
+@model IReadOnlyList<NewHarian.Application.Catalog.CategoryCardDto>
+@{
+    ViewData["Title"] = Localizer["Nav.Products"];
+}
+
+<section class="page-hero">
+    <h1>@Localizer["Nav.Products"]</h1>
+    <p class="muted">@Localizer["Products.HubIntro"]</p>
+</section>
+
+<div class="card-grid">
+@foreach (var c in Model)
+{
+    <a class="card-link"
+       asp-controller="@CatalogNav.CategoryHubController(c)"
+       asp-action="Category"
+       asp-route-categorySlug="@c.Slug">
+        <div class="card">
+            @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
+            {
+                <img src="@c.ImageUrl" alt="@c.Name" loading="lazy" />
+            }
+            <h2>@c.Name</h2>
+            <p class="muted">@c.ProductCount @Localizer["Products.Items"]</p>
+        </div>
+    </a>
+}
+</div>

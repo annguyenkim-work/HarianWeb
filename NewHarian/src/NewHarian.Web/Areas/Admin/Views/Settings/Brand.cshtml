@@ -1,0 +1,66 @@
+@model NewHarian.Web.Areas.Admin.Controllers.SettingsController.BrandSettingsVm
+@{
+    ViewData["Title"] = "Thương hiệu & logo";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-toolbar">
+    <h1>Thương hiệu &amp; logo</h1>
+</div>
+
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+
+<p class="muted">Cấu hình logo và nội dung footer (2 cột: giới thiệu + liên hệ). Trên trang chủ, menu trong suốt nằm trên slide (không dùng ảnh nền menu).</p>
+
+<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:640px">
+    @Html.AntiForgeryToken()
+    <label>Tên thương hiệu (header) *
+        <input asp-for="BrandName" class="form-control" required placeholder="Harian" />
+    </label>
+    <label>Tên công ty đầy đủ (copyright footer)
+        <input asp-for="CompanyName" class="form-control" placeholder="HARIAN CORPORATION" />
+    </label>
+    <label>Logo (JPG/PNG/WEBP/SVG)
+        <input type="file" name="logoFile" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" class="form-control" />
+    </label>
+    <p class="img-size-hint"><strong>Kích thước đề xuất:</strong> 360×96 px (ngang) hoặc SVG nền trong suốt. Logo hiển thị tối đa ~180×48 px trên header.</p>
+    @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+    {
+        <div>
+            <p>Logo hiện tại:</p>
+            <img src="@Model.LogoUrl" alt="Logo" style="max-height:64px;max-width:220px;object-fit:contain" />
+            <input type="hidden" asp-for="LogoUrl" />
+        </div>
+    }
+
+    <h2>Giới thiệu footer</h2>
+    <label>Tiếng Việt
+        <textarea asp-for="TaglineVi" class="form-control" rows="3" placeholder="Chúng tôi hỗ trợ toàn diện..."></textarea>
+    </label>
+    <label>English
+        <textarea asp-for="TaglineEn" class="form-control" rows="3"></textarea>
+    </label>
+    <label>日本語
+        <textarea asp-for="TaglineJa" class="form-control" rows="3"></textarea>
+    </label>
+
+    <h2>Liên hệ (footer)</h2>
+    <label>Địa chỉ <input asp-for="Address" class="form-control" /></label>
+    <label>Email <input asp-for="Email" class="form-control" type="email" /></label>
+    <label>Điện thoại 1 <input asp-for="Phone" class="form-control" /></label>
+    <label>Điện thoại 2 <input asp-for="Phone2" class="form-control" /></label>
+    <label>Facebook (URL) <input asp-for="FacebookUrl" class="form-control" placeholder="https://facebook.com/..." /></label>
+    <label>Instagram (URL) <input asp-for="InstagramUrl" class="form-control" placeholder="https://instagram.com/..." /></label>
+
+    <button type="submit" class="btn-primary">Lưu</button>
+</form>
+
+<div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap">
+@if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+{
+    <form asp-action="ClearLogo" method="post" class="inline" onsubmit="return confirm('Gỡ logo?');">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn-link">Gỡ logo</button>
+    </form>
+}
+</div>

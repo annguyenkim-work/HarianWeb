@@ -1,0 +1,91 @@
+@model IReadOnlyList<NewHarian.Application.Engagement.ApplicationListItemDto>
+@using NewHarian.Application.Posts
+@using NewHarian.Domain.Enums
+@{
+    ViewData["Title"] = "Applications";
+    Layout = "_AdminLayout";
+    var statuses = Enum.GetValues<ApplicationStatus>();
+    var jobs = ViewBag.Jobs as IReadOnlyList<SitePostListItemDto> ?? Array.Empty<SitePostListItemDto>();
+    var selectedPost = ViewBag.SitePostId as int?;
+    var sort = (string)(ViewBag.Sort ?? "createdAt");
+    var dir = (string)(ViewBag.Dir ?? "desc");
+}
+<div class="admin-toolbar"><h1>Hồ sơ tuyển dụng</h1></div>
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+<form method="get" class="filter-bar filter-bar--row">
+    <input type="hidden" name="sort" value="@sort" />
+    <input type="hidden" name="dir" value="@dir" />
+    <select name="status" aria-label="Trạng thái">
+        <option value=""> Trạng thái </option>
+        @foreach (var s in statuses)
+        {
+            if (ViewBag.Status as ApplicationStatus? == s)
+            {
+                <option value="@s" selected>@s</option>
+            }
+            else
+            {
+                <option value="@s">@s</option>
+            }
+        }
+    </select>
+    <select name="sitePostId" aria-label="Tin tuyển dụng">
+        <option value=""> Tất cả tin tuyển dụng </option>
+        @foreach (var j in jobs)
+        {
+            if (selectedPost == j.Id)
+            {
+                <option value="@j.Id" selected>@j.Title</option>
+            }
+            else
+            {
+                <option value="@j.Id">@j.Title</option>
+            }
+        }
+    </select>
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm tên / email / SĐT" class="form-control filter-bar__search" />
+    <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
+</form>
+<table class="data-table">
+<thead>
+<tr>
+    <partial name="_SortableTh" model='new SortableThModel { Column = "id", Label = "#", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "createdAt", Label = "Ngày", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "name", Label = "Họ tên", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "email", Label = "Email", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "job", Label = "Tin tuyển dụng", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "type", Label = "Loại", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "status", Label = "Status", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "hasCv", Label = "CV", CurrentSort = sort, CurrentDir = dir }' />
+    <th></th>
+</tr>
+</thead>
+<tbody>
+@foreach (var a in Model)
+{
+<tr>
+<td>@a.Id</td>
+<td>@a.CreatedAt.ToLocalTime().ToString("g")</td>
+<td>@a.FullName</td>
+<td>@a.Email</td>
+<td>@(a.JobTitle ?? "-")</td>
+<td>@a.ApplicationType</td>
+<td>@a.Status</td>
+<td>@(a.HasCv ? "Yes" : "No")</td>
+<td><a href="#" class="btn-icon js-detail" data-id="@a.Id" title="Detail" aria-label="Detail"><i class="fa-solid fa-eye" aria-hidden="true"></i></a></td>
+</tr>
+}
+</tbody>
+</table>
+<partial name="_AdminPager" />
+<div id="modal-host"></div>
+@section Scripts {
+<script>
+document.querySelectorAll('.js-detail').forEach(a => a.addEventListener('click', async e => {
+  e.preventDefault();
+  const res = await fetch('@Url.Action("Detail")?id=' + a.dataset.id);
+  document.getElementById('modal-host').innerHTML = await res.text();
+}));
+</script>
+}

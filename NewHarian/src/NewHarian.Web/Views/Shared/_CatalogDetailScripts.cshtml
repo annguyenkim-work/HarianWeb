@@ -1,0 +1,226 @@
+<script>
+(() => {
+  const gallery = document.getElementById('product-gallery');
+  let galleryApi = null;
+
+  if (gallery) {
+    const slides = [...gallery.querySelectorAll('.gallery-slide')];
+    const dots = [...gallery.querySelectorAll('.gallery-dot')];
+    const loupe = document.getElementById('gallery-loupe');
+    const viewport = gallery.querySelector('.gallery-viewport') || gallery;
+    const intervalMs = Number(gallery.dataset.interval) || 10000;
+    let index = 0;
+    let timer = null;
+    const zoom = 1.3;
+    const isTouchOnly = window.matchMedia('(hover: none) and (pointer: coarse)').matches
+      && !window.matchMedia('(any-pointer: fine)').matches;
+
+    function activeImg() {
+      return gallery.querySelector('.gallery-slide.is-active img');
+    }
+
+    function hideLoupe() {
+      gallery.classList.remove('is-zooming');
+    }
+
+    function updateLoupe(e) {
+      if (!loupe || isTouchOnly) return;
+      if (e.pointerType === 'touch') return;
+      if (e.target.closest('.gallery-nav, .gallery-dots')) {
+        hideLoupe();
+        return;
+      }
+      const img = activeImg();
+      if (!img) { hideLoupe(); return; }
+      if (!img.naturalWidth) {
+        if (!img.dataset.zoomWait) {
+          img.dataset.zoomWait = '1';
+          img.addEventListener('load', () => { delete img.dataset.zoomWait; }, { once: true });
+        }
+        hideLoupe();
+        return;
+      }
+
+      const galleryRect = gallery.getBoundingClientRect();
+      const rect = viewport.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        hideLoupe();
+        return;
+      }
+
+      // Match object-fit: contain
+      const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+      const renderedW = img.naturalWidth * scale;
+      const renderedH = img.naturalHeight * scale;
+      const offsetX = (rect.width - renderedW) / 2;
+      const offsetY = (rect.height - renderedH) / 2;
+      const loupeW = loupe.offsetWidth || 180;
+      const loupeH = loupe.offsetHeight || 180;
+      const src = img.currentSrc || img.src;
+
+      loupe.style.left = `${e.clientX - galleryRect.left}px`;
+      loupe.style.top = `${e.clientY - galleryRect.top}px`;
+      loupe.style.backgroundImage = `url("${src.replace(/"/g, '\\"')}")`;
+      loupe.style.backgroundSize = `${renderedW * zoom}px ${renderedH * zoom}px`;
+      loupe.style.backgroundPosition =
+        `${-(x - offsetX) * zoom + loupeW / 2}px ${-(y - offsetY) * zoom + loupeH / 2}px`;
+      gallery.classList.add('is-zooming');
+    }
+
+    function show(i) {
+      if (!slides.length) return;
+      index = ((i % slides.length) + slides.length) % slides.length;
+      slides.forEach((s, n) => s.classList.toggle('is-active', n === index));
+      dots.forEach((d, n) => d.classList.toggle('is-active', n === index));
+      hideLoupe();
+    }
+
+    function next() { show(index + 1); }
+    function prev() { show(index - 1); }
+
+    function stopAuto() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+    function startAuto() {
+      stopAuto();
+      if (slides.length < 2) return;
+      timer = setInterval(next, intervalMs);
+    }
+    function userNav(fn) {
+      fn();
+      startAuto();
+    }
+
+    function showByIndex(i, restartAuto) {
+      if (typeof i !== 'number' || Number.isNaN(i)) return false;
+      show(i);
+      if (restartAuto !== false) startAuto();
+      return true;
+    }
+
+    function showByImageUrl(url) {
+      if (!url) return false;
+      const idx = slides.findIndex(s => {
+        const img = s.querySelector('img');
+        return img && (img.getAttribute('src') === url || img.src.endsWith(url));
+      });
+      if (idx < 0) return false;
+      return showByIndex(idx);
+    }
+
+    galleryApi = { showByIndex, showByImageUrl, startAuto };
+
+    gallery.querySelector('[data-gallery-prev]')?.addEventListener('click', () => userNav(prev));
+    gallery.querySelector('[data-gallery-next]')?.addEventListener('click', () => userNav(next));
+    dots.forEach(d => d.addEventListener('click', () => userNav(() => show(Number(d.dataset.galleryGoto)))));
+    gallery.addEventListener('mouseenter', stopAuto);
+    gallery.addEventListener('mouseleave', () => {
+      hideLoupe();
+      startAuto();
+    });
+
+    if (loupe && !isTouchOnly) {
+      gallery.addEventListener('pointermove', updateLoupe);
+      gallery.addEventListener('pointerleave', hideLoupe);
+      gallery.addEventListener('pointercancel', hideLoupe);
+    }
+  }
+
+  const isPreview = document.querySelector('.product-detail')?.dataset?.preview === 'true';
+  const priceEl = document.getElementById('variant-price');
+  const skuEl = document.getElementById('variant-sku');
+  const cartVariant = document.getElementById('cart-variant-id');
+  const bookLink = document.getElementById('book-link');
+  const radios = document.querySelectorAll('input[name="variantId"]');
+
+  function goToVariantGallery(radio, apiIndex) {
+    if (!galleryApi || !radio) return;
+    const fromAttr = Number(radio.getAttribute('data-gallery-slide-index'));
+    if (!Number.isNaN(fromAttr) && galleryApi.showByIndex(fromAttr)) return;
+    if (typeof apiIndex === 'number' && galleryApi.showByIndex(apiIndex)) return;
+    const imageUrl = radio.getAttribute('data-image-url');
+    if (imageUrl) galleryApi.showByImageUrl(imageUrl);
+  }
+
+  function applyLocal(radio) {
+    if (!radio) return;
+    goToVariantGallery(radio);
+    if (priceEl) priceEl.textContent = radio.dataset.priceText || '-';
+    if (skuEl) skuEl.textContent = 'SKU: ' + (radio.dataset.sku || '');
+    const meta = document.getElementById('variant-color-meta');
+    if (meta) {
+      const meaning = radio.dataset.colorMeaning || '';
+      const meaningEl = document.getElementById('variant-color-meaning');
+      if (meaningEl) { meaningEl.textContent = meaning; meaningEl.hidden = !meaning; }
+      meta.hidden = !meaning;
+    }
+    if (cartVariant) cartVariant.value = radio.value;
+    if (bookLink) {
+      const url = new URL(bookLink.href, window.location.origin);
+      url.searchParams.set('variantId', radio.value);
+      bookLink.href = url.pathname + url.search;
+    }
+  }
+
+  async function refresh(radio) {
+    if (!radio) return;
+    goToVariantGallery(radio);
+
+    if (isPreview) {
+      applyLocal(radio);
+      return;
+    }
+
+    const kind = document.querySelector('.variant-picker')?.dataset?.productType === 'service'
+      ? 'service'
+      : 'product';
+    const res = await fetch(`/api/variants/${radio.value}?kind=${encodeURIComponent(kind)}`);
+    if (!res.ok) {
+      applyLocal(radio);
+      return;
+    }
+    const data = await res.json();
+    if (priceEl) priceEl.textContent = data.priceText;
+    if (skuEl) skuEl.textContent = 'SKU: ' + data.sku;
+    const meta = document.getElementById('variant-color-meta');
+    if (meta) {
+      const meaning = data.colorMeaning || '';
+      const meaningEl = document.getElementById('variant-color-meaning');
+      if (meaningEl) { meaningEl.textContent = meaning; meaningEl.hidden = !meaning; }
+      meta.hidden = !meaning;
+    }
+    if (cartVariant) cartVariant.value = data.id;
+    goToVariantGallery(radio, data.gallerySlideIndex);
+    if (bookLink) {
+      const url = new URL(bookLink.href);
+      url.searchParams.set('variantId', data.id);
+      bookLink.href = url.pathname + url.search;
+    }
+  }
+
+  radios.forEach(r => r.addEventListener('change', () => refresh(r)));
+
+  const checked = document.querySelector('input[name="variantId"]:checked');
+  if (checked) goToVariantGallery(checked);
+  galleryApi?.startAuto();
+
+  const form = document.getElementById('add-cart-form');
+  const modal = document.getElementById('cart-modal');
+  if (form && modal) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const res = await fetch('/Cart/Add', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data.ok) { alert(data.error || 'Error'); return; }
+      const subtotalLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Cart.Subtotal"].Value));
+      document.getElementById('cart-modal-msg').textContent =
+        subtotalLabel + ': ' + data.subTotalText + ' (' + data.count + ')';
+      modal.showModal();
+    });
+  }
+})();
+</script>

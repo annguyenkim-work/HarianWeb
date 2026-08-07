@@ -1,0 +1,93 @@
+@model NewHarian.Application.Orders.OrderSummaryDto
+
+<h2>@Model.OrderNumber</h2>
+
+<div class="detail-grid">
+    <div class="detail-field">
+        <span class="detail-field__label">Khách</span>
+        <span class="detail-field__value">@Model.CustomerName</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Email</span>
+        <span class="detail-field__value">@Model.CustomerEmail</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">SĐT</span>
+        <span class="detail-field__value">@(Model.CustomerPhone ?? "-")</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">PT TT</span>
+        <span class="detail-field__value">@Model.PaymentMethod</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Status</span>
+        <span class="detail-field__value">@Model.Status</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Ngày đặt</span>
+        <span class="detail-field__value">@Model.CreatedAt.ToLocalTime().ToString("g")</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Địa chỉ</span>
+        <span class="detail-field__value">@Model.ShippingAddress, @Model.ShippingDistrict @Model.ProvinceName</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Ghi chú KH</span>
+        <span class="detail-field__value">@(Model.Notes ?? "-")</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Tổng</span>
+        <span class="detail-field__value"><strong>@Model.Total.ToString("N0")đ</strong> <span class="muted">(SP @Model.SubTotal.ToString("N0")đ + ship @Model.ShippingFee.ToString("N0")đ)</span></span>
+    </div>
+</div>
+
+<ul class="order-detail-items">
+@foreach (var i in Model.Items)
+{
+    <li>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}") (@i.Sku) × @i.Quantity = @i.LineTotal.ToString("N0")đ</li>
+}
+</ul>
+
+<label>Ghi chú nội bộ
+    <textarea name="internalNotes" class="form-control" rows="2">@Model.InternalNotes</textarea>
+</label>
+
+<div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.AwaitingConfirmation && Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.COD)
+{
+    <button type="button" class="btn-primary" data-action="confirm-cod" data-id="@Model.Id">Xác nhận COD</button>
+}
+@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.PendingPayment && Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.BankTransfer)
+{
+    <button type="button" class="btn-primary" data-action="confirm-payment" data-id="@Model.Id">Xác nhận CK</button>
+}
+@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.Confirmed)
+{
+    <button type="button" class="btn-secondary" data-action="status" data-status="Processing" data-id="@Model.Id">Bắt đầu xử lý</button>
+}
+@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.Processing)
+{
+    <button type="button" class="btn-secondary" data-action="status" data-status="Shipped" data-id="@Model.Id">Đã giao vận</button>
+}
+@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.Shipped)
+{
+    <button type="button" class="btn-secondary" data-action="status" data-status="Delivered" data-id="@Model.Id">Hoàn thành</button>
+}
+@if (Model.Status is NewHarian.Domain.Enums.OrderStatus.AwaitingConfirmation
+    or NewHarian.Domain.Enums.OrderStatus.PendingPayment
+    or NewHarian.Domain.Enums.OrderStatus.Confirmed
+    or NewHarian.Domain.Enums.OrderStatus.Processing)
+{
+    <button type="button" class="btn-link" data-action="status" data-status="Cancelled" data-id="@Model.Id">Hủy đơn</button>
+}
+</div>
+
+@{
+    var histories = ViewBag.Histories as IReadOnlyList<NewHarian.Application.Admin.StatusHistoryItemDto>
+                    ?? Array.Empty<NewHarian.Application.Admin.StatusHistoryItemDto>();
+}
+<partial name="_StatusHistory" model="histories" />
+
+<div class="modal__actions">
+    <button type="button" class="btn-secondary" data-close>Đóng</button>
+</div>

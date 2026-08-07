@@ -1,0 +1,67 @@
+@model IReadOnlyList<NewHarian.Application.Engagement.InquiryListItemDto>
+@{
+    ViewData["Title"] = "Inquiries";
+    Layout = "_AdminLayout";
+    var statuses = Enum.GetValues<NewHarian.Domain.Enums.InquiryStatus>();
+    var sort = (string)(ViewBag.Sort ?? "createdAt");
+    var dir = (string)(ViewBag.Dir ?? "desc");
+}
+<div class="admin-toolbar"><h1>Liên hệ (Inquiries)</h1></div>
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+<form method="get" class="filter-bar filter-bar--row">
+    <input type="hidden" name="sort" value="@sort" />
+    <input type="hidden" name="dir" value="@dir" />
+    <select name="status" aria-label="Trạng thái">
+        <option value=""> Trạng thái </option>
+        @foreach (var s in statuses)
+        {
+            if (ViewBag.Status as NewHarian.Domain.Enums.InquiryStatus? == s)
+            {
+                <option value="@s" selected>@s</option>
+            }
+            else
+            {
+                <option value="@s">@s</option>
+            }
+        }
+    </select>
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm tên / email / SĐT" class="form-control filter-bar__search" />
+    <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
+</form>
+<table class="data-table">
+<thead>
+<tr>
+    <partial name="_SortableTh" model='new SortableThModel { Column = "id", Label = "#", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "createdAt", Label = "Ngày", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "name", Label = "Họ tên", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "email", Label = "Email", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "phone", Label = "SĐT", CurrentSort = sort, CurrentDir = dir }' />
+    <partial name="_SortableTh" model='new SortableThModel { Column = "status", Label = "Status", CurrentSort = sort, CurrentDir = dir }' />
+    <th></th>
+</tr>
+</thead>
+<tbody>
+@foreach (var i in Model) {
+<tr>
+<td>@i.Id</td>
+<td>@i.CreatedAt.ToLocalTime().ToString("g")</td>
+<td>@i.Name</td>
+<td>@i.Email</td>
+<td>@(i.Phone ?? "-")</td>
+<td>@i.Status</td>
+<td><a href="#" class="btn-icon js-detail" data-id="@i.Id" title="Detail" aria-label="Detail"><i class="fa-solid fa-eye" aria-hidden="true"></i></a></td>
+</tr>
+}
+</tbody>
+</table>
+<partial name="_AdminPager" />
+<div id="modal-host"></div>
+@section Scripts {
+<script>
+document.querySelectorAll('.js-detail').forEach(a => a.addEventListener('click', async e => {
+  e.preventDefault();
+  const res = await fetch('@Url.Action("Detail")?id=' + a.dataset.id);
+  document.getElementById('modal-host').innerHTML = await res.text();
+}));
+</script>
+}

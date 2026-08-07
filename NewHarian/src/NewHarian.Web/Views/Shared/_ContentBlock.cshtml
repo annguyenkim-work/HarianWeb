@@ -1,0 +1,101 @@
+@model NewHarian.Application.Cms.PublicBlockDto
+@using System.Text.Json
+@using NewHarian.Domain.Enums
+@{
+    var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    if (lang is not ("en" or "ja")) lang = "vi";
+    var gapRem = Model.SpacingAfterRem.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var flush = Model.SpacingAfterRem <= 0;
+}
+
+<article class="cms-block cms-block--@Model.BlockType.ToString().ToLowerInvariant()@(flush ? " cms-block--flush" : null)"
+         style="margin-bottom: @(gapRem)rem">
+@switch (Model.BlockType)
+{
+    case ContentBlockType.TextWithImage:
+    case ContentBlockType.ZigzagFeature:
+        <div class="cms-text-image @(Model.ImagePosition == "left" ? "is-image-left" : "is-image-right")">
+            <div class="cms-text-image__text">
+                @if (!string.IsNullOrWhiteSpace(Model.Title)) { <h2>@Model.Title</h2> }
+                @if (!string.IsNullOrWhiteSpace(Model.Body)) { <div class="cms-body">@Html.Raw(Model.Body)</div> }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <div class="cms-text-image__media">
+                    <img src="@Model.ImageUrl" alt="@(Model.Title ?? "")" />
+                </div>
+            }
+        </div>
+        break;
+
+    case ContentBlockType.BulletList:
+        @if (!string.IsNullOrWhiteSpace(Model.Title)) { <h2>@Model.Title</h2> }
+        <ul class="cms-bullets">
+            @foreach (var line in (Model.Body ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                <li>@line</li>
+            }
+        </ul>
+        break;
+
+    case ContentBlockType.CtaButton:
+        <p class="cms-cta">
+            <a class="btn-primary" href="@(Model.LinkUrl ?? "#")">@(Model.Title ?? "Xem thêm")</a>
+        </p>
+        break;
+
+    case ContentBlockType.RichText:
+        @if (!string.IsNullOrWhiteSpace(Model.Title)) { <h2>@Model.Title</h2> }
+        <div class="cms-body">@Html.Raw(Model.Body)</div>
+        break;
+
+    case ContentBlockType.DataTable:
+        @if (!string.IsNullOrWhiteSpace(Model.Title)) { <h2>@Model.Title</h2> }
+        if (!string.IsNullOrWhiteSpace(Model.ExtraData))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(Model.ExtraData);
+                if (doc.RootElement.TryGetProperty("rows", out var rows))
+                {
+                    <table class="cms-data-table">
+                        <tbody>
+                        @foreach (var row in rows.EnumerateArray().OrderBy(r => r.TryGetProperty("sortOrder", out var so) ? so.GetInt32() : 0))
+                        {
+                            var label = Localized(row, "label", lang);
+                            var value = Localized(row, "value", lang);
+                            <tr>
+                                <th scope="row">@label</th>
+                                <td>@value</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
+            }
+            catch { /* ignore bad JSON */ }
+        }
+        break;
+
+    case ContentBlockType.ImageGallery:
+        @if (!string.IsNullOrWhiteSpace(Model.Title)) { <h2>@Model.Title</h2> }
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <div class="cms-gallery">
+                <img src="@Model.ImageUrl" alt="@(Model.Title ?? "")" />
+            </div>
+        }
+        break;
+}
+</article>
+
+@functions {
+    private static string Localized(JsonElement row, string field, string lang)
+    {
+        if (!row.TryGetProperty(field, out var obj)) return "";
+        if (obj.ValueKind == JsonValueKind.String) return obj.GetString() ?? "";
+        if (obj.TryGetProperty(lang, out var v)) return v.GetString() ?? "";
+        if (obj.TryGetProperty("vi", out var vi)) return vi.GetString() ?? "";
+        return "";
+    }
+}

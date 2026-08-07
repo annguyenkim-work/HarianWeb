@@ -1,0 +1,11 @@
+@model NewHarian.Application.Catalog.ProductDetailDto
+@{
+    ViewData["Title"] = Localizer["Book.Thanks"];
+}
+
+<section class="page-hero">
+    <h1>@Localizer["Book.Thanks"]</h1>
+    <p>@Localizer["Book.ThanksBody"] <strong>@ViewBag.BookingNumber</strong></p>
+    <p class="muted">@Model.Name</p>
+    <a class="btn-primary" asp-controller="Services" asp-action="Index">@Localizer["Nav.Services"]</a>
+</section>

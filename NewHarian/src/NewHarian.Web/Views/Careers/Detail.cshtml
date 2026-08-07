@@ -1,0 +1,35 @@
+@model NewHarian.Application.Posts.SitePostDetailDto
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["MetaDescription"] = Model.Excerpt;
+}
+
+<nav class="breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    <a asp-action="Index">@Localizer["Careers.PageTitle"]</a>
+    <span>/</span>
+    <span>@Model.Title</span>
+</nav>
+
+<article class="post-detail">
+    <header class="post-detail__header">
+        <h1>@Model.Title</h1>
+        @if (Model.PublishedAt is DateTime dt)
+        {
+            <p class="muted">@dt.ToLocalTime().ToString("dd/MM/yyyy")</p>
+        }
+    </header>
+    @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl))
+    {
+        <figure class="post-detail__cover">
+            <img src="@Model.CoverImageUrl" alt="@Model.Title" />
+        </figure>
+    }
+    <div class="post-detail__body rich-content">
+        @Html.Raw(Model.Body)
+    </div>
+    <p class="post-detail__cta">
+        <a class="btn-primary" asp-action="Apply" asp-route-slug="@Model.Slug">@Localizer["Careers.ApplyCta"]</a>
+    </p>
+</article>

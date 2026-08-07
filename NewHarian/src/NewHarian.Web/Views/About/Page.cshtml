@@ -1,0 +1,32 @@
+@model NewHarian.Application.Cms.PublicPageDto
+@{
+    ViewData["Title"] = Model.MetaTitle ?? Model.Title;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+    var isAboutHub = Model.Slug == "about";
+}
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    @if (Model.Slug == "about")
+    {
+        <span>@Model.Title</span>
+    }
+    else
+    {
+        <a href="/about">@Localizer["Nav.About"]</a>
+        <span>/</span>
+        <span>@Model.Title</span>
+    }
+</nav>
+
+<main class="content-main content-main--full">
+    @if (isAboutHub)
+    {
+        <h2 class="section-title">@Localizer["About.CompanyInfoSectionTitle"]</h2>
+    }
+    @foreach (var block in Model.Blocks)
+    {
+        <partial name="_ContentBlock" model="block" />
+    }
+</main>

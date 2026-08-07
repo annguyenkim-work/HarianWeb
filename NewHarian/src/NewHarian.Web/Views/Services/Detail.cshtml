@@ -1,0 +1,11 @@
+@model NewHarian.Application.Catalog.ProductDetailDto
+@{
+    ViewData["Title"] = Model.Name;
+    ViewData["MetaDescription"] = Model.ShortDescription;
+}
+
+@await Html.PartialAsync("_ServiceDetail", Model)
+
+@section Scripts {
+@await Html.PartialAsync("~/Views/Shared/_CatalogDetailScripts.cshtml")
+}

@@ -1,0 +1,48 @@
+@using NewHarian.Application.Posts
+@{
+    ViewData["Title"] = Localizer["Careers.PageTitle"];
+    var jobs = ViewBag.Jobs as IReadOnlyList<SitePostListItemDto> ?? Array.Empty<SitePostListItemDto>();
+}
+
+<section class="page-hero"><h1>@Localizer["Careers.PageTitle"]</h1></section>
+<nav class="breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    <span>@Localizer["Careers.PageTitle"]</span>
+</nav>
+
+@if (TempData["Error"] is string err)
+{
+    <p class="text-danger">@err</p>
+}
+
+<h2 class="section-title">@Localizer["Careers.Openings"]</h2>
+@if (jobs.Count == 0)
+{
+    <p class="muted">@Localizer["Careers.NoOpenings"]</p>
+}
+else
+{
+    <div class="post-list">
+        @foreach (var p in jobs)
+        {
+            <a class="post-card" asp-action="Detail" asp-route-slug="@p.Slug">
+                @if (!string.IsNullOrWhiteSpace(p.CoverImageUrl))
+                {
+                    <img src="@p.CoverImageUrl" alt="" />
+                }
+                <div class="post-card__body">
+                    <h3>@p.Title</h3>
+                    @if (p.PublishedAt is DateTime dt)
+                    {
+                        <p class="muted">@dt.ToLocalTime().ToString("dd/MM/yyyy")</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(p.Excerpt))
+                    {
+                        <p>@p.Excerpt</p>
+                    }
+                </div>
+            </a>
+        }
+    </div>
+}

@@ -1,0 +1,191 @@
+@model IReadOnlyList<NewHarian.Application.Catalog.ServiceBookingListItemDto>
+@{
+    ViewData["Title"] = "Đặt lịch dịch vụ";
+    Layout = "_AdminLayout";
+    var statuses = Enum.GetValues(typeof(NewHarian.Domain.Enums.ServiceBookingStatus)).Cast<NewHarian.Domain.Enums.ServiceBookingStatus>().ToArray();
+    var sort = (string)(ViewBag.Sort ?? "createdAt");
+    var dir = (string)(ViewBag.Dir ?? "desc");
+    DateOnly? from = ViewBag.From as DateOnly?;
+    DateOnly? to = ViewBag.To as DateOnly?;
+}
+
+<div class="admin-toolbar">
+    <h1>Đặt lịch dịch vụ</h1>
+</div>
+
+<form method="get" class="filter-bar filter-bar--row">
+    <input type="hidden" name="sort" value="@sort" />
+    <input type="hidden" name="dir" value="@dir" />
+    <select name="status" aria-label="Trạng thái">
+        <option value="">Trạng thái</option>
+        @foreach (var s in statuses)
+        {
+            if (ViewBag.Status as NewHarian.Domain.Enums.ServiceBookingStatus? == s)
+            {
+                <option value="@s" selected>@s</option>
+            }
+            else
+            {
+                <option value="@s">@s</option>
+            }
+        }
+    </select>
+    <div class="filter-bar__field">
+        <label for="from">Từ ngày hẹn</label>
+        <input id="from" type="date" name="from" value="@(from?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="filter-bar__field">
+        <label for="to">Đến</label>
+        <input id="to" type="date" name="to" value="@(to?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Mã / tên / email / SĐT" class="form-control filter-bar__search" />
+    <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
+</form>
+
+@Html.AntiForgeryToken()
+
+<table class="data-table" id="bookings-table">
+    <thead>
+        <tr>
+            <partial name="_SortableTh" model='new SortableThModel { Column = "bookingNumber", Label = "Mã", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "customer", Label = "Khách", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "phone", Label = "SĐT", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "product", Label = "Dịch vụ", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "preferredDate", Label = "Ngày", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "status", Label = "Status", CurrentSort = sort, CurrentDir = dir }' />
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var b in Model)
+    {
+        <tr data-id="@b.Id">
+            <td>@b.BookingNumber</td>
+            <td>@b.CustomerName<br /><span class="muted">@b.CustomerEmail</span></td>
+            <td>@b.CustomerPhone</td>
+            <td>@b.ProductName - @b.VariantLabel</td>
+            <td>@b.PreferredDate.ToString("yyyy-MM-dd") @b.PreferredTime</td>
+            <td>
+                <select class="form-control status-inline" data-id="@b.Id" aria-label="Status @b.BookingNumber">
+                    @foreach (var s in statuses)
+                    {
+                        if (s == b.Status)
+                        {
+                            <option value="@s" selected>@s</option>
+                        }
+                        else
+                        {
+                            <option value="@s">@s</option>
+                        }
+                    }
+                </select>
+            </td>
+            <td>
+                <button type="button" class="btn-icon btn-detail" data-id="@b.Id" title="Detail" aria-label="Detail"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />
+
+<div id="booking-modal" class="admin-modal" hidden>
+    <div class="admin-modal__backdrop" data-close-modal></div>
+    <div class="admin-modal__panel modal__box" id="booking-modal-body" style="width:min(560px,96vw)"></div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+  const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+  const modal = document.getElementById('booking-modal');
+  const body = document.getElementById('booking-modal-body');
+
+  function openModal() {
+    modal.hidden = false;
+    document.body.classList.add('admin-modal-open');
+  }
+  function closeModal() {
+    modal.hidden = true;
+    document.body.classList.remove('admin-modal-open');
+    body.innerHTML = '';
+  }
+
+  async function updateStatus(id, status, internalNotes) {
+    const fd = new FormData();
+    fd.append('id', id);
+    fd.append('status', status);
+    if (internalNotes != null) fd.append('internalNotes', internalNotes);
+    fd.append('__RequestVerificationToken', token);
+    const res = await fetch('/admin/ServiceBookings/UpdateStatus', {
+      method: 'POST',
+      body: fd,
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    });
+    return res.json();
+  }
+
+  document.querySelectorAll('.status-inline').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const id = sel.dataset.id;
+      const prev = sel.dataset.prev || sel.value;
+      sel.disabled = true;
+      try {
+        const data = await updateStatus(id, sel.value, null);
+        if (!data.ok) {
+          alert(data.error || 'Không cập nhật được');
+          sel.value = prev;
+        } else {
+          sel.dataset.prev = sel.value;
+        }
+      } catch {
+        alert('Lỗi mạng');
+        sel.value = prev;
+      } finally {
+        sel.disabled = false;
+      }
+    });
+    sel.dataset.prev = sel.value;
+  });
+
+  async function openDetail(id) {
+    body.innerHTML = await (await fetch(`/admin/ServiceBookings/Detail/${id}`)).text();
+    openModal();
+    const form = body.querySelector('#booking-detail-form');
+    body.querySelector('[data-close]')?.addEventListener('click', closeModal);
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      const msg = body.querySelector('#booking-detail-msg');
+      if (data.ok) {
+        const rowSel = document.querySelector(`.status-inline[data-id="${fd.get('id')}"]`);
+        if (rowSel) {
+          rowSel.value = fd.get('status');
+          rowSel.dataset.prev = fd.get('status');
+        }
+        closeModal();
+      } else if (msg) {
+        msg.hidden = false;
+        msg.textContent = data.error || 'Lỗi';
+        msg.className = 'text-danger';
+      }
+    });
+  }
+
+  document.querySelectorAll('.btn-detail').forEach(btn => {
+    btn.addEventListener('click', () => openDetail(btn.dataset.id));
+  });
+  modal.querySelector('[data-close-modal]')?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeModal();
+  });
+})();
+</script>
+}

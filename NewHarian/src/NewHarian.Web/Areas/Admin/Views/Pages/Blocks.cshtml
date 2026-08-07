@@ -1,0 +1,151 @@
+@model IReadOnlyList<NewHarian.Application.Cms.CmsBlockListItem>
+
+@using NewHarian.Domain.Enums
+
+@using NewHarian.Web.Areas.Admin
+
+@{
+
+    ViewData["Title"] = "Nội dung trang";
+
+    Layout = "_AdminLayout";
+
+    var cmsPage = ViewBag.Page as NewHarian.Application.Cms.CmsPageDetailDto;
+
+}
+
+
+
+<div class="admin-toolbar">
+
+    <h1>Nội dung - @(cmsPage?.TitleVi ?? cmsPage?.Slug)</h1>
+
+    <a asp-action="Edit" asp-route-id="@cmsPage?.Id" class="btn-secondary">Thông tin trang</a>
+
+    <a asp-action="Index" class="btn-link">← Danh sách trang</a>
+
+</div>
+
+
+
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+
+
+
+<div class="admin-add-block" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1rem 0">
+
+    <a class="btn-primary"
+
+       asp-action="EditBlock"
+
+       asp-route-pageId="@cmsPage?.Id"
+
+       asp-route-type="@ContentBlockType.RichText">+ Văn bản</a>
+
+    <a class="btn-secondary"
+
+       asp-action="EditBlock"
+
+       asp-route-pageId="@cmsPage?.Id"
+
+       asp-route-type="@ContentBlockType.TextWithImage">+ Văn bản và hình ảnh</a>
+
+    <a class="btn-secondary"
+
+       asp-action="EditBlock"
+
+       asp-route-pageId="@cmsPage?.Id"
+
+       asp-route-type="@ContentBlockType.DataTable">+ Bảng thông tin</a>
+
+    <a class="btn-secondary"
+
+       asp-action="EditBlock"
+
+       asp-route-pageId="@cmsPage?.Id"
+
+       asp-route-type="@ContentBlockType.CtaButton">+ Nút liên kết</a>
+
+</div>
+
+<p class="muted">Bốn kiểu khối: <strong>Văn bản</strong>, <strong>Văn bản và hình ảnh</strong>, <strong>Bảng thông tin</strong>, <strong>Nút liên kết</strong> (nút bấm mở trang trong site hoặc website khác). Khối mới tự động xếp cuối danh sách.</p>
+
+
+
+<table class="data-table" style="margin-top:1rem">
+
+    <thead>
+
+        <tr>
+
+            <th class="sort-cell">Thứ tự hiển thị</th>
+
+            <th>Kiểu</th>
+
+            <th>Tiêu đề (VI)</th>
+
+            <th>Hiển thị</th>
+
+            <th></th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+    @for (var i = 0; i < Model.Count; i++)
+
+    {
+
+        var b = Model[i];
+
+        <tr>
+
+            <td class="sort-cell">
+                <div class="sort-controls">
+                    <span class="sort-controls__pos">@(i + 1)</span>
+                    <form asp-action="MoveBlock" method="post" class="sort-controls__move">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="pageId" value="@cmsPage?.Id" />
+                        <input type="hidden" name="id" value="@b.Id" />
+                        <button name="direction" value="-1" type="submit" title="Up" @(i == 0 ? "disabled" : null)>↑</button>
+                        <button name="direction" value="1" type="submit" title="Down" @(i == Model.Count - 1 ? "disabled" : null)>↓</button>
+                    </form>
+                </div>
+            </td>
+
+            <td>@CmsUiLabels.BlockType(b.BlockType)</td>
+
+            <td>@(b.TitleVi ?? "-")</td>
+
+            <td>@(b.IsPublished ? "Có" : "Ẩn")</td>
+
+            <td class="actions">
+
+                <a asp-action="EditBlock" asp-route-pageId="@cmsPage?.Id" asp-route-id="@b.Id">Sửa</a>
+
+                <form asp-action="DeleteBlock" method="post" class="inline" onsubmit="return confirm('Xóa khối nội dung này?');">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="pageId" value="@cmsPage?.Id" />
+
+                    <input type="hidden" name="id" value="@b.Id" />
+
+                    <button type="submit" class="btn-link">Xóa</button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+    }
+
+    </tbody>
+
+</table>
+

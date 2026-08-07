@@ -1,0 +1,57 @@
+@model IReadOnlyList<NewHarian.Domain.Entities.HomeSlide>
+@{
+    ViewData["Title"] = "Home slides";
+    Layout = "_AdminLayout";
+}
+<div class="admin-toolbar"><h1>Home slides</h1></div>
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="form-stack" style="max-width:480px;margin-bottom:2rem">
+    @Html.AntiForgeryToken()
+    <label>Caption Vi <input name="captionVi" class="form-control" /></label>
+    <label>Link URL <input name="linkUrl" class="form-control" /></label>
+    <label><input name="isActive" type="checkbox" value="true" checked /> Active</label>
+    <label>Ảnh <input type="file" name="image" accept="image/*" required /></label>
+    <p class="img-size-hint"><strong>Kích thước đề xuất:</strong> 1920×600 px (banner ngang ~16:5). JPG/PNG/WEBP, ≤ 10MB. Ảnh khác tỷ lệ sẽ bị cắt (cover) trên slider trang chủ.</p>
+    <p class="muted">Slide mới sẽ tự động xếp cuối danh sách.</p>
+    <button type="submit" class="btn-primary">Thêm slide</button>
+</form>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Ảnh</th>
+            <th>Caption</th>
+            <th class="sort-cell">Thứ tự hiển thị</th>
+            <th>Active</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @for (var i = 0; i < Model.Count; i++)
+    {
+        var s = Model[i];
+        <tr>
+            <td>@if (!string.IsNullOrEmpty(s.ImageUrl)) { <img src="@s.ImageUrl" alt="" style="height:48px" /> }</td>
+            <td>@(s.Translations.FirstOrDefault(t => t.LanguageCode == "vi")?.Caption)</td>
+            <td class="sort-cell">
+                <div class="sort-controls">
+                    <span class="sort-controls__pos">@(i + 1)</span>
+                    <form asp-action="Move" method="post" class="sort-controls__move">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@s.Id" />
+                        <button name="direction" value="-1" type="submit" class="btn-icon" title="Up" aria-label="Up" @(i == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                        <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(i == Model.Count - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                    </form>
+                </div>
+            </td>
+            <td>@(s.IsActive ? "Yes" : "No")</td>
+            <td class="actions">
+                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Xóa slide này?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@s.Id" />
+                    <button type="submit" class="btn-icon btn-icon--danger" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

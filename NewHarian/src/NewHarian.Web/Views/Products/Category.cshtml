@@ -1,0 +1,61 @@
+@model IReadOnlyList<NewHarian.Application.Catalog.ProductCardDto>
+@{
+    var cat = (NewHarian.Application.Catalog.CategoryCardDto)ViewBag.Category;
+    ViewData["Title"] = cat.Name;
+    int page = ViewBag.Page;
+    int total = ViewBag.Total;
+    int pageSize = ViewBag.PageSize;
+    int pages = (int)Math.Ceiling(total / (double)pageSize);
+}
+
+<nav class="breadcrumb">
+    <a asp-controller="Products" asp-action="Index">@Localizer["Nav.Products"]</a> /
+    <span>@cat.Name</span>
+</nav>
+
+<h1>@cat.Name</h1>
+
+<div class="card-grid">
+@foreach (var p in Model)
+{
+    <a class="card-link"
+       asp-controller="Products"
+       asp-action="Detail"
+       asp-route-categorySlug="@p.CategorySlug"
+       asp-route-productSlug="@p.Slug">
+        <div class="card">
+            @if (!string.IsNullOrWhiteSpace(p.ImageUrl))
+            {
+                <img src="@p.ImageUrl" alt="@p.Name" loading="lazy" />
+            }
+            <h2>@p.Name</h2>
+            @if (!string.IsNullOrWhiteSpace(p.ShortDescription))
+            {
+                <p class="card-short">@p.ShortDescription</p>
+            }
+            @if (p.HidePrice)
+            {
+                <p class="price price--on-request">@Localizer["Products.PriceOnRequest"]</p>
+            }
+            else if (p.FromPrice is decimal price)
+            {
+                <p class="price">@Localizer["Products.From"] @price.ToString("N0")đ</p>
+            }
+        </div>
+    </a>
+}
+</div>
+
+@if (pages > 1)
+{
+    <div class="pager">
+        @for (var i = 1; i <= pages; i++)
+        {
+            <a class="@(i == page ? "active" : "")"
+               asp-controller="Products"
+               asp-action="Category"
+               asp-route-categorySlug="@cat.Slug"
+               asp-route-page="@i">@i</a>
+        }
+    </div>
+}

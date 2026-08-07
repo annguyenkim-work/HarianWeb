@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NewHarian.Application/NewHarian.Application.csproj" />
+    <Project Path="src/NewHarian.Domain/NewHarian.Domain.csproj" />
+    <Project Path="src/NewHarian.Infrastructure/NewHarian.Infrastructure.csproj" />
+    <Project Path="src/NewHarian.Web/NewHarian.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NewHarian.Web.Tests/NewHarian.Web.Tests.csproj" />
+  </Folder>
+</Solution>

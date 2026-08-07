@@ -1,0 +1,77 @@
+@model NewHarian.Application.Cart.CartDto
+@{
+    ViewData["Title"] = Localizer["Cart.Title"];
+}
+
+<nav class="breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a> /
+    <span>@Localizer["Cart.Title"]</span>
+</nav>
+
+<h1>@Localizer["Cart.Title"]</h1>
+
+@if (TempData["Error"] is string err)
+{
+    <p class="text-danger">@err</p>
+}
+
+@if (Model.Items.Count == 0)
+{
+    <p class="muted">@Localizer["Cart.Empty"]</p>
+    <a asp-controller="Products" asp-action="Index" class="btn-primary">@Localizer["Nav.Products"]</a>
+}
+else
+{
+    <div class="cart-layout">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>@Localizer["Cart.Item"]</th>
+                    <th>SKU</th>
+                    <th>@Localizer["Products.Qty"]</th>
+                    <th>@Localizer["Cart.Price"]</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var i in Model.Items)
+            {
+                <tr>
+                    <td class="cart-thumb">
+                        @if (!string.IsNullOrEmpty(i.ImageUrl))
+                        {
+                            <img src="@i.ImageUrl" alt="@i.ProductName" />
+                        }
+                    </td>
+                    <td>@i.DisplayName</td>
+                    <td>@i.Sku</td>
+                    <td>
+                        <form asp-action="Update" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productVariantId" value="@i.ProductVariantId" />
+                            <input type="number" name="quantity" value="@i.Quantity" min="1" class="qty-input" />
+                            <button type="submit" class="btn-link">OK</button>
+                        </form>
+                    </td>
+                    <td>@i.LineTotal.ToString("N0")đ</td>
+                    <td>
+                        <form asp-action="Remove" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productVariantId" value="@i.ProductVariantId" />
+                            <button type="submit" class="btn-link">@Localizer["Cart.Remove"]</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <aside class="cart-summary">
+            <p><strong>@Localizer["Cart.Subtotal"]:</strong> @Model.SubTotal.ToString("N0")đ</p>
+            <p class="muted">@Localizer["Cart.ShipHint"]</p>
+            <a class="btn-primary" asp-controller="Checkout" asp-action="Index">@Localizer["Cart.Checkout"]</a>
+            <a class="btn-secondary" asp-controller="Products" asp-action="Index">@Localizer["Cart.Continue"]</a>
+        </aside>
+    </div>
+}

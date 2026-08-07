@@ -1,0 +1,35 @@
+@model dynamic
+@{
+    // Expect ViewBag or Model bag: BankName, BankAccount, BankBranch, BankQr, AmountText, TransferContent
+    string? bankName = ViewBag.BankName as string;
+    string? bankAccount = ViewBag.BankAccount as string;
+    string? bankBranch = ViewBag.BankBranch as string;
+    string? bankQr = ViewBag.BankQr as string;
+    string? amountText = ViewBag.AmountText as string;
+    string? transferContent = ViewBag.TransferContent as string;
+}
+
+<div class="bank-box">
+    <h2>@Localizer["Checkout.BankInfo"]</h2>
+    <div class="bank-box__grid">
+        <div class="bank-box__info">
+            <p>@Localizer["Checkout.BankName"]: <strong>@bankName</strong></p>
+            <p>@Localizer["Checkout.BankAccount"]: <strong>@bankAccount</strong></p>
+            <p>@Localizer["Checkout.BankBranch"]: @bankBranch</p>
+            <p>@Localizer["Checkout.TransferAmount"]: <strong>@amountText</strong></p>
+            <p>@Localizer["Checkout.TransferContent"]: <strong>@transferContent</strong></p>
+            <p class="muted">@Localizer["Checkout.BankMsg"]</p>
+        </div>
+        <div class="bank-box__qr">
+            @if (!string.IsNullOrWhiteSpace(bankQr))
+            {
+                <p class="bank-qr-label">@Localizer["Checkout.ScanQr"]</p>
+                <img src="@bankQr" alt="QR chuyển khoản" class="bank-qr-img" />
+            }
+            else
+            {
+                <p class="muted">@Localizer["Checkout.QrMissing"]</p>
+            }
+        </div>
+    </div>
+</div>

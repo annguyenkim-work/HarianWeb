@@ -1,0 +1,314 @@
+@using Microsoft.EntityFrameworkCore
+@using NewHarian.Infrastructure.Persistence
+@inject AppDbContext Db
+@{
+    var brandKeys = new[] { "company.brand", "company.logo", "company.name" };
+    var brandMap = await Db.SiteSettings.AsNoTracking()
+        .Where(s => brandKeys.Contains(s.Key))
+        .ToDictionaryAsync(s => s.Key, s => s.Value);
+    var brandName = brandMap.GetValueOrDefault("company.brand");
+    if (string.IsNullOrWhiteSpace(brandName)) brandName = "Harian";
+    var companyName = brandMap.GetValueOrDefault("company.name");
+    if (string.IsNullOrWhiteSpace(companyName)) companyName = brandName;
+    var logoUrl = brandMap.GetValueOrDefault("company.logo") ?? "";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - @brandName Admin</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+</head>
+<body class="admin-body@(User.Identity?.IsAuthenticated == true ? " admin-body--authed" : "")">
+    <header class="admin-header">
+        <a class="admin-brand" asp-area="Admin" asp-controller="Home" asp-action="Index" title="@companyName">
+            @if (!string.IsNullOrWhiteSpace(logoUrl))
+            {
+                <img src="@logoUrl" alt="@brandName" class="admin-brand__logo" />
+            }
+            else
+            {
+                <span class="admin-brand__text">@brandName</span>
+            }
+            <span class="admin-brand__badge">Admin</span>
+        </a>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <nav class="admin-nav" aria-label="Admin">
+                <div class="admin-nav__group">
+                    <button type="button" class="admin-nav__toggle" aria-expanded="false" aria-haspopup="true">Vận hành</button>
+                    <div class="admin-nav__dropdown" role="menu">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a role="menuitem" asp-area="Admin" asp-controller="Categories" asp-action="Index">Danh mục</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Products" asp-action="Index">Sản phẩm</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="ServiceProducts" asp-action="Index">Dịch vụ</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Colors" asp-action="Index">Màu sắc</a>
+                        }
+                        <a role="menuitem" asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index">Đặt lịch</a>
+                        <a role="menuitem" asp-area="Admin" asp-controller="Orders" asp-action="Index">Đơn hàng</a>
+                        <a role="menuitem" asp-area="Admin" asp-controller="Inquiries" asp-action="Index">Liên hệ</a>
+                        <a role="menuitem" asp-area="Admin" asp-controller="Applications" asp-action="Index">Hồ sơ ứng tuyển</a>
+                        <a role="menuitem" asp-area="Admin" asp-controller="Help" asp-action="Index">Hướng dẫn</a>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a role="menuitem" asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="News">Tin tức</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="Job">Tin tuyển dụng</a>
+                        }
+                    </div>
+                </div>
+                @if (User.IsInRole("Admin"))
+                {
+                    <div class="admin-nav__group">
+                        <button type="button" class="admin-nav__toggle" aria-expanded="false" aria-haspopup="true">Cài đặt website</button>
+                        <div class="admin-nav__dropdown" role="menu">
+                    <a role="menuitem" asp-area="Admin" asp-controller="Pages" asp-action="Index">Trang nội dung</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Menus" asp-action="Index">Menus</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="HomeSlides" asp-action="Index">Slides</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Media" asp-action="Index">Media</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Shipping" asp-action="Index">Phí ship</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Users" asp-action="Index">Users</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Settings" asp-action="Brand">Thương hiệu &amp; logo</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Settings" asp-action="Email">Email &amp; thông báo</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="EmailTemplates" asp-action="Index">Mẫu email</a>
+                            <a role="menuitem" asp-area="Admin" asp-controller="Settings" asp-action="Index">Ngân hàng / QR</a>
+                        </div>
+                    </div>
+                }
+            </nav>
+            <div class="admin-header__end">
+                <div class="admin-notify" id="admin-notify">
+                    <button type="button" class="admin-notify__btn" id="admin-notify-btn" aria-label="Notifications" aria-expanded="false" aria-haspopup="true" title="Notifications">
+                        <i class="fa-solid fa-bell" aria-hidden="true"></i>
+                        <span class="admin-notify__badge" id="admin-notify-badge" hidden>0</span>
+                    </button>
+                    <div class="admin-notify__panel" id="admin-notify-panel" hidden>
+                        <div class="admin-notify__head">
+                            <strong>Notifications</strong>
+                            <button type="button" class="btn-link" id="admin-notify-read-all">Mark all as read</button>
+                        </div>
+                        <ul class="admin-notify__list" id="admin-notify-list"></ul>
+                        <p class="admin-notify__empty muted" id="admin-notify-empty" hidden>No notifications</p>
+                    </div>
+                </div>
+                <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" class="inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-link">Đăng xuất</button>
+                </form>
+            </div>
+        }
+    </header>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <aside class="admin-sidebar" aria-label="Menu nhanh bên trái">
+            <div class="admin-sidebar__rail" aria-hidden="true"></div>
+            <div class="admin-sidebar__panel">
+                <a class="admin-sidebar__brand" asp-area="Admin" asp-controller="Home" asp-action="Index" title="@companyName">
+                    @if (!string.IsNullOrWhiteSpace(logoUrl))
+                    {
+                        <img src="@logoUrl" alt="@brandName" class="admin-sidebar__logo" />
+                    }
+                    else
+                    {
+                        <span>@brandName</span>
+                    }
+                </a>
+                <p class="admin-sidebar__title">Menu nhanh</p>
+                <nav class="admin-sidebar__nav">
+                    <div class="admin-sidebar__section">
+                        <p class="admin-sidebar__heading">Vận hành</p>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-area="Admin" asp-controller="Categories" asp-action="Index">Danh mục</a>
+                            <a asp-area="Admin" asp-controller="Products" asp-action="Index">Sản phẩm</a>
+                            <a asp-area="Admin" asp-controller="ServiceProducts" asp-action="Index">Dịch vụ</a>
+                            <a asp-area="Admin" asp-controller="Colors" asp-action="Index">Màu sắc</a>
+                        }
+                        <a asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index">Đặt lịch</a>
+                        <a asp-area="Admin" asp-controller="Orders" asp-action="Index">Đơn hàng</a>
+                        <a asp-area="Admin" asp-controller="Inquiries" asp-action="Index">Liên hệ</a>
+                        <a asp-area="Admin" asp-controller="Applications" asp-action="Index">Hồ sơ ứng tuyển</a>
+                        <a asp-area="Admin" asp-controller="Help" asp-action="Index">Hướng dẫn</a>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="News">Tin tức</a>
+                            <a asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="Job">Tin tuyển dụng</a>
+                        }
+                    </div>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="admin-sidebar__section">
+                            <p class="admin-sidebar__heading">Cài đặt website</p>
+                            <a asp-area="Admin" asp-controller="Pages" asp-action="Index">Trang nội dung</a>
+                            <a asp-area="Admin" asp-controller="Menus" asp-action="Index">Menus</a>
+                            <a asp-area="Admin" asp-controller="HomeSlides" asp-action="Index">Slides</a>
+                            <a asp-area="Admin" asp-controller="Media" asp-action="Index">Media</a>
+                            <a asp-area="Admin" asp-controller="Shipping" asp-action="Index">Phí ship</a>
+                            <a asp-area="Admin" asp-controller="Users" asp-action="Index">Users</a>
+                            <a asp-area="Admin" asp-controller="Settings" asp-action="Brand">Thương hiệu &amp; logo</a>
+                            <a asp-area="Admin" asp-controller="Settings" asp-action="Email">Email &amp; thông báo</a>
+                            <a asp-area="Admin" asp-controller="EmailTemplates" asp-action="Index">Mẫu email</a>
+                            <a asp-area="Admin" asp-controller="Settings" asp-action="Index">Ngân hàng / QR</a>
+                        </div>
+                    }
+                </nav>
+            </div>
+        </aside>
+    }
+
+    <main class="admin-main">
+        @RenderBody()
+    </main>
+    <script src="~/lib/microsoft/signalr/signalr.min.js" asp-append-version="true"></script>
+    <script>
+    (() => {
+      document.querySelectorAll('.admin-nav__group').forEach(g => {
+        const btn = g.querySelector('.admin-nav__toggle');
+        btn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = g.classList.toggle('is-open');
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          document.querySelectorAll('.admin-nav__group').forEach(o => {
+            if (o !== g) {
+              o.classList.remove('is-open');
+              o.querySelector('.admin-nav__toggle')?.setAttribute('aria-expanded', 'false');
+            }
+          });
+        });
+      });
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.admin-nav__group.is-open').forEach(g => {
+          g.classList.remove('is-open');
+          g.querySelector('.admin-nav__toggle')?.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      const root = document.getElementById('admin-notify');
+      if (!root || typeof signalR === 'undefined') return;
+      const btn = document.getElementById('admin-notify-btn');
+      const panel = document.getElementById('admin-notify-panel');
+      const badge = document.getElementById('admin-notify-badge');
+      const list = document.getElementById('admin-notify-list');
+      const empty = document.getElementById('admin-notify-empty');
+      const readAll = document.getElementById('admin-notify-read-all');
+      const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value
+        || document.querySelector('#admin-notify ~ form input[name="__RequestVerificationToken"]')?.value
+        || document.querySelector('.admin-header__end input[name="__RequestVerificationToken"]')?.value;
+
+      function antiForgeryFormData() {
+        const fd = new FormData();
+        const t = document.querySelector('.admin-header__end input[name="__RequestVerificationToken"]')?.value;
+        if (t) fd.append('__RequestVerificationToken', t);
+        return fd;
+      }
+
+      function setBadge(n) {
+        if (n > 0) {
+          badge.hidden = false;
+          badge.textContent = n > 99 ? '99+' : String(n);
+        } else {
+          badge.hidden = true;
+          badge.textContent = '0';
+        }
+      }
+
+      function relTime(iso) {
+        const d = new Date(iso);
+        const sec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+        if (sec < 60) return 'vừa xong';
+        if (sec < 3600) return Math.floor(sec / 60) + ' phút trước';
+        if (sec < 86400) return Math.floor(sec / 3600) + ' giờ trước';
+        return d.toLocaleString();
+      }
+
+      function renderItems(items) {
+        list.innerHTML = '';
+        if (!items || !items.length) {
+          empty.hidden = false;
+          return;
+        }
+        empty.hidden = true;
+        items.forEach(it => {
+          const li = document.createElement('li');
+          li.className = 'admin-notify__item' + (it.isRead ? '' : ' is-unread');
+          li.innerHTML = `<a href="${it.url}" data-id="${it.id}"><span class="admin-notify__title">${it.title}</span><span class="admin-notify__time">${relTime(it.createdAt)}</span></a>`;
+          list.appendChild(li);
+        });
+      }
+
+      async function refreshCount() {
+        try {
+          const res = await fetch('/admin/Notifications/UnreadCount');
+          if (!res.ok) return;
+          const data = await res.json();
+          setBadge(data.count || 0);
+        } catch { /* ignore */ }
+      }
+
+      async function refreshList() {
+        try {
+          const res = await fetch('/admin/Notifications?take=20');
+          if (!res.ok) return;
+          const items = await res.json();
+          renderItems(items);
+        } catch { /* ignore */ }
+      }
+
+      btn?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const open = panel.hidden;
+        panel.hidden = !open;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) await refreshList();
+      });
+      panel?.addEventListener('click', e => e.stopPropagation());
+      document.addEventListener('click', () => {
+        panel.hidden = true;
+        btn?.setAttribute('aria-expanded', 'false');
+      });
+
+      list?.addEventListener('click', async (e) => {
+        const a = e.target.closest('a[data-id]');
+        if (!a) return;
+        e.preventDefault();
+        const id = a.getAttribute('data-id');
+        const fd = antiForgeryFormData();
+        fd.append('id', id);
+        try {
+          await fetch('/admin/Notifications/MarkRead', { method: 'POST', body: fd });
+        } catch { /* ignore */ }
+        location.href = a.getAttribute('href');
+      });
+
+      readAll?.addEventListener('click', async () => {
+        try {
+          await fetch('/admin/Notifications/MarkAllRead', { method: 'POST', body: antiForgeryFormData() });
+          setBadge(0);
+          await refreshList();
+        } catch { /* ignore */ }
+      });
+
+      let hubOk = false;
+      try {
+        const connection = new signalR.HubConnectionBuilder()
+          .withUrl('/admin/hubs/notifications')
+          .withAutomaticReconnect()
+          .build();
+        connection.on('notificationCreated', () => {
+          refreshCount();
+          if (!panel.hidden) refreshList();
+        });
+        connection.start().then(() => { hubOk = true; }).catch(() => { hubOk = false; });
+      } catch { hubOk = false; }
+
+      refreshCount();
+      setInterval(() => { if (!hubOk) refreshCount(); }, 45000);
+    })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

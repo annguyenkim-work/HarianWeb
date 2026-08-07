@@ -1,0 +1,116 @@
+@model NewHarian.Domain.Entities.Menu?
+@{
+    ViewData["Title"] = "Menu header";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-toolbar">
+    <h1>Menu header (top)</h1>
+</div>
+
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+
+<p class="muted">Chỉ đổi <strong>thứ tự</strong> và <strong>ẩn/hiện</strong>. Tên và link cố định theo trang guest (không chỉnh sửa).</p>
+
+@if (Model is null)
+{
+    <p class="text-danger">Chưa có menu <code>header-main</code>. Khởi động lại app để seed, hoặc liên hệ kỹ thuật.</p>
+}
+else
+{
+    var roots = Model.Items.Where(i => i.ParentId is null).OrderBy(i => i.SortOrder).ThenBy(i => i.Id).ToList();
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Mục</th>
+                <th>Đường dẫn</th>
+                <th class="sort-cell">Thứ tự</th>
+                <th>Hiển thị</th>
+            </tr>
+        </thead>
+        <tbody>
+        @for (var i = 0; i < roots.Count; i++)
+        {
+            var item = roots[i];
+            var label = item.Translations.FirstOrDefault(t => t.LanguageCode == "vi")?.Label
+                        ?? item.ItemKey;
+            <tr>
+                <td><strong>@label</strong></td>
+                <td><code>@item.Url</code></td>
+                <td class="sort-cell">
+                    <div class="sort-controls">
+                        <span class="sort-controls__pos">@(i + 1)</span>
+                        <form asp-action="MoveItem" method="post" class="sort-controls__move">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="itemId" value="@item.Id" />
+                            <button name="direction" value="-1" type="submit" class="btn-icon" title="Up" aria-label="Up" @(i == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                            <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(i == roots.Count - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                        </form>
+                    </div>
+                </td>
+                <td>
+                    <form asp-action="SetActive" method="post" class="inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="itemId" value="@item.Id" />
+                        @if (item.IsActive)
+                        {
+                            <input type="hidden" name="isActive" value="false" />
+                            <button type="submit" class="btn-secondary">Đang hiện - Ẩn</button>
+                        }
+                        else
+                        {
+                            <input type="hidden" name="isActive" value="true" />
+                            <button type="submit" class="btn-primary">Đang ẩn - Hiện</button>
+                        }
+                    </form>
+                </td>
+            </tr>
+
+            @if (string.Equals(item.ItemKey, "about", StringComparison.OrdinalIgnoreCase))
+            {
+                var children = Model.Items.Where(c => c.ParentId == item.Id)
+                    .OrderBy(c => c.SortOrder).ThenBy(c => c.Id).ToList();
+                @for (var c = 0; c < children.Count; c++)
+                {
+                    var child = children[c];
+                    var childLabel = child.Translations.FirstOrDefault(t => t.LanguageCode == "vi")?.Label
+                                    ?? child.ItemKey;
+                    <tr class="menu-child-row">
+                        <td style="padding-left:1.75rem">↳ @childLabel</td>
+                        <td><code>@child.Url</code></td>
+                        <td class="sort-cell">
+                            <div class="sort-controls">
+                                <span class="sort-controls__pos">@(c + 1)</span>
+                                <form asp-action="MoveItem" method="post" class="sort-controls__move">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="itemId" value="@child.Id" />
+                                    <button name="direction" value="-1" type="submit" class="btn-icon" title="Up" aria-label="Up" @(c == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                                    <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(c == children.Count - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                        <td>
+                            <form asp-action="SetActive" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="itemId" value="@child.Id" />
+                                @if (child.IsActive)
+                                {
+                                    <input type="hidden" name="isActive" value="false" />
+                                    <button type="submit" class="btn-secondary">Đang hiện - Ẩn</button>
+                                }
+                                else
+                                {
+                                    <input type="hidden" name="isActive" value="true" />
+                                    <button type="submit" class="btn-primary">Đang ẩn - Hiện</button>
+                                }
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+        }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,171 @@
+@model IReadOnlyList<NewHarian.Web.Areas.Admin.Controllers.ColorsController.ColorListItemDto>
+
+@{
+
+    ViewData["Title"] = "Màu sắc";
+
+    Layout = "_AdminLayout";
+
+}
+
+
+
+<div class="admin-toolbar">
+
+    <h1>Màu sắc</h1>
+
+    <button type="button" class="btn-icon btn-primary" id="btn-add-color" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+
+</div>
+
+
+
+@if (TempData["Success"] is string ok)
+
+{
+
+    <p class="text-success">@ok</p>
+
+}
+
+
+
+<table class="data-table">
+
+    <thead>
+
+        <tr>
+
+            <th>Tên (VI)</th>
+
+            <th>Ý nghĩa</th>
+
+            <th></th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+    @foreach (var c in Model)
+
+    {
+
+        <tr>
+
+            <td>@c.NameVi</td>
+
+            <td>@(string.IsNullOrWhiteSpace(c.MeaningVi) ? "-" : c.MeaningVi)</td>
+
+            <td class="actions">
+
+                <button type="button" class="btn-icon btn-edit-color" data-id="@c.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+
+                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Xóa màu này?');">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="id" value="@c.Id" />
+
+                    <button type="submit" class="btn-icon btn-icon--danger" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+    }
+
+    </tbody>
+
+</table>
+
+
+
+<partial name="_AdminPager" />
+
+
+
+<dialog id="color-modal" class="modal">
+
+    <div class="modal__box modal__box--wide" id="color-modal-body"></div>
+
+</dialog>
+
+
+
+@section Scripts {
+
+<script>
+
+(() => {
+
+  const modal = document.getElementById('color-modal');
+
+  const body = document.getElementById('color-modal-body');
+
+
+
+  async function openForm(id) {
+
+    const url = id ? `/admin/Colors/Edit/${id}` : '/admin/Colors/Edit';
+
+    body.innerHTML = await (await fetch(url)).text();
+
+    modal.showModal();
+
+    bindForm();
+
+  }
+
+
+
+  function bindForm() {
+
+    const form = body.querySelector('form');
+
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+
+      e.preventDefault();
+
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+
+      const ct = res.headers.get('content-type') || '';
+
+      if (ct.includes('application/json')) {
+
+        const data = await res.json();
+
+        if (data.ok) { location.reload(); return; }
+
+      } else {
+
+        body.innerHTML = await res.text();
+
+        bindForm();
+
+      }
+
+    });
+
+    body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
+
+  }
+
+
+
+  document.getElementById('btn-add-color').addEventListener('click', () => openForm(null));
+
+  document.querySelectorAll('.btn-edit-color').forEach(b => b.addEventListener('click', () => openForm(b.dataset.id)));
+
+})();
+
+</script>
+
+}
+
+

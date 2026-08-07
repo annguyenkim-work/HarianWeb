@@ -1,0 +1,93 @@
+@model NewHarian.Web.ViewComponents.SiteFooterViewComponent.SiteFooterVm
+<footer class="site-footer">
+    <div class="site-footer__main">
+        <div class="site-footer__inner site-footer__grid">
+            <div class="site-footer__about">
+                <a class="site-footer__brand" asp-controller="Home" asp-action="Index">
+                    @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+                    {
+                        <img src="@Model.LogoUrl" alt="@Model.BrandName" class="site-footer__logo" />
+                    }
+                    else
+                    {
+                        <span class="site-footer__brand-text">@Model.BrandName</span>
+                    }
+                </a>
+                @if (!string.IsNullOrWhiteSpace(Model.Tagline))
+                {
+                    <p class="site-footer__tagline">@Model.Tagline</p>
+                }
+            </div>
+
+            <div class="site-footer__contact">
+                <h2 class="site-footer__heading">@Model.ContactHeading</h2>
+                <ul class="site-footer__list">
+                    @if (!string.IsNullOrWhiteSpace(Model.Address))
+                    {
+                        <li>
+                            <span class="site-footer__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/></svg>
+                            </span>
+                            <span>@Model.Address</span>
+                        </li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Email))
+                    {
+                        <li>
+                            <span class="site-footer__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
+                            </span>
+                            <a href="mailto:@Model.Email">@Model.Email</a>
+                        </li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Phone) || !string.IsNullOrWhiteSpace(Model.Phone2))
+                    {
+                        <li>
+                            <span class="site-footer__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 3h3l1.5 5-2 1.5a14 14 0 0 0 6 6L17 13.5l5 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z"/></svg>
+                            </span>
+                            <span class="site-footer__phones">
+                                @if (!string.IsNullOrWhiteSpace(Model.Phone))
+                                {
+                                    <a href="tel:@Model.Phone.Replace(" ", "")">@Model.Phone</a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Phone2))
+                                {
+                                    <a href="tel:@Model.Phone2.Replace(" ", "")">@Model.Phone2</a>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+
+                @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl) || !string.IsNullOrWhiteSpace(Model.InstagramUrl))
+                {
+                    <div class="site-footer__social">
+                        @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl))
+                        {
+                            <a class="site-footer__social-link" href="@Model.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H9v3h2v7h3v-7h2.5l.5-3H14V9Z"/></svg>
+                            </a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.InstagramUrl))
+                        {
+                            <a class="site-footer__social-link" href="@Model.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="site-footer__bar">
+        <div class="site-footer__inner site-footer__bar-inner">
+            <p>&copy; @DateTime.UtcNow.Year Copyright: <strong>@Model.CompanyName.ToUpperInvariant()</strong></p>
+            <p class="site-footer__legal">
+                <a href="/help">@Localizer["Nav.Help"]</a>
+                <a href="/legal/privacy">@Localizer["Nav.Privacy"]</a>
+                <a href="/legal/terms">@Localizer["Nav.Terms"]</a>
+            </p>
+        </div>
+    </div>
+</footer>

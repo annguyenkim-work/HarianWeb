@@ -1,0 +1,162 @@
+@{
+    ViewData["Title"] = "Hướng dẫn";
+    var isAdmin = ViewBag.IsAdmin as bool? == true;
+}
+
+<div class="admin-page-head">
+    <h1>Hướng dẫn sử dụng Admin</h1>
+    <p class="muted">Tiếng Việt - dành cho Staff@(isAdmin ? " và Admin" : ""). Phần cấu hình website chỉ hiện với tài khoản Admin.</p>
+</div>
+
+<nav class="help-toc admin-help-toc" aria-label="Mục lục">
+    <strong>Mục lục</strong>
+    <ol>
+        <li><a href="#dang-nhap">Đăng nhập</a></li>
+        <li><a href="#don-hang">Đơn hàng</a></li>
+        <li><a href="#dat-lich">Đặt lịch dịch vụ</a></li>
+        <li><a href="#lien-he">Liên hệ (Inquiries)</a></li>
+        <li><a href="#ho-so">Hồ sơ ứng tuyển</a></li>
+        @if (isAdmin)
+        {
+            <li><a href="#catalog">Danh mục / Sản phẩm / Dịch vụ / Màu</a></li>
+            <li><a href="#posts">Tin tức &amp; tin tuyển dụng</a></li>
+            <li><a href="#cms">CMS &amp; media</a></li>
+            <li><a href="#cai-dat">Cài đặt (ship, email, ngân hàng, users)</a></li>
+        }
+    </ol>
+</nav>
+
+<section id="dang-nhap" class="help-section admin-help-section">
+    <h2>Đăng nhập</h2>
+    <ol class="help-flow">
+        <li>
+            <span class="help-flow__num">1</span>
+            <div>
+                <strong>Mở trang đăng nhập</strong>
+                <span>Truy cập <code>/admin/login</code> bằng tài khoản Staff hoặc Admin đã được cấp.</span>
+            </div>
+        </li>
+        <li>
+            <span class="help-flow__num">2</span>
+            <div>
+                <strong>Vào Dashboard</strong>
+                <span>Sau khi đăng nhập thành công bạn vào khu vực <code>/admin</code>. Menu <em>Vận hành</em> dùng chung; mục <em>Cài đặt website</em> chỉ Admin thấy.</span>
+            </div>
+        </li>
+    </ol>
+    <div class="help-callout">
+        <strong>Phân quyền</strong>
+        <ul>
+            <li><strong>Staff:</strong> Đơn hàng, Đặt lịch, Liên hệ, Hồ sơ ứng tuyển.</li>
+            <li><strong>Admin:</strong> toàn bộ Staff + catalog, CMS, cấu hình hệ thống.</li>
+        </ul>
+    </div>
+</section>
+
+<section id="don-hang" class="help-section admin-help-section help-section--highlight">
+    <h2>Đơn hàng (ưu tiên vận hành)</h2>
+    <p>Menu <strong>Đơn hàng</strong> → <code>/admin/Orders</code>. Lọc theo trạng thái / phương thức thanh toán, tìm theo mã đơn, tên, email, SĐT. Mở <strong>Chi tiết</strong> để xử lý.</p>
+
+    <h3>Quy trình theo phương thức thanh toán</h3>
+    <div class="help-callout">
+        <ul>
+            <li><strong>COD</strong> (khách trả khi nhận): đơn mới thường ở <code>AwaitingConfirmation</code> → gọi/email xác nhận với khách → ghi <em>Ghi chú nội bộ</em> → nhấn <strong>Xác nhận COD</strong> → <code>Confirmed</code>.</li>
+            <li><strong>Chuyển khoản</strong>: đơn ở <code>PendingPayment</code> → đối chiếu đã nhận tiền → <strong>Xác nhận CK</strong> → <code>Confirmed</code>.</li>
+        </ul>
+    </div>
+
+    <h3>Sau khi đã Confirmed</h3>
+    <ol class="help-flow">
+        <li>
+            <span class="help-flow__num">1</span>
+            <div><strong>Bắt đầu xử lý</strong><span><code>Confirmed</code> → nút <em>Bắt đầu xử lý</em> → <code>Processing</code>.</span></div>
+        </li>
+        <li>
+            <span class="help-flow__num">2</span>
+            <div><strong>Đã giao vận</strong><span><code>Processing</code> → <em>Đã giao vận</em> → <code>Shipped</code>.</span></div>
+        </li>
+        <li>
+            <span class="help-flow__num">3</span>
+            <div><strong>Hoàn thành</strong><span><code>Shipped</code> → <em>Hoàn thành</em> → <code>Delivered</code>.</span></div>
+        </li>
+    </ol>
+    <p><strong>Hủy đơn:</strong> nút <em>Hủy đơn</em> khả dụng khi đơn còn ở AwaitingConfirmation / PendingPayment / Confirmed / Processing.</p>
+    <p class="muted">Gợi ý: luôn cập nhật <em>Ghi chú nội bộ</em> (đã gọi lúc nào, khách xác nhận gì) trước khi đổi trạng thái.</p>
+</section>
+
+<section id="dat-lich" class="help-section admin-help-section">
+    <h2>Đặt lịch dịch vụ</h2>
+    <p>Menu <strong>Đặt lịch</strong> → <code>/admin/ServiceBookings</code>. Lọc theo trạng thái, mở <strong>Chi tiết</strong>, cập nhật Status + <em>Ghi chú nội bộ</em> → <strong>Lưu</strong>.</p>
+    <ul>
+        <li><code>New</code> - vừa nhận từ website</li>
+        <li><code>Confirmed</code> - đã liên hệ / chốt lịch với khách</li>
+        <li><code>Completed</code> - đã hoàn thành dịch vụ</li>
+        <li><code>Cancelled</code> - hủy</li>
+    </ul>
+</section>
+
+<section id="lien-he" class="help-section admin-help-section">
+    <h2>Liên hệ (Inquiries)</h2>
+    <p>Menu <strong>Liên hệ</strong> → <code>/admin/Inquiries</code>. Đây là tin nhắn từ trang Liên hệ của khách.</p>
+    <ol class="help-flow">
+        <li><span class="help-flow__num">1</span><div><strong>Mở Chi tiết</strong><span>Đọc nội dung, SĐT/email khách.</span></div></li>
+        <li><span class="help-flow__num">2</span><div><strong>Cập nhật trạng thái</strong><span><code>New</code> → <code>InProgress</code> khi đang xử lý → <code>Resolved</code> / <code>Closed</code> khi xong. Ghi chú nội bộ nếu cần → <em>Lưu</em>.</span></div></li>
+    </ol>
+</section>
+
+<section id="ho-so" class="help-section admin-help-section">
+    <h2>Hồ sơ ứng tuyển</h2>
+    <p>Menu <strong>Hồ sơ ứng tuyển</strong> → <code>/admin/Applications</code>. Lọc theo trạng thái / tin tuyển dụng.</p>
+    <ul>
+        <li>Xem loại hồ sơ (<strong>Ứng tuyển</strong> / <strong>Hỏi đáp tuyển dụng</strong>), có CV hay không.</li>
+        <li>Trong Chi tiết: tải CV (nếu có), đổi Status: <code>New</code> → <code>Reviewing</code> → <code>Accepted</code> / <code>Rejected</code> / <code>Closed</code>, kèm ghi chú → <em>Lưu</em>.</li>
+    </ul>
+</section>
+
+@if (isAdmin)
+{
+    <section id="catalog" class="help-section admin-help-section help-section--highlight">
+        <h2>Danh mục / Sản phẩm / Dịch vụ / Màu sắc</h2>
+        <p>Chỉ <strong>Admin</strong>. Các màn danh sách dùng pattern modal: <em>Thêm</em> / <em>Sửa</em> mở form trong dialog, không sang trang Edit riêng.</p>
+        <ul>
+            <li><strong>Danh mục</strong> - nhóm sản phẩm/dịch vụ; thứ tự hiển thị bằng ↑/↓.</li>
+            <li><strong>Sản phẩm</strong> - hàng hóa bán qua giỏ; bật/tắt biến thể size/màu theo từng sản phẩm; ảnh chính + ảnh theo SKU.</li>
+            <li><strong>Dịch vụ</strong> - dịch vụ đặt lịch (không qua giỏ).</li>
+            <li><strong>Màu sắc</strong> - chỉ <em>Name</em> + <em>Meaning</em> (VI/EN/JA); không có trường Description riêng.</li>
+        </ul>
+        <p class="muted">Nội dung đa ngôn ngữ: ưu tiên VI; EN/JA có thể để trống (fallback VI).</p>
+    </section>
+
+    <section id="posts" class="help-section admin-help-section">
+        <h2>Tin tức &amp; tin tuyển dụng</h2>
+        <ul>
+            <li><strong>Tin tức</strong> - bài đăng công khai tại <code>/news</code>.</li>
+            <li><strong>Tin tuyển dụng</strong> - vị trí hiển thị tại <code>/careers</code>; khách ứng tuyển từ đây.</li>
+        </ul>
+    </section>
+
+    <section id="cms" class="help-section admin-help-section">
+        <h2>CMS &amp; media</h2>
+        <ul>
+            <li><strong>Trang nội dung</strong> - About, Company, Legal, khối nội dung trang chủ, …</li>
+            <li><strong>Menus / Slides</strong> - điều hướng và slide trang chủ; sắp xếp bằng ↑/↓.</li>
+            <li><strong>Media</strong> - thư viện ảnh/file dùng cho sản phẩm và CMS.</li>
+        </ul>
+    </section>
+
+    <section id="cai-dat" class="help-section admin-help-section">
+        <h2>Cài đặt website</h2>
+        <ul>
+            <li><strong>Phí ship</strong> - theo tỉnh/thành; miễn phí ship từ ngưỡng cấu hình (hiện 1.000.000đ trên site khách).</li>
+            <li><strong>Users</strong> - tạo/khóa tài khoản Admin/Staff.</li>
+            <li><strong>Thương hiệu &amp; logo</strong> - tên thương hiệu, logo header/footer.</li>
+            <li><strong>Email &amp; thông báo</strong> / <strong>Mẫu email</strong> - SMTP và nội dung email đơn hàng, đặt lịch, …</li>
+            <li><strong>Ngân hàng / QR</strong> - thông tin CK hiển thị cho khách khi chọn chuyển khoản.</li>
+        </ul>
+    </section>
+}
+
+<p class="muted admin-help-footnote">
+    Hướng dẫn khách hàng (công khai): <a href="/help" target="_blank" rel="noopener">/help</a>.
+    @(isAdmin ? "" : "Một số mục cấu hình bị ẩn vì tài khoản của bạn là Staff - liên hệ Admin nếu cần.")
+</p>

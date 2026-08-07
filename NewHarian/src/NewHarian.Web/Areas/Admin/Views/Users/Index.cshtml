@@ -1,0 +1,16 @@
+@model IReadOnlyList<NewHarian.Web.Areas.Admin.Controllers.UsersController.UserRow>
+@{ ViewData["Title"] = "Users"; Layout = "_AdminLayout"; }
+<div class="admin-toolbar">
+  <h1>Users</h1>
+  <a asp-action="Create" class="btn-icon btn-primary" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></a>
+</div>
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+<table class="data-table">
+<thead><tr><th>Email</th><th>Name</th><th>Roles</th><th>Active</th></tr></thead>
+<tbody>
+@foreach (var u in Model) {
+<tr><td>@u.Email</td><td>@u.FullName</td><td>@u.Roles</td><td>@(u.IsActive?"Yes":"No")</td></tr>
+}
+</tbody>
+</table>
+<partial name="_AdminPager" />

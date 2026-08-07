@@ -1,0 +1,48 @@
+@model NewHarian.Application.Catalog.ServiceBookingDetailDto
+
+<h2>@Model.BookingNumber</h2>
+
+<dl class="detail-list">
+    <dt>Khách</dt><dd>@Model.CustomerName</dd>
+    <dt>Email</dt><dd>@Model.CustomerEmail</dd>
+    <dt>SĐT</dt><dd>@Model.CustomerPhone</dd>
+    <dt>Dịch vụ</dt><dd>@Model.ProductName - @Model.VariantLabel</dd>
+    <dt>Lịch hẹn</dt><dd>@Model.PreferredDate.ToString("yyyy-MM-dd") @Model.PreferredTime</dd>
+    <dt>Địa chỉ</dt><dd>@(Model.ServiceAddress ?? "-")</dd>
+    <dt>Ghi chú KH</dt><dd>@(Model.Notes ?? "-")</dd>
+    <dt>Ngôn ngữ</dt><dd>@Model.LanguageCode</dd>
+    <dt>Tạo lúc</dt><dd>@Model.CreatedAt.ToLocalTime().ToString("g")</dd>
+</dl>
+<form id="booking-detail-form" asp-area="Admin" asp-controller="ServiceBookings" asp-action="UpdateStatus" method="post" class="form-stack">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+    <label>Status
+        <select name="status" class="form-control">
+            @foreach (NewHarian.Domain.Enums.ServiceBookingStatus s in Enum.GetValues(typeof(NewHarian.Domain.Enums.ServiceBookingStatus)))
+            {
+                if (s == Model.Status)
+                {
+                    <option value="@s" selected>@s</option>
+                }
+                else
+                {
+                    <option value="@s">@s</option>
+                }
+            }
+        </select>
+    </label>
+    <label>Ghi chú nội bộ
+        <textarea name="internalNotes" class="form-control" rows="3">@Model.InternalNotes</textarea>
+    </label>
+    <p id="booking-detail-msg" class="muted" hidden></p>
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close>Đóng</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+    </div>
+</form>
+
+@{
+    var histories = ViewBag.Histories as IReadOnlyList<NewHarian.Application.Admin.StatusHistoryItemDto>
+                    ?? Array.Empty<NewHarian.Application.Admin.StatusHistoryItemDto>();
+}
+<partial name="_StatusHistory" model="histories" />

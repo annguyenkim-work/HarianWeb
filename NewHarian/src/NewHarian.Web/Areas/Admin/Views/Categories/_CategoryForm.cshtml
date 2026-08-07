@@ -1,0 +1,39 @@
+@model NewHarian.Application.Catalog.CategorySaveRequest
+<form asp-area="Admin" asp-controller="Categories" asp-action="Save" method="post" enctype="multipart/form-data" id="category-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ImageUrl" />
+    <h2>@(Model.Id.HasValue ? "Sửa danh mục" : "Thêm danh mục")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-grid">
+        <label><input asp-for="IsActive" /> Active</label>
+        <label><input asp-for="ShowOnHome" /> Show on home</label>
+        <label class="full">Ảnh danh mục
+            <input type="file" name="imageFile" id="category-image-input" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" />
+            <span id="category-image-status" class="muted"></span>
+        </label>
+        <p class="full img-size-hint"><strong>Kích thước đề xuất:</strong> 600×400 px (ngang ~3:2). JPG/PNG/WEBP/GIF. Sau khi chọn ảnh, kéo khung 3:2 để chọn vùng hiển thị trước khi lưu.</p>
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <div class="full" id="category-image-preview-wrap">
+                <p class="muted">Ảnh hiện tại:</p>
+                <img id="category-image-preview" src="@Model.ImageUrl" alt="" style="max-width:180px;height:auto;border:1px solid #ddd" />
+            </div>
+        }
+        else
+        {
+            <div class="full" id="category-image-preview-wrap" hidden>
+                <p class="muted">Ảnh sau khi cắt:</p>
+                <img id="category-image-preview" alt="" style="max-width:180px;height:auto;border:1px solid #ddd" />
+            </div>
+        }
+        <label>Tên VI * <input asp-for="NameVi" class="form-control" required id="name-vi" /></label>
+        <label>Tên EN * <input asp-for="NameEn" class="form-control" required /></label>
+        <label>Tên JA * <input asp-for="NameJa" class="form-control" required /></label>
+        <label class="full">Mô tả VI <textarea asp-for="DescVi" class="form-control" rows="2"></textarea></label>
+    </div>
+    <div class="modal__actions">
+        <button type="button" data-close class="btn-secondary">Hủy</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+    </div>
+</form>

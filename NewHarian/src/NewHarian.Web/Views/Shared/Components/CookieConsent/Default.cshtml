@@ -1,0 +1,23 @@
+@using NewHarian.Web.ViewComponents
+<div id="cookie-consent" class="cookie-consent" role="dialog" aria-live="polite" aria-label="@Localizer["Cookie.Title"]">
+    <div class="cookie-consent__inner">
+        <p class="cookie-consent__text">
+            @Localizer["Cookie.Message"]
+            <a asp-controller="Legal" asp-action="Privacy">@Localizer["Nav.Privacy"]</a>
+        </p>
+        <button type="button" class="btn-primary cookie-consent__btn" id="cookie-consent-accept">@Localizer["Cookie.Accept"]</button>
+    </div>
+</div>
+<script>
+(() => {
+  const btn = document.getElementById('cookie-consent-accept');
+  const banner = document.getElementById('cookie-consent');
+  if (!btn || !banner) return;
+  btn.addEventListener('click', () => {
+    const maxAge = 365 * 24 * 60 * 60;
+    document.cookie = '@CookieConsentViewComponent.CookieName=1; path=/; max-age=' + maxAge + '; SameSite=Lax';
+    banner.hidden = true;
+    banner.remove();
+  });
+})();
+</script>

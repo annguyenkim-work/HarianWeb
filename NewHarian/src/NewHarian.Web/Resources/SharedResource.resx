@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav.Home" xml:space="preserve"><value>Trang chủ</value></data>
+  <data name="Nav.About" xml:space="preserve"><value>Giới thiệu</value></data>
+  <data name="Nav.Company" xml:space="preserve"><value>Công ty</value></data>
+  <data name="Nav.Privacy" xml:space="preserve"><value>Bảo mật</value></data>
+  <data name="Nav.Terms" xml:space="preserve"><value>Điều khoản</value></data>
+  <data name="Nav.Help" xml:space="preserve"><value>Hướng dẫn</value></data>
+  <data name="Nav.Products" xml:space="preserve"><value>Sản phẩm</value></data>
+  <data name="Nav.Services" xml:space="preserve"><value>Dịch vụ</value></data>
+  <data name="Nav.Concept" xml:space="preserve"><value>Triết lý</value></data>
+  <data name="Nav.Quality" xml:space="preserve"><value>Chất lượng</value></data>
+  <data name="Search.Title" xml:space="preserve"><value>Tìm kiếm</value></data>
+  <data name="Search.Placeholder" xml:space="preserve"><value>Tìm sản phẩm, SKU…</value></data>
+  <data name="Search.Submit" xml:space="preserve"><value>Tìm</value></data>
+  <data name="Search.Hint" xml:space="preserve"><value>Nhập tên sản phẩm hoặc mã SKU để tìm.</value></data>
+  <data name="Search.ResultsFor" xml:space="preserve"><value>Kết quả cho</value></data>
+  <data name="Search.NoResults" xml:space="preserve"><value>Không tìm thấy sản phẩm phù hợp.</value></data>
+  <data name="About.CompanyInfoSectionTitle" xml:space="preserve"><value>Thông tin công ty</value></data>
+  <data name="Company.LegalInfoSectionTitle" xml:space="preserve"><value>Thông tin pháp lý</value></data>
+  <data name="Company.MapSectionTitle" xml:space="preserve"><value>Vị trí công ty</value></data>
+  <data name="Company.PageTitle" xml:space="preserve"><value>Công ty</value></data>
+  <data name="Home.Title" xml:space="preserve"><value>Trang chủ</value></data>
+  <data name="Home.Hero" xml:space="preserve"><value>Chào mừng đến Harian</value></data>
+  <data name="Home.Intro" xml:space="preserve"><value>Website thương mại - nền tảng Sprint 0.</value></data>
+  <data name="Home.Categories" xml:space="preserve"><value>Tôi sẽ giúp bạn</value></data>
+  <data name="Home.Featured" xml:space="preserve"><value>Chúng tôi có gì</value></data>
+  <data name="Products.HubIntro" xml:space="preserve"><value>Danh sách sản phẩm (hàng hóa).</value></data>
+  <data name="Services.HubIntro" xml:space="preserve"><value>Danh sách dịch vụ - đặt lịch, không mua qua giỏ hàng.</value></data>
+  <data name="Products.Items" xml:space="preserve"><value>mục</value></data>
+  <data name="Products.From" xml:space="preserve"><value>Từ</value></data>
+  <data name="Products.PriceOnRequest" xml:space="preserve"><value>Giá liên hệ</value></data>
+  <data name="Products.BookLabel" xml:space="preserve"><value>Đặt lịch</value></data>
+  <data name="Products.BookCta" xml:space="preserve"><value>Đặt lịch</value></data>
+  <data name="Products.Variant" xml:space="preserve"><value>Quy cách</value></data>
+  <data name="Products.ServiceOption" xml:space="preserve"><value>Hình thức</value></data>
+  <data name="Products.Qty" xml:space="preserve"><value>Số lượng</value></data>
+  <data name="Products.AddCart" xml:space="preserve"><value>Thêm vào giỏ</value></data>
+  <data name="Products.Related" xml:space="preserve"><value>Sản phẩm liên quan</value></data>
+  <data name="Products.Description" xml:space="preserve"><value>Mô tả sản phẩm</value></data>
+  <data name="Cart.Title" xml:space="preserve"><value>Giỏ hàng</value></data>
+  <data name="Cart.Added" xml:space="preserve"><value>Đã thêm vào giỏ</value></data>
+  <data name="Cart.Continue" xml:space="preserve"><value>Tiếp tục mua</value></data>
+  <data name="Cart.View" xml:space="preserve"><value>Xem giỏ</value></data>
+  <data name="Cart.Subtotal" xml:space="preserve"><value>Tạm tính</value></data>
+  <data name="Cart.Empty" xml:space="preserve"><value>Giỏ hàng trống.</value></data>
+  <data name="Cart.Item" xml:space="preserve"><value>Sản phẩm</value></data>
+  <data name="Cart.Price" xml:space="preserve"><value>Thành tiền</value></data>
+  <data name="Cart.Remove" xml:space="preserve"><value>Xóa</value></data>
+  <data name="Cart.CheckoutLater" xml:space="preserve"><value>Thanh toán ở bước tiếp theo.</value></data>
+  <data name="Cart.Checkout" xml:space="preserve"><value>Thanh toán</value></data>
+  <data name="Cart.ShipHint" xml:space="preserve"><value>Phí vận chuyển tính khi chọn tỉnh/thành ở bước thanh toán.</value></data>
+  <data name="Book.Name" xml:space="preserve"><value>Họ tên</value></data>
+  <data name="Book.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Book.Phone" xml:space="preserve"><value>Điện thoại</value></data>
+  <data name="Book.Date" xml:space="preserve"><value>Ngày hẹn</value></data>
+  <data name="Book.Time" xml:space="preserve"><value>Buổi</value></data>
+  <data name="Book.Address" xml:space="preserve"><value>Địa chỉ (bắt buộc nếu tại nhà)</value></data>
+  <data name="Book.Notes" xml:space="preserve"><value>Ghi chú</value></data>
+  <data name="Book.Submit" xml:space="preserve"><value>Gửi đặt lịch</value></data>
+  <data name="Book.Thanks" xml:space="preserve"><value>Đã nhận đặt lịch</value></data>
+  <data name="Book.ThanksBody" xml:space="preserve"><value>Cảm ơn bạn. Mã đặt lịch</value></data>
+  <data name="Orders.Track" xml:space="preserve"><value>Tra cứu đơn</value></data>
+  <data name="Orders.OrderNo" xml:space="preserve"><value>Mã đơn</value></data>
+  <data name="Orders.Lookup" xml:space="preserve"><value>Tra cứu</value></data>
+  <data name="Orders.NotFound" xml:space="preserve"><value>Không tìm thấy đơn hàng. Vui lòng kiểm tra lại mã đơn và email.</value></data>
+  <data name="Orders.Status" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="Orders.Cancel" xml:space="preserve"><value>Hủy đơn hàng</value></data>
+  <data name="Orders.CancelConfirm" xml:space="preserve"><value>Bạn chắc chắn muốn hủy đơn? Đơn chưa thanh toán sẽ bị hủy.</value></data>
+  <data name="Checkout.Title" xml:space="preserve"><value>Thanh toán</value></data>
+  <data name="Checkout.Address" xml:space="preserve"><value>Địa chỉ giao hàng</value></data>
+  <data name="Checkout.Province" xml:space="preserve"><value>Tỉnh / Thành phố</value></data>
+  <data name="Checkout.District" xml:space="preserve"><value>Quận / Huyện</value></data>
+  <data name="Checkout.Postal" xml:space="preserve"><value>Mã bưu điện</value></data>
+  <data name="Checkout.Notes" xml:space="preserve"><value>Ghi chú đơn hàng</value></data>
+  <data name="Checkout.Payment" xml:space="preserve"><value>Phương thức thanh toán</value></data>
+  <data name="Checkout.COD" xml:space="preserve"><value>Thanh toán khi nhận hàng (COD)</value></data>
+  <data name="Checkout.Bank" xml:space="preserve"><value>Chuyển khoản ngân hàng</value></data>
+  <data name="Checkout.Continue" xml:space="preserve"><value>Tiếp tục</value></data>
+  <data name="Checkout.Summary" xml:space="preserve"><value>Tóm tắt đơn</value></data>
+  <data name="Checkout.Shipping" xml:space="preserve"><value>Phí vận chuyển</value></data>
+  <data name="Checkout.Total" xml:space="preserve"><value>Tổng cộng</value></data>
+  <data name="Checkout.FreeHint" xml:space="preserve"><value>Miễn phí ship từ</value></data>
+  <data name="Checkout.FreeShip" xml:space="preserve"><value>Miễn phí vận chuyển</value></data>
+  <data name="Checkout.Confirm" xml:space="preserve"><value>Xác nhận đơn hàng</value></data>
+  <data name="Checkout.Customer" xml:space="preserve"><value>Thông tin khách</value></data>
+  <data name="Checkout.ShipTo" xml:space="preserve"><value>Địa chỉ giao hàng</value></data>
+  <data name="Checkout.Edit" xml:space="preserve"><value>Quay lại sửa</value></data>
+  <data name="Checkout.Place" xml:space="preserve"><value>Xác nhận đặt hàng</value></data>
+  <data name="Common.Processing" xml:space="preserve"><value>Đang xử lý…</value></data>
+  <data name="Checkout.Success" xml:space="preserve"><value>Đặt hàng thành công!</value></data>
+  <data name="Checkout.OrderNo" xml:space="preserve"><value>Mã đơn</value></data>
+  <data name="Checkout.CodMsg" xml:space="preserve"><value>Nhân viên sẽ gọi điện hoặc gửi email xác nhận đơn trước khi giao hàng.</value></data>
+  <data name="Checkout.BankInfo" xml:space="preserve"><value>Thông tin chuyển khoản</value></data>
+  <data name="Checkout.BankName" xml:space="preserve"><value>Ngân hàng</value></data>
+  <data name="Checkout.BankAccount" xml:space="preserve"><value>Số tài khoản</value></data>
+  <data name="Checkout.BankBranch" xml:space="preserve"><value>Chi nhánh</value></data>
+  <data name="Checkout.TransferAmount" xml:space="preserve"><value>Số tiền</value></data>
+  <data name="Checkout.TransferContent" xml:space="preserve"><value>Nội dung CK</value></data>
+  <data name="Checkout.BankMsg" xml:space="preserve"><value>Vui lòng chuyển khoản trong vòng 48h. Đơn sẽ được xử lý sau khi chúng tôi xác nhận thanh toán.</value></data>
+  <data name="Checkout.ScanQr" xml:space="preserve"><value>Quét mã QR để chuyển khoản</value></data>
+  <data name="Checkout.QrMissing" xml:space="preserve"><value>Chưa cấu hình ảnh QR - vui lòng dùng STK bên cạnh (Admin → Ngân hàng / QR).</value></data>
+  <data name="Nav.Contact" xml:space="preserve"><value>Liên hệ</value></data>
+  <data name="Nav.Careers" xml:space="preserve"><value>Tuyển dụng</value></data>
+  <data name="Nav.News" xml:space="preserve"><value>Tin tức</value></data>
+  <data name="Contact.PageTitle" xml:space="preserve"><value>Liên hệ</value></data>
+  <data name="Contact.Name" xml:space="preserve"><value>Họ và tên</value></data>
+  <data name="Contact.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Contact.Phone" xml:space="preserve"><value>Số điện thoại</value></data>
+  <data name="Contact.Address" xml:space="preserve"><value>Địa chỉ</value></data>
+  <data name="Contact.Message" xml:space="preserve"><value>Nội dung</value></data>
+  <data name="Contact.Continue" xml:space="preserve"><value>Xác nhận</value></data>
+  <data name="Contact.Confirm" xml:space="preserve"><value>Xác nhận liên hệ</value></data>
+  <data name="Contact.Send" xml:space="preserve"><value>Gửi</value></data>
+  <data name="Contact.Thanks" xml:space="preserve"><value>Cảm ơn bạn</value></data>
+  <data name="Contact.ThanksBody" xml:space="preserve"><value>Chúng tôi đã nhận tin nhắn và sẽ phản hồi sớm.</value></data>
+  <data name="Careers.PageTitle" xml:space="preserve"><value>Tuyển dụng</value></data>
+  <data name="Careers.FormTitle" xml:space="preserve"><value>Ứng tuyển / Hỏi đáp</value></data>
+  <data name="Careers.Openings" xml:space="preserve"><value>Tin tuyển dụng</value></data>
+  <data name="Careers.NoOpenings" xml:space="preserve"><value>Hiện chưa có tin tuyển dụng.</value></data>
+  <data name="Careers.ApplyCta" xml:space="preserve"><value>Ứng tuyển</value></data>
+  <data name="Careers.ApplyingFor" xml:space="preserve"><value>Ứng tuyển vị trí</value></data>
+  <data name="Careers.Type" xml:space="preserve"><value>Loại</value></data>
+  <data name="Careers.TypeApplication" xml:space="preserve"><value>Ứng tuyển</value></data>
+  <data name="Careers.TypeInquiry" xml:space="preserve"><value>Hỏi đáp tuyển dụng</value></data>
+  <data name="Careers.Gender" xml:space="preserve"><value>Giới tính</value></data>
+  <data name="Careers.GenderMale" xml:space="preserve"><value>Nam</value></data>
+  <data name="Careers.GenderFemale" xml:space="preserve"><value>Nữ</value></data>
+  <data name="Careers.GenderOther" xml:space="preserve"><value>Khác</value></data>
+  <data name="Careers.FullName" xml:space="preserve"><value>Họ và tên</value></data>
+  <data name="Careers.Furigana" xml:space="preserve"><value>Furigana</value></data>
+  <data name="Careers.Age" xml:space="preserve"><value>Tuổi</value></data>
+  <data name="Careers.Postal" xml:space="preserve"><value>Mã bưu điện</value></data>
+  <data name="Careers.Prefecture" xml:space="preserve"><value>Tỉnh / Thành</value></data>
+  <data name="Careers.City" xml:space="preserve"><value>Quận / Huyện</value></data>
+  <data name="Careers.Address" xml:space="preserve"><value>Địa chỉ</value></data>
+  <data name="Careers.Fax" xml:space="preserve"><value>Fax</value></data>
+  <data name="Careers.Message" xml:space="preserve"><value>Note</value></data>
+  <data name="Careers.Cv" xml:space="preserve"><value>CV / hồ sơ</value></data>
+  <data name="Careers.CvAttached" xml:space="preserve"><value>Đã đính kèm</value></data>
+  <data name="Careers.Confirm" xml:space="preserve"><value>Xác nhận hồ sơ</value></data>
+  <data name="Careers.Thanks" xml:space="preserve"><value>Đã nhận hồ sơ</value></data>
+  <data name="Careers.ThanksBody" xml:space="preserve"><value>Cảm ơn bạn. Chúng tôi sẽ liên hệ nếu hồ sơ phù hợp.</value></data>
+  <data name="Cookie.Title" xml:space="preserve"><value>Thông báo cookie</value></data>
+  <data name="Cookie.Message" xml:space="preserve"><value>Website sử dụng cookie để duy trì ngôn ngữ, giỏ hàng và cải thiện trải nghiệm. Tiếp tục sử dụng đồng nghĩa bạn đồng ý.</value></data>
+  <data name="Cookie.Accept" xml:space="preserve"><value>Đồng ý</value></data>
+  <data name="Error.NotFoundTitle" xml:space="preserve"><value>Không tìm thấy trang</value></data>
+  <data name="Error.NotFoundBody" xml:space="preserve"><value>Trang bạn tìm không tồn tại hoặc đã được di chuyển.</value></data>
+  <data name="Error.ServerTitle" xml:space="preserve"><value>Đã xảy ra lỗi</value></data>
+  <data name="Error.ServerBody" xml:space="preserve"><value>Hệ thống gặp sự cố tạm thời. Vui lòng thử lại sau ít phút.</value></data>
+  <data name="Error.GenericTitle" xml:space="preserve"><value>Không thể hoàn tất yêu cầu</value></data>
+  <data name="Error.GenericBody" xml:space="preserve"><value>Yêu cầu không thể xử lý. Vui lòng quay lại trang chủ hoặc liên hệ chúng tôi.</value></data>
+  <data name="Error.RequestId" xml:space="preserve"><value>Mã yêu cầu</value></data>
+  <data name="Error.BackHome" xml:space="preserve"><value>Về trang chủ</value></data>
+</root>

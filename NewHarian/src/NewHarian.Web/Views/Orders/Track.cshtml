@@ -1,0 +1,57 @@
+@model NewHarian.Web.Controllers.OrdersController.TrackForm
+@{
+    ViewData["Title"] = Localizer["Orders.Track"];
+    var order = ViewBag.Order as NewHarian.Application.Orders.OrderSummaryDto;
+}
+
+<h1>@Localizer["Orders.Track"]</h1>
+
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+
+<form method="post" class="form-stack">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <label>@Localizer["Orders.OrderNo"] <input asp-for="OrderNumber" class="form-control" required placeholder="HAR-ORDER-0001" /></label>
+    <label>@Localizer["Book.Email"] <input asp-for="CustomerEmail" type="email" class="form-control" required /></label>
+    <button type="submit" class="btn-primary">@Localizer["Orders.Lookup"]</button>
+</form>
+
+@if (ViewBag.NotFound == true)
+{
+    <p class="text-danger">@Localizer["Orders.NotFound"]</p>
+}
+
+@if (order is not null)
+{
+    <section class="confirm-block" style="margin-top:2rem">
+        <h2>@order.OrderNumber</h2>
+        <p>@Localizer["Orders.Status"]: <strong>@order.Status</strong></p>
+        <p>@Localizer["Checkout.Payment"]: @order.PaymentMethod</p>
+        <p>@order.CreatedAt.ToLocalTime().ToString("g")</p>
+        <ul>
+            @foreach (var i in order.Items)
+            {
+                <li>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} ({i.VariantLabel})") × @i.Quantity - @i.LineTotal.ToString("N0")đ</li>
+            }
+        </ul>
+        <p>@Localizer["Cart.Subtotal"]: @order.SubTotal.ToString("N0")đ</p>
+        <p>@Localizer["Checkout.Shipping"]: @order.ShippingFee.ToString("N0")đ</p>
+        <p><strong>@Localizer["Checkout.Total"]: @order.Total.ToString("N0")đ</strong></p>
+
+        @if (order.Status == NewHarian.Domain.Enums.OrderStatus.PendingPayment
+             && order.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.BankTransfer)
+        {
+            ViewBag.AmountText = order.Total.ToString("N0") + "đ";
+            ViewBag.TransferContent = order.OrderNumber;
+            <partial name="_BankTransferInfo" />
+
+            <form asp-action="Cancel" method="post" onsubmit="return confirm(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Orders.CancelConfirm"].Value)));" style="margin-top:1rem">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="orderNumber" value="@order.OrderNumber" />
+                <input type="hidden" name="customerEmail" value="@order.CustomerEmail" />
+                <button type="submit" class="btn-secondary">@Localizer["Orders.Cancel"]</button>
+            </form>
+        }
+    </section>
+}

@@ -1,0 +1,205 @@
+@model NewHarian.Application.Catalog.ProductDetailDto
+@{
+    var isPreview = ViewBag.IsPreview as bool? == true;
+    var hidePrice = Model.HidePrice;
+    var defaultVariant = Model.Variants.FirstOrDefault(v => v.IsDefault) ?? Model.Variants.FirstOrDefault();
+}
+
+<nav class="breadcrumb">
+    @if (isPreview)
+    {
+        <span>@Localizer["Nav.Products"]</span>
+        <text> / </text>
+        <span>@Model.CategoryName</span>
+        <text> / </text>
+        <span>@Model.Name</span>
+    }
+    else
+    {
+        <a asp-controller="Products" asp-action="Index">@Localizer["Nav.Products"]</a>
+        <text> / </text>
+        <a asp-controller="Products" asp-action="Category" asp-route-categorySlug="@Model.CategorySlug">@Model.CategoryName</a>
+        <text> / </text>
+        <span>@Model.Name</span>
+    }
+</nav>
+
+<article class="product-detail" data-preview="@(isPreview ? "true" : "false")">
+    <div class="product-detail__main">
+        <div class="product-gallery" id="product-gallery" data-interval="10000" aria-roledescription="carousel">
+            @if (Model.ImageUrls.Count > 0)
+            {
+                <div class="gallery-viewport">
+                    @for (var i = 0; i < Model.ImageUrls.Count; i++)
+                    {
+                        <figure class="gallery-slide @(i == 0 ? "is-active" : "")" data-index="@i">
+                            <img src="@Model.ImageUrls[i]" alt="@Model.Name" loading="@(i == 0 ? "eager" : "lazy")" />
+                        </figure>
+                    }
+                </div>
+                @if (Model.ImageUrls.Count > 1)
+                {
+                    <button type="button" class="gallery-nav gallery-nav--prev" aria-label="Previous" data-gallery-prev>&lsaquo;</button>
+                    <button type="button" class="gallery-nav gallery-nav--next" aria-label="Next" data-gallery-next>&rsaquo;</button>
+                    <div class="gallery-dots" role="tablist">
+                        @for (var i = 0; i < Model.ImageUrls.Count; i++)
+                        {
+                            <button type="button"
+                                    class="gallery-dot @(i == 0 ? "is-active" : "")"
+                                    data-gallery-goto="@i"
+                                    aria-label="Image @(i + 1)"></button>
+                        }
+                    </div>
+                }
+                <div class="gallery-loupe" id="gallery-loupe" aria-hidden="true"></div>
+            }
+            else
+            {
+                <div class="img-placeholder">@Model.Name</div>
+            }
+        </div>
+
+        <div class="product-info">
+            <h1>@Model.Name</h1>
+            @if (!string.IsNullOrEmpty(Model.ShortDescription))
+            {
+                <p>@Model.ShortDescription</p>
+            }
+
+            @if (Model.Variants.Count > 0)
+            {
+                <div class="variant-picker" data-product-type="physical">
+                    <label>@Localizer["Products.Variant"]</label>
+                    <div class="variant-options">
+                        @foreach (var v in Model.Variants)
+                        {
+                            var priceText = hidePrice ? "" : $"{v.Price.ToString("N0")}đ";
+                            var hasSize = !string.IsNullOrWhiteSpace(v.SizeLabel);
+                            var hasColor = !string.IsNullOrWhiteSpace(v.ColorName);
+                            var useChip = hasSize || hasColor;
+                            <label class="variant-option @(useChip ? "variant-option--chip" : "variant-option--radio")">
+                                <input type="radio"
+                                       name="variantId"
+                                       value="@v.Id"
+                                       @(v.Id == defaultVariant?.Id ? "checked" : null)
+                                       data-price-text="@priceText"
+                                       data-sku="@v.Sku"
+                                       data-color-meaning="@v.ColorMeaning"
+                                       data-gallery-slide-index="@v.GallerySlideIndex"
+                                       data-image-url="@(v.ImageUrl ?? "")" />
+                                @if (useChip)
+                                {
+                                    <span class="variant-option__chip">
+                                        @if (hasSize)
+                                        {
+                                            <span class="variant-option__size">@v.SizeLabel</span>
+                                        }
+                                        @if (hasColor)
+                                        {
+                                            <span class="variant-option__color">@v.ColorName</span>
+                                        }
+                                    </span>
+                                }
+                            </label>
+                        }
+                    </div>
+                    @if (hidePrice)
+                    {
+                        <p class="price price--on-request">@Localizer["Products.PriceOnRequest"]</p>
+                    }
+                    else
+                    {
+                        <p class="price" id="variant-price">@(defaultVariant?.Price.ToString("N0") ?? "-")đ</p>
+                    }
+                    <p class="muted" id="variant-sku">SKU: @(defaultVariant?.Sku)</p>
+                    <div id="variant-color-meta"
+                         @(string.IsNullOrWhiteSpace(defaultVariant?.ColorMeaning) ? "hidden" : null)>
+                        <p id="variant-color-meaning" class="variant-color-meaning">@defaultVariant?.ColorMeaning</p>
+                    </div>
+                </div>
+            }
+
+            @if (isPreview)
+            {
+                <p class="muted preview-cta-note">Chế độ xem trước - không thể mua từ trang này.</p>
+                @if (defaultVariant is not null)
+                {
+                    <button type="button" class="btn-primary" disabled>@Localizer["Products.AddCart"]</button>
+                }
+            }
+            else if (defaultVariant is not null)
+            {
+                <form id="add-cart-form" class="add-cart-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productVariantId" id="cart-variant-id" value="@defaultVariant.Id" />
+                    <label>
+                        @Localizer["Products.Qty"]
+                        <input type="number" name="quantity" value="1" min="1" class="qty-input" />
+                    </label>
+                    <button type="submit" class="btn-primary">@Localizer["Products.AddCart"]</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <section class="product-desc product-desc--full">
+            <h2 class="product-desc__title">@Localizer["Products.Description"]</h2>
+            <div class="product-desc__body rich-content">
+                @Html.Raw(Model.Description)
+            </div>
+        </section>
+    }
+
+    @if (!isPreview && Model.Related.Count > 0)
+    {
+        <section class="related">
+            <h2>@Localizer["Products.Related"]</h2>
+            <div class="card-grid">
+            @foreach (var r in Model.Related.Where(x => x.Kind == NewHarian.Domain.Enums.CatalogKind.Product))
+            {
+                <a class="card-link"
+                   asp-controller="Products"
+                   asp-action="Detail"
+                   asp-route-categorySlug="@r.CategorySlug"
+                   asp-route-productSlug="@r.Slug">
+                    <div class="card">
+                        @if (!string.IsNullOrWhiteSpace(r.ImageUrl))
+                        {
+                            <img src="@r.ImageUrl" alt="@r.Name" loading="lazy" />
+                        }
+                        <h3>@r.Name</h3>
+                        @if (!string.IsNullOrWhiteSpace(r.ShortDescription))
+                        {
+                            <p class="card-short">@r.ShortDescription</p>
+                        }
+                        @if (r.HidePrice)
+                        {
+                            <p class="price price--on-request">@Localizer["Products.PriceOnRequest"]</p>
+                        }
+                        else if (r.FromPrice is decimal price)
+                        {
+                            <p class="price">@price.ToString("N0")đ</p>
+                        }
+                    </div>
+                </a>
+            }
+            </div>
+        </section>
+    }
+</article>
+
+@if (!isPreview)
+{
+<dialog id="cart-modal" class="modal">
+    <form method="dialog" class="modal__box">
+        <h2>@Localizer["Cart.Added"]</h2>
+        <p id="cart-modal-msg"></p>
+        <div class="modal__actions">
+            <button value="continue" class="btn-secondary">@Localizer["Cart.Continue"]</button>
+            <a class="btn-primary" id="cart-modal-view" href="/Cart">@Localizer["Cart.View"]</a>
+        </div>
+    </form>
+</dialog>
+}

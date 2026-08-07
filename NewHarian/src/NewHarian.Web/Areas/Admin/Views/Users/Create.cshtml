@@ -1,0 +1,17 @@
+@model NewHarian.Web.Areas.Admin.Controllers.UsersController.CreateUserVm
+@{ ViewData["Title"] = "Create user"; Layout = "_AdminLayout"; }
+<h1>Tạo user</h1>
+<form method="post" class="form-stack" style="max-width:420px">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="All" class="text-danger"></div>
+<label>Email <input asp-for="Email" class="form-control" required /></label>
+<label>Họ tên <input asp-for="FullName" class="form-control" /></label>
+<label>Mật khẩu <input asp-for="Password" type="password" class="form-control" required /></label>
+<label>Role
+  <select asp-for="Role" class="form-control">
+    <option>Staff</option>
+    <option>Admin</option>
+  </select>
+</label>
+<button type="submit" class="btn-primary">Tạo</button>
+</form>

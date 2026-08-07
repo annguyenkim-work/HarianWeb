@@ -1,0 +1,184 @@
+@model NewHarian.Application.Dashboard.AdminDashboardDto
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Dashboard";
+    var isAdmin = ViewBag.IsAdmin == true;
+    var k = Model.Kpis;
+    var startVal = Model.Range.Start.ToString("yyyy-MM-dd");
+    var endVal = Model.Range.End.ToString("yyyy-MM-dd");
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var gmvLabels = (Model.GmvByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
+    var gmvValues = (Model.GmvByDay ?? []).Select(x => x.Amount).ToList();
+    var orderLabels = (Model.OrdersByStatus ?? []).Select(x => x.Label).ToList();
+    var orderValues = (Model.OrdersByStatus ?? []).Select(x => x.Count).ToList();
+    var bookingLabels = (Model.BookingsByStatus ?? []).Select(x => x.Label).ToList();
+    var bookingValues = (Model.BookingsByStatus ?? []).Select(x => x.Count).ToList();
+    var bookingGmvLabels = (Model.BookingGmvByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
+    var bookingGmvValues = (Model.BookingGmvByDay ?? []).Select(x => x.Amount).ToList();
+    var bookingCountTotal = (Model.BookingsByDay ?? []).Sum(x => x.Total);
+    string Vnd(decimal v) => v.ToString("N0") + "đ";
+}
+
+<div class="admin-toolbar">
+    <h1>Dashboard</h1>
+    <p class="muted" style="margin:0">@User.Identity?.Name</p>
+</div>
+
+<form method="get" class="dash-range filter-bar filter-bar--row">
+    <label>Từ
+        <input type="date" name="start" value="@startVal" class="form-control" required />
+    </label>
+    <label>Đến
+        <input type="date" name="end" value="@endVal" class="form-control" required />
+    </label>
+    <button type="submit" class="btn-secondary">Áp dụng</button>
+</form>
+
+<div class="dash-kpi-grid">
+    <a class="dash-kpi" asp-area="Admin" asp-controller="Orders" asp-action="Index">
+        <span class="dash-kpi__label">Đơn chờ xử lý</span>
+        <span class="dash-kpi__value">@k.PendingOrders</span>
+        <span class="dash-kpi__hint">PendingPayment + AwaitingConfirmation</span>
+    </a>
+    <a class="dash-kpi" asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index" asp-route-status="New">
+        <span class="dash-kpi__label">Booking mới</span>
+        <span class="dash-kpi__value">@k.NewBookings</span>
+    </a>
+    <a class="dash-kpi" asp-area="Admin" asp-controller="Inquiries" asp-action="Index" asp-route-status="New">
+        <span class="dash-kpi__label">Liên hệ mới</span>
+        <span class="dash-kpi__value">@k.NewInquiries</span>
+    </a>
+    <a class="dash-kpi" asp-area="Admin" asp-controller="Applications" asp-action="Index" asp-route-status="New">
+        <span class="dash-kpi__label">Hồ sơ ứng tuyển mới</span>
+        <span class="dash-kpi__value">@k.NewApplications</span>
+    </a>
+</div>
+
+@if (isAdmin)
+{
+    <div class="dash-charts">
+        <section class="dash-chart-card dash-chart-card--wide">
+            <div class="dash-chart-card__head">
+                <div>
+                    <h2>GMV đơn hàng đã xác nhận</h2>
+                    <p class="muted">Confirmed / Processing / Shipped / Delivered theo ngày tạo</p>
+                </div>
+                <div class="dash-chart-total">
+                    <span class="dash-chart-total__label">Tổng GMV</span>
+                    <span class="dash-chart-total__value">@Vnd(Model.OrderGmvTotal)</span>
+                </div>
+            </div>
+            <canvas id="chart-gmv" height="120"></canvas>
+        </section>
+        <section class="dash-chart-card dash-chart-card--wide">
+            <div class="dash-chart-card__head">
+                <div>
+                    <h2>GMV đặt lịch dịch vụ</h2>
+                    <p class="muted">Ước tính theo giá variant hiện tại (không tính đã hủy) · @bookingCountTotal booking</p>
+                </div>
+                <div class="dash-chart-total">
+                    <span class="dash-chart-total__label">Tổng GMV (ước tính)</span>
+                    <span class="dash-chart-total__value">@Vnd(Model.BookingGmvTotal)</span>
+                </div>
+            </div>
+            <canvas id="chart-bookings-gmv" height="120"></canvas>
+            @if (bookingCountTotal == 0)
+            {
+                <p class="muted">Không có booking trong khoảng đã chọn.</p>
+            }
+        </section>
+        <section class="dash-chart-card">
+            <h2>Đơn hàng theo status</h2>
+            <canvas id="chart-orders-status"></canvas>
+            @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
+            {
+                <p class="muted">Không có đơn trong khoảng đã chọn.</p>
+            }
+        </section>
+        <section class="dash-chart-card">
+            <h2>Booking theo status</h2>
+            <canvas id="chart-bookings-status"></canvas>
+            @if (Model.BookingsByStatus is null || Model.BookingsByStatus.Count == 0)
+            {
+                <p class="muted">Không có booking trong khoảng đã chọn.</p>
+            }
+        </section>
+    </div>
+}
+
+@section Scripts {
+@if (isAdmin)
+{
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+(() => {
+  const gmvLabels = @Html.Raw(JsonSerializer.Serialize(gmvLabels, jsonOpts));
+  const gmvValues = @Html.Raw(JsonSerializer.Serialize(gmvValues, jsonOpts));
+  const orderLabels = @Html.Raw(JsonSerializer.Serialize(orderLabels, jsonOpts));
+  const orderValues = @Html.Raw(JsonSerializer.Serialize(orderValues, jsonOpts));
+  const bookingLabels = @Html.Raw(JsonSerializer.Serialize(bookingLabels, jsonOpts));
+  const bookingValues = @Html.Raw(JsonSerializer.Serialize(bookingValues, jsonOpts));
+  const bookingGmvLabels = @Html.Raw(JsonSerializer.Serialize(bookingGmvLabels, jsonOpts));
+  const bookingGmvValues = @Html.Raw(JsonSerializer.Serialize(bookingGmvValues, jsonOpts));
+  const palette = ['#2d6a4f','#1d3557','#457b9d','#e9c46a','#f4a261','#e76f51','#6c757d','#264653'];
+  const money = v => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
+
+  function lineMoneyChart(el, labels, values, color, fill) {
+    if (!el) return;
+    new Chart(el, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'GMV',
+          data: values,
+          borderColor: color,
+          backgroundColor: fill,
+          fill: true,
+          tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => money(ctx.parsed.y ?? 0) } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { callback: v => Number(v).toLocaleString('vi-VN') }
+          }
+        }
+      }
+    });
+  }
+
+  lineMoneyChart(document.getElementById('chart-gmv'), gmvLabels, gmvValues, '#2d6a4f', 'rgba(45,106,79,0.12)');
+  lineMoneyChart(document.getElementById('chart-bookings-gmv'), bookingGmvLabels, bookingGmvValues, '#1d3557', 'rgba(29,53,87,0.12)');
+
+  function doughnut(id, labels, values) {
+    const el = document.getElementById(id);
+    if (!el || !labels.length) return;
+    new Chart(el, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map((_, i) => palette[i % palette.length])
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  }
+
+  doughnut('chart-orders-status', orderLabels, orderValues);
+  doughnut('chart-bookings-status', bookingLabels, bookingValues);
+})();
+</script>
+}
+}

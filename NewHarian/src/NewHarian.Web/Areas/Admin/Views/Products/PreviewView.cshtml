@@ -1,0 +1,62 @@
+@model NewHarian.Application.Catalog.ProductDetailDto
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Xem trước - " + Model.Name;
+    var token = ViewBag.PreviewToken as string ?? "";
+    var lang = ViewBag.PreviewLang as string ?? "vi";
+    ViewBag.IsPreview = true;
+}
+
+<div class="preview-banner" role="status">
+    <div class="preview-banner__inner">
+        <strong>Chế độ xem trước</strong>
+        <span>- dữ liệu từ form (chưa lưu). Không phải trang công khai.</span>
+        <span class="preview-banner__langs">
+            Ngôn ngữ:
+            <a class="@(lang == "vi" ? "is-active" : null)" asp-action="PreviewView" asp-route-token="@token" asp-route-lang="vi">VI</a>
+            <a class="@(lang == "en" ? "is-active" : null)" asp-action="PreviewView" asp-route-token="@token" asp-route-lang="en">EN</a>
+            <a class="@(lang == "ja" ? "is-active" : null)" asp-action="PreviewView" asp-route-token="@token" asp-route-lang="ja">JA</a>
+        </span>
+    </div>
+</div>
+
+<style>
+  .preview-banner {
+    background: #1a3a2a;
+    color: #fff;
+    padding: 0.65rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+  .preview-banner__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    font-size: 0.95rem;
+  }
+  .preview-banner__langs a {
+    color: #c8e6d0;
+    margin-left: 0.35rem;
+    text-decoration: underline;
+  }
+  .preview-banner__langs a.is-active {
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .preview-cta-note { margin: 0.75rem 0 0.35rem; }
+</style>
+
+@await Html.PartialAsync(
+    Model.Kind == NewHarian.Domain.Enums.CatalogKind.Service
+        ? "~/Views/Services/_ServiceDetail.cshtml"
+        : "~/Views/Products/_ProductDetail.cshtml",
+    Model)
+
+@section Scripts {
+@await Html.PartialAsync("~/Views/Shared/_CatalogDetailScripts.cshtml")
+}

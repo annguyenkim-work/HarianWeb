@@ -1,0 +1,104 @@
+@model NewHarian.Application.Posts.SitePostSaveRequest
+@using NewHarian.Domain.Enums
+@{
+    Layout = "_AdminLayout";
+    var kind = Model.Kind;
+}
+
+<div class="admin-toolbar">
+    <h1>@ViewData["Title"]</h1>
+    <a class="btn-link" asp-action="Index" asp-route-kind="@kind">← Danh sách</a>
+</div>
+
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+
+<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:900px" id="post-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="Kind" />
+    <input type="hidden" asp-for="CoverImageMediaFileId" />
+    <input type="hidden" asp-for="CoverImageUrl" />
+
+    <label><input asp-for="IsPublished" type="checkbox" /> Xuất bản (hiện công khai)</label>
+
+    @if (Model.Id.HasValue)
+    {
+        <p class="muted">Slug: <code>@Model.Slug</code></p>
+        <input type="hidden" asp-for="Slug" />
+    }
+    else
+    {
+        <p class="muted">Slug tự tạo từ tiêu đề VI.</p>
+    }
+
+    <label>Ảnh đại diện (list)
+        <input type="file" name="coverFile" accept="image/*" class="form-control" />
+    </label>
+    <p class="img-size-hint"><strong>Kích thước đề xuất:</strong> 1200×630 px (ngang ~1.9:1). Ảnh list bị cắt theo khung thẻ; chi tiết bài cũng cover theo chiều ngang.</p>
+    @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl))
+    {
+        <img src="@Model.CoverImageUrl" alt="" style="max-width:200px;height:auto;border:1px solid #ddd" />
+    }
+
+    <h2>Tiếng Việt *</h2>
+    <label>Tiêu đề * <input asp-for="TitleVi" class="form-control" required id="title-vi" /></label>
+    <label>Tóm tắt <input asp-for="ExcerptVi" class="form-control" /></label>
+    <label>Nội dung *
+        <textarea asp-for="BodyVi" class="form-control richtext" rows="12"></textarea>
+    </label>
+
+    <h2>English</h2>
+    <label>Title <input asp-for="TitleEn" class="form-control" /></label>
+    <label>Excerpt <input asp-for="ExcerptEn" class="form-control" /></label>
+    <label>Body
+        <textarea asp-for="BodyEn" class="form-control richtext" rows="8"></textarea>
+    </label>
+
+    <h2>日本語</h2>
+    <label>タイトル <input asp-for="TitleJa" class="form-control" /></label>
+    <label>抜粋 <input asp-for="ExcerptJa" class="form-control" /></label>
+    <label>本文
+        <textarea asp-for="BodyJa" class="form-control richtext" rows="8"></textarea>
+    </label>
+
+    <button type="submit" class="btn-primary">Lưu</button>
+</form>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.tinymce) return;
+  var token = document.querySelector('#post-form input[name="__RequestVerificationToken"]')?.value;
+  tinymce.init({
+    selector: '#post-form textarea.richtext',
+    height: 360,
+    menubar: false,
+    plugins: 'lists link table code autoresize image media',
+    toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media table | removeformat | code',
+    branding: false,
+    license_key: 'gpl',
+    promotion: false,
+    automatic_uploads: true,
+    images_upload_handler: function (blobInfo) {
+      return new Promise(function (resolve, reject) {
+        var fd = new FormData();
+        fd.append('file', blobInfo.blob(), blobInfo.filename());
+        if (token) fd.append('__RequestVerificationToken', token);
+        fetch('@Url.Action("UploadImage", "Posts")', { method: 'POST', body: fd })
+          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (result) {
+            if (!result.ok || !result.data?.ok || !result.data.url) reject(result.data?.error || 'Upload lỗi');
+            else resolve(result.data.url);
+          })
+          .catch(function () { reject('Upload lỗi'); });
+      });
+    },
+    content_style: 'body { font-family: Segoe UI, sans-serif; font-size: 14px; } img, video, iframe { max-width: 100%; height: auto; }'
+  });
+  document.getElementById('post-form')?.addEventListener('submit', function () {
+    tinymce.triggerSave();
+  });
+});
+</script>
+}

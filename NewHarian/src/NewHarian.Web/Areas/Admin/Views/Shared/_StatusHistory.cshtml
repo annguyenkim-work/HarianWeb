@@ -1,0 +1,38 @@
+@model IReadOnlyList<NewHarian.Application.Admin.StatusHistoryItemDto>
+@{
+    var items = Model ?? Array.Empty<NewHarian.Application.Admin.StatusHistoryItemDto>();
+}
+<section class="status-history" aria-label="Lịch sử cập nhật">
+    <h3 class="status-history__title">Lịch sử cập nhật</h3>
+    @if (items.Count == 0)
+    {
+        <p class="muted status-history__empty">Chưa có lịch sử.</p>
+    }
+    else
+    {
+        <div class="status-history__scroll">
+            <table class="data-table status-history__table">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Người thực hiện</th>
+                        <th>Sự kiện</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var h in items)
+                {
+                    var actor = string.IsNullOrWhiteSpace(h.ActorName)
+                        ? h.ActorType
+                        : $"{h.ActorType} · {h.ActorName}";
+                    <tr>
+                        <td><time datetime="@h.CreatedAt.ToString("o")">@h.CreatedAt.ToLocalTime().ToString("g")</time></td>
+                        <td>@actor</td>
+                        <td>@h.MessageVi</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

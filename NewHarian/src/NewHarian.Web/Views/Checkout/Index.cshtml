@@ -1,0 +1,84 @@
+@model NewHarian.Application.Orders.CheckoutDraft
+@{
+    ViewData["Title"] = Localizer["Checkout.Title"];
+    var cart = (NewHarian.Application.Cart.CartDto)ViewBag.Cart;
+    var provinces = (IReadOnlyList<NewHarian.Application.Shipping.ProvinceOptionDto>)ViewBag.Provinces;
+    var threshold = (decimal)ViewBag.FreeThreshold;
+}
+
+<nav class="breadcrumb">
+    <a asp-controller="Cart" asp-action="Index">@Localizer["Cart.Title"]</a> /
+    <span>@Localizer["Checkout.Title"]</span>
+</nav>
+
+<h1>@Localizer["Checkout.Title"]</h1>
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<div class="checkout-layout">
+    <form method="post" class="form-stack" id="checkout-form">
+        @Html.AntiForgeryToken()
+        <label>@Localizer["Book.Name"] <input asp-for="CustomerName" class="form-control" required /></label>
+        <label>@Localizer["Book.Email"] <input asp-for="CustomerEmail" type="email" class="form-control" required /></label>
+        <label>@Localizer["Book.Phone"] <input asp-for="CustomerPhone" class="form-control" required /></label>
+        <label>@Localizer["Checkout.Address"] <input asp-for="ShippingAddress" class="form-control" required /></label>
+        <label>@Localizer["Checkout.Province"]
+            <select asp-for="ShippingProvinceId" class="form-control" id="province-select" required>
+                <option value="">-</option>
+                @foreach (var p in provinces)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </label>
+        <label>@Localizer["Checkout.District"] <input asp-for="ShippingDistrict" class="form-control" /></label>
+        <label>@Localizer["Checkout.Notes"] <textarea asp-for="Notes" class="form-control" rows="3" maxlength="2000"></textarea></label>
+
+        <fieldset>
+            <legend>@Localizer["Checkout.Payment"]</legend>
+            <label class="radio-row">
+                <input type="radio" asp-for="PaymentMethod" value="COD" /> @Localizer["Checkout.COD"]
+            </label>
+            <label class="radio-row">
+                <input type="radio" asp-for="PaymentMethod" value="BankTransfer" /> @Localizer["Checkout.Bank"]
+            </label>
+        </fieldset>
+
+        <button type="submit" class="btn-primary">@Localizer["Checkout.Continue"]</button>
+        <a asp-controller="Cart" asp-action="Index" class="btn-secondary">@Localizer["Cart.Title"]</a>
+    </form>
+
+    <aside class="cart-summary" id="order-summary">
+        <h2>@Localizer["Checkout.Summary"]</h2>
+        <ul class="summary-lines">
+            @foreach (var i in cart.Items)
+            {
+                <li>@i.DisplayName × @i.Quantity - @i.LineTotal.ToString("N0")đ</li>
+            }
+        </ul>
+        <p>@Localizer["Cart.Subtotal"]: <span id="sum-subtotal">@cart.SubTotal.ToString("N0")đ</span></p>
+        <p>@Localizer["Checkout.Shipping"]: <span id="sum-ship">-</span></p>
+        <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total">@cart.SubTotal.ToString("N0")đ</span></strong></p>
+        <p class="muted">@Localizer["Checkout.FreeHint"] @threshold.ToString("N0")đ</p>
+    </aside>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+  const sel = document.getElementById('province-select');
+  const shipEl = document.getElementById('sum-ship');
+  const totalEl = document.getElementById('sum-total');
+  async function refresh() {
+    if (!sel.value) { shipEl.textContent = '-'; return; }
+    const res = await fetch('/checkout/shipping-fee?provinceId=' + sel.value);
+    if (!res.ok) return;
+    const data = await res.json();
+    const freeShipLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Checkout.FreeShip"].Value));
+    shipEl.textContent = data.isFree ? freeShipLabel : data.feeText;
+    totalEl.textContent = data.totalText;
+  }
+  sel?.addEventListener('change', refresh);
+  if (sel?.value) refresh();
+})();
+</script>
+}

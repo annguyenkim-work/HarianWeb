@@ -1,0 +1,38 @@
+@model NewHarian.Application.Orders.OrderSummaryDto
+@{
+    ViewData["Title"] = Localizer["Checkout.Success"];
+    var isCod = Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.COD;
+}
+
+<section class="page-hero">
+    <h1>@Localizer["Checkout.Success"]</h1>
+    <p>@Localizer["Checkout.OrderNo"]: <strong id="order-no">@Model.OrderNumber</strong></p>
+</section>
+
+@if (isCod)
+{
+    <p>@Localizer["Checkout.CodMsg"]</p>
+}
+else
+{
+    ViewBag.AmountText = Model.Total.ToString("N0") + "đ";
+    ViewBag.TransferContent = Model.OrderNumber;
+    <partial name="_BankTransferInfo" />
+}
+
+<table class="data-table">
+    <tbody>
+    @foreach (var i in Model.Items)
+    {
+        <tr>
+            <td>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}")</td>
+            <td>× @i.Quantity</td>
+            <td>@i.LineTotal.ToString("N0")đ</td>
+        </tr>
+    }
+    <tr><td colspan="2">@Localizer["Checkout.Total"]</td><td><strong>@Model.Total.ToString("N0")đ</strong></td></tr>
+    </tbody>
+</table>
+
+<p><a asp-controller="Orders" asp-action="Track" class="btn-primary">@Localizer["Orders.Track"]</a>
+   <a asp-controller="Products" asp-action="Index" class="btn-secondary">@Localizer["Nav.Products"]</a></p>

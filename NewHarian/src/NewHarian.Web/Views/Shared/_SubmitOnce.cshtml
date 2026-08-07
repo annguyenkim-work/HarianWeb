@@ -1,0 +1,46 @@
+<script>
+(() => {
+  function unlock(form) {
+    delete form.dataset.submitting;
+    form.removeAttribute('aria-busy');
+    form.querySelectorAll('.is-busy').forEach((btn) => {
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      btn.removeAttribute('aria-busy');
+      if (btn.dataset.originalHtml != null) {
+        btn.innerHTML = btn.dataset.originalHtml;
+        delete btn.dataset.originalHtml;
+      }
+    });
+  }
+
+  function lock(form) {
+    form.dataset.submitting = '1';
+    form.setAttribute('aria-busy', 'true');
+    const label = form.dataset.busyLabel || '…';
+    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((btn) => {
+      btn.disabled = true;
+      btn.classList.add('is-busy');
+      btn.setAttribute('aria-busy', 'true');
+      btn.dataset.originalHtml = btn.innerHTML;
+      btn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span><span>${label}</span>`;
+    });
+  }
+
+  document.querySelectorAll('form[data-submit-once]').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      if (form.dataset.submitting === '1') {
+        e.preventDefault();
+        return;
+      }
+      lock(form);
+    });
+  });
+
+  // Restore if browser restores the page from bfcache after back navigation
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    document.querySelectorAll('form[data-submit-once][data-submitting="1"]').forEach(unlock);
+  });
+})();
+</script>

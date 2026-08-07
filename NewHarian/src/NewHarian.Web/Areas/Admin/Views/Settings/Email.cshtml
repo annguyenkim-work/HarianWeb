@@ -1,0 +1,76 @@
+@model NewHarian.Web.Areas.Admin.Controllers.SettingsController.EmailSettingsVm
+@{
+    ViewData["Title"] = "Email & thông báo";
+}
+
+<h1>Email &amp; thông báo</h1>
+
+@if (TempData["Success"] is string ok)
+{
+    <p class="text-success">@ok</p>
+}
+@if (TempData["Error"] is string err)
+{
+    <p class="text-danger">@err</p>
+}
+
+<section class="admin-card" style="margin-bottom:1.5rem">
+    <h2>Trạng thái SMTP</h2>
+    <p class="muted">Cấu hình máy chủ nằm trong <code>appsettings.json</code> / biến môi trường (không nhập mật khẩu trên web). Nội dung thư chỉnh tại <a asp-controller="EmailTemplates" asp-action="Index">Mẫu email</a>.</p>
+    <dl class="detail-list">
+        <dt>Enabled</dt>
+        <dd>
+            @if (Model.SmtpEnabled)
+            {
+                <strong class="text-success">Bật - gửi thật qua SMTP</strong>
+            }
+            else
+            {
+                <strong>Tắt - chỉ ghi file outbox</strong>
+                <span class="muted"> (<code>App_Data/outbox</code>)</span>
+            }
+        </dd>
+        <dt>Host</dt><dd>@(string.IsNullOrWhiteSpace(Model.SmtpHost) ? "-" : Model.SmtpHost):@Model.SmtpPort</dd>
+        <dt>From</dt><dd>@(string.IsNullOrWhiteSpace(Model.SmtpFrom) ? "-" : $"{Model.SmtpFromName} &lt;{Model.SmtpFrom}&gt;")</dd>
+        <dt>SSL/TLS</dt><dd>@(Model.SmtpUseSsl ? "Có" : "Không")</dd>
+        <dt>Fallback</dt><dd>company.email = <code>@(string.IsNullOrWhiteSpace(Model.CompanyEmail) ? "(chưa có)" : Model.CompanyEmail)</code></dd>
+    </dl>
+</section>
+
+<section class="admin-card" style="margin-bottom:1.5rem">
+    <h2>Email nhận thông báo (staff)</h2>
+    <p class="muted">Khi khách đặt hàng / liên hệ / ứng tuyển / đặt lịch, hệ thống gửi mail tới các địa chỉ dưới đây.</p>
+    <form asp-action="Email" method="post" class="form-grid">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger full"></div>
+        <label>Đơn hàng (order)
+            <input asp-for="OrderEmail" class="form-control" type="email" required />
+        </label>
+        <label>Liên hệ (inquiry)
+            <input asp-for="InquiryEmail" class="form-control" type="email" required />
+        </label>
+        <label>Tuyển dụng (application)
+            <input asp-for="ApplicationEmail" class="form-control" type="email" required />
+        </label>
+        <label>Đặt lịch dịch vụ (booking)
+            <input asp-for="ServiceBookingEmail" class="form-control" type="email" required />
+        </label>
+        <div class="full modal__actions" style="justify-content:flex-start">
+            <button type="submit" class="btn-primary">Lưu</button>
+        </div>
+    </form>
+</section>
+
+<section class="admin-card">
+    <h2>Gửi email thử</h2>
+    <p class="muted">Dùng để kiểm tra SMTP / outbox trước khi đưa lên production.</p>
+    <form asp-action="TestEmail" method="post" class="form-grid">
+        @Html.AntiForgeryToken()
+        <label class="full">Gửi tới
+            <input name="testTo" class="form-control" type="email" required value="@Model.TestTo" />
+        </label>
+        <div class="full">
+            <button type="submit" class="btn-secondary">Gửi thử</button>
+        </div>
+    </form>
+</section>

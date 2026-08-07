@@ -1,0 +1,596 @@
+@model IReadOnlyList<NewHarian.Application.Catalog.AdminProductListItemDto>
+@using NewHarian.Web.Areas.Admin
+@using NewHarian.Domain.Enums
+@{
+    var listTitle = ViewBag.ListTitle as string ?? "Sản phẩm";
+    var adminController = ViewBag.AdminController as string ?? "Products";
+    var managedType = ViewBag.ManagedType as CatalogKind? ?? CatalogKind.Product;
+    ViewData["Title"] = listTitle;
+    Layout = "_AdminLayout";
+    var cats = (IReadOnlyList<NewHarian.Application.Catalog.AdminCategoryOptionDto>)ViewBag.Categories;
+    var categoryId = ViewBag.CategoryId as int?;
+    var canReorder = categoryId.HasValue;
+    var pager = ViewBag.Pager as AdminPagerModel;
+    var offset = pager?.Offset ?? 0;
+    var total = pager?.TotalCount ?? Model.Count;
+}
+
+<div class="admin-toolbar">
+    <h1>@listTitle</h1>
+    <button type="button" class="btn-icon btn-primary" id="btn-add-prod" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+</div>
+
+<form method="get" class="filter-bar filter-bar--row" asp-area="Admin" asp-controller="@adminController" asp-action="Index">
+    <select name="categoryId" class="form-control" onchange="this.form.submit()" aria-label="Danh mục">
+        <option value="">- Tất cả danh mục -</option>
+        @foreach (var c in cats)
+        {
+            if (ViewBag.CategoryId as int? == c.Id)
+            {
+                <option value="@c.Id" selected>@c.Name</option>
+            }
+            else
+            {
+                <option value="@c.Id">@c.Name</option>
+            }
+        }
+    </select>
+</form>
+
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+@if (!canReorder)
+{
+    <p class="muted">Chọn một danh mục để sắp xếp thứ tự hiển thị bằng ↑/↓. Mục mới tự động xếp cuối trong danh mục (theo loại).</p>
+}
+
+<table class="data-table">
+    <thead>
+        <tr>
+            @if (canReorder) { <th class="sort-cell">Thứ tự hiển thị</th> }
+            <th>Tên</th><th>Status</th><th>Variants</th><th>Giá từ</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @for (var i = 0; i < Model.Count; i++)
+    {
+        var p = Model[i];
+        var abs = offset + i;
+        <tr>
+            @if (canReorder)
+            {
+                <td class="sort-cell">
+                    <div class="sort-controls">
+                        <span class="sort-controls__pos">@(abs + 1)</span>
+                        <form asp-area="Admin" asp-controller="@adminController" asp-action="Move" method="post" class="sort-controls__move">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <input type="hidden" name="categoryId" value="@categoryId" />
+                            <button name="direction" value="-1" type="submit" class="btn-icon" title="Up" aria-label="Up" @(abs == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                            <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(abs >= total - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                        </form>
+                    </div>
+                </td>
+            }
+            <td>@p.NameVi</td>
+            <td>@p.Status</td>
+            <td>@p.VariantCount</td>
+            <td>@(p.FromPrice?.ToString("N0") is string priceText ? $"{priceText}đ" : "-")</td>
+            <td class="actions">
+                <button type="button" class="btn-icon btn-edit-prod" data-id="@p.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                @if (p.Status != ProductStatus.Archived)
+                {
+                    <form asp-area="Admin" asp-controller="@adminController" asp-action="Delete" method="post" class="inline js-archive-prod">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <button type="submit" class="btn-icon btn-icon--danger" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                    </form>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />
+
+<div id="prod-modal" class="admin-modal" hidden>
+    <div class="admin-modal__backdrop" data-close-modal></div>
+    <div class="admin-modal__panel modal__box modal__box--xwide" id="prod-modal-body"></div>
+</div>
+
+<div id="image-crop-modal" class="admin-modal image-crop-modal" hidden>
+    <div class="admin-modal__backdrop" id="image-crop-backdrop"></div>
+    <div class="admin-modal__panel image-crop-modal__panel" role="dialog" aria-modal="true" aria-labelledby="image-crop-title">
+        <h2 id="image-crop-title">Chọn vùng hiển thị</h2>
+        <p class="muted">Kéo / phóng khung vuông 1:1. Ảnh sẽ được lưu ở kích thước 800×800 px.</p>
+        <div class="image-crop-modal__stage">
+            <img id="image-crop-target" alt="Ảnh cần cắt" />
+        </div>
+        <div class="modal__actions image-crop-modal__actions">
+            <button type="button" class="btn-secondary" id="image-crop-cancel">Hủy</button>
+            <button type="button" class="btn-primary" id="image-crop-apply">Áp dụng</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+(() => {
+  const modal = document.getElementById('prod-modal');
+  const body = document.getElementById('prod-modal-body');
+  const adminCtrl = '@adminController';
+  const editBase = `/admin/${adminCtrl}`;
+
+  function openModal() {
+    modal.hidden = false;
+    document.body.classList.add('admin-modal-open');
+  }
+  function closeModal() {
+    destroyEditors();
+    modal.hidden = true;
+    document.body.classList.remove('admin-modal-open');
+    body.innerHTML = '';
+  }
+
+  function destroyEditors() {
+    if (!window.tinymce) return;
+    if (tinymce.editors) {
+      [...tinymce.editors].forEach(e => e.remove());
+    }
+  }
+
+  function initEditors() {
+    if (!window.tinymce) return;
+    tinymce.init({
+      selector: '#prod-modal-body textarea.richtext',
+      height: 280,
+      menubar: false,
+      plugins: 'lists link table code autoresize image media',
+      toolbar: 'undo redo | styles | bold italic underline | bullist numlist | link image media table | removeformat | code',
+      branding: false,
+      license_key: 'gpl',
+      promotion: false,
+      automatic_uploads: true,
+      images_upload_handler: (blobInfo) => new Promise((resolve, reject) => {
+        const token = document.querySelector('#prod-modal-body input[name="__RequestVerificationToken"]')?.value
+          || document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const fd = new FormData();
+        fd.append('file', blobInfo.blob(), blobInfo.filename());
+        if (token) fd.append('__RequestVerificationToken', token);
+        fetch(`${editBase}/UploadImage`, { method: 'POST', body: fd })
+          .then(res => res.json().then(data => ({ ok: res.ok, data })))
+          .then(({ ok, data }) => {
+            if (!ok || !data?.ok || !data.url) reject(data?.error || 'Upload ảnh thất bại.');
+            else resolve(data.url);
+          })
+          .catch(() => reject('Upload ảnh thất bại.'));
+      }),
+      content_style: 'body { font-family: Segoe UI, sans-serif; font-size: 14px; } img, video, iframe { max-width: 100%; height: auto; }'
+    });
+  }
+
+  function syncVariantRows(form) {
+    const rows = [...form.querySelectorAll('#variants-list .variant-row')];
+    const selectedRadio = form.querySelector('input[name="defaultVariant"]:checked');
+    const selectedRow = selectedRadio?.closest('.variant-row');
+    rows.forEach((row, idx) => {
+      row.querySelectorAll('input, select').forEach(input => {
+        if (input.name === 'defaultVariant') return;
+        input.name = input.name.replace(/Variants\[\d+]/, `Variants[${idx}]`);
+      });
+      const sort = row.querySelector('input[name$=".SortOrder"]');
+      if (sort) sort.value = String(idx + 1);
+      const label = row.querySelector('.order-label');
+      if (label) label.textContent = String(idx + 1);
+      const radio = row.querySelector('.variant-default-radio');
+      const flag = row.querySelector('.variant-default-flag');
+      if (radio) radio.value = String(idx);
+      const isDefault = selectedRow ? selectedRow === row : idx === 0;
+      if (radio && isDefault) radio.checked = true;
+      if (flag) flag.value = isDefault ? 'true' : 'false';
+      const up = row.querySelector('.btn-order-up');
+      const down = row.querySelector('.btn-order-down');
+      if (up) up.disabled = idx === 0;
+      if (down) down.disabled = idx === rows.length - 1;
+      const removeBtn = row.querySelector('.btn-remove-variant');
+      if (removeBtn) removeBtn.disabled = rows.length <= 1;
+    });
+  }
+
+  function colorSelectHtml(form, idx) {
+    const proto = form.querySelector('#variant-color-options-proto')
+      || form.querySelector('select.col-variant-color');
+    const select = document.createElement('select');
+    select.name = `Variants[${idx}].ColorDefinitionId`;
+    select.className = 'form-control col-variant-color';
+    if (proto) {
+      Array.from(proto.options).forEach(o => {
+        select.appendChild(new Option(o.text, o.value, false, false));
+      });
+    } else {
+      select.appendChild(new Option('- Chọn màu -', '', false, false));
+    }
+    return select.outerHTML;
+  }
+
+  function moveListItem(list, item, direction) {
+    const items = [...list.children];
+    const idx = items.indexOf(item);
+    const swapIdx = idx + direction;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= items.length) return;
+    // Move up: insert before previous. Move down: insert before sibling after next.
+    if (direction < 0) list.insertBefore(item, items[swapIdx]);
+    else list.insertBefore(item, items[swapIdx].nextSibling);
+  }
+
+  function bindOrderButtons(form) {
+    const variantsList = form.querySelector('#variants-list');
+    if (variantsList && !variantsList.dataset.orderBound) {
+      variantsList.dataset.orderBound = '1';
+      variantsList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-order-up, .btn-order-down');
+        if (!btn || !variantsList.contains(btn) || btn.disabled) return;
+        const row = btn.closest('.variant-row');
+        if (!row) return;
+        moveListItem(variantsList, row, btn.classList.contains('btn-order-up') ? -1 : 1);
+        syncVariantRows(form);
+      });
+    }
+  }
+
+  async function uploadProductImage(form, file) {
+    const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('__RequestVerificationToken', token);
+    const res = await fetch(`${editBase}/UploadImage`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Upload lỗi');
+    return data;
+  }
+
+  let activeCropper = null;
+  let activeCropObjectUrl = null;
+
+  function destroyActiveCropper() {
+    if (activeCropper) {
+      activeCropper.destroy();
+      activeCropper = null;
+    }
+    if (activeCropObjectUrl) {
+      URL.revokeObjectURL(activeCropObjectUrl);
+      activeCropObjectUrl = null;
+    }
+    const img = document.getElementById('image-crop-target');
+    if (img) {
+      img.onload = null;
+      img.removeAttribute('src');
+    }
+  }
+
+  function closeCropModal() {
+    destroyActiveCropper();
+    const cropModal = document.getElementById('image-crop-modal');
+    if (cropModal) cropModal.hidden = true;
+  }
+
+  function openImageCrop(file) {
+    return new Promise((resolve, reject) => {
+      const cropModal = document.getElementById('image-crop-modal');
+      const img = document.getElementById('image-crop-target');
+      const btnApply = document.getElementById('image-crop-apply');
+      const btnCancel = document.getElementById('image-crop-cancel');
+      const backdrop = document.getElementById('image-crop-backdrop');
+      if (!cropModal || !img || !btnApply || !btnCancel) {
+        reject(new Error('Thiếu UI crop ảnh.'));
+        return;
+      }
+      if (!window.Cropper) {
+        reject(new Error('Cropper chưa tải được.'));
+        return;
+      }
+
+      let settled = false;
+      function finish(fn) {
+        if (settled) return;
+        settled = true;
+        btnApply.onclick = null;
+        btnCancel.onclick = null;
+        if (backdrop) backdrop.onclick = null;
+        closeCropModal();
+        fn();
+      }
+      function cancel() {
+        finish(() => reject(Object.assign(new Error('cancelled'), { cancelled: true })));
+      }
+
+      destroyActiveCropper();
+      activeCropObjectUrl = URL.createObjectURL(file);
+      cropModal.hidden = false;
+      const startCropper = () => {
+        if (activeCropper || settled) return;
+        activeCropper = new Cropper(img, {
+          aspectRatio: 1,
+          viewMode: 1,
+          autoCropArea: 1,
+          responsive: true,
+          background: false,
+          movable: true,
+          zoomable: true,
+          rotatable: false,
+          scalable: false
+        });
+      };
+      img.onload = startCropper;
+      img.src = activeCropObjectUrl;
+      if (img.complete) startCropper();
+
+      btnCancel.onclick = cancel;
+      if (backdrop) backdrop.onclick = cancel;
+      btnApply.onclick = () => {
+        if (!activeCropper) return;
+        const canvas = activeCropper.getCroppedCanvas({
+          width: 800,
+          height: 800,
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: 'high'
+        });
+        if (!canvas) {
+          cancel();
+          return;
+        }
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            cancel();
+            return;
+          }
+          const base = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+          const out = new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
+          finish(() => resolve(out));
+        }, 'image/jpeg', 0.92);
+      };
+    });
+  }
+
+  function isCropCancelled(err) {
+    return err?.cancelled === true || err?.message === 'cancelled';
+  }
+
+  function setVariantImageCell(cell, media) {
+    const idInput = cell.querySelector('.variant-image-id');
+    const urlInput = cell.querySelector('.variant-image-url');
+    const thumb = cell.querySelector('.variant-image-thumb');
+    if (idInput) idInput.value = media?.id ? String(media.id) : '';
+    if (urlInput) urlInput.value = media?.url || '';
+    if (thumb) {
+      thumb.innerHTML = media?.url ? `<img src="${media.url}" alt="" />` : '';
+    }
+    const fileInput = cell.querySelector('.variant-image-file');
+    if (fileInput) fileInput.value = '';
+  }
+
+  function variantImageCellHtml(idx) {
+    return `
+      <div class="col-variant-image variant-image-cell">
+        <input type="hidden" name="Variants[${idx}].ImageMediaFileId" class="variant-image-id" />
+        <input type="hidden" name="Variants[${idx}].ImageUrl" class="variant-image-url" />
+        <div class="variant-image-thumb"></div>
+        <input type="file" class="variant-image-file" accept="image/jpeg,image/png,image/webp,image/gif" />
+        <button type="button" class="btn-link btn-clear-variant-image">Xóa</button>
+      </div>`;
+  }
+
+  async function openForm(id) {
+    destroyEditors();
+    const url = id ? `${editBase}/Edit/${id}` : `${editBase}/Edit`;
+    body.innerHTML = await (await fetch(url)).text();
+    openModal();
+    bindForm();
+    initEditors();
+  }
+
+  function bindForm() {
+    const form = body.querySelector('form');
+    if (!form) return;
+
+    bindOrderButtons(form);
+    syncVariantRows(form);
+
+    form.querySelector('#main-image-input')?.addEventListener('change', async () => {
+      const input = form.querySelector('#main-image-input');
+      const status = form.querySelector('#main-upload-status');
+      const file = input?.files?.[0];
+      if (!file) return;
+      if (status) status.textContent = 'Chọn vùng hiển thị...';
+      try {
+        const cropped = await openImageCrop(file);
+        if (status) status.textContent = 'Đang tải...';
+        const data = await uploadProductImage(form, cropped);
+        form.querySelector('#main-image-media-id').value = String(data.id);
+        form.querySelector('#main-image-url').value = data.url;
+        const preview = form.querySelector('#main-image-preview');
+        if (preview) preview.innerHTML = `<img src="${data.url}" alt="" />`;
+        form.querySelector('#btn-clear-main-image')?.removeAttribute('hidden');
+        if (status) status.textContent = 'Đã tải lên.';
+      } catch (err) {
+        if (status) status.textContent = isCropCancelled(err) ? '' : (err.message || 'Upload lỗi');
+      } finally {
+        if (input) input.value = '';
+      }
+    });
+
+    form.querySelector('#btn-clear-main-image')?.addEventListener('click', () => {
+      form.querySelector('#main-image-media-id').value = '';
+      form.querySelector('#main-image-url').value = '';
+      const preview = form.querySelector('#main-image-preview');
+      if (preview) preview.innerHTML = '';
+      form.querySelector('#main-image-input').value = '';
+      form.querySelector('#btn-clear-main-image')?.setAttribute('hidden', '');
+      const status = form.querySelector('#main-upload-status');
+      if (status) status.textContent = '';
+    });
+
+    form.querySelector('#variants-list')?.addEventListener('change', async (e) => {
+      if (e.target.matches('.variant-image-file')) {
+        const file = e.target.files?.[0];
+        const cell = e.target.closest('.variant-image-cell');
+        if (!file || !cell) return;
+        try {
+          const cropped = await openImageCrop(file);
+          const data = await uploadProductImage(form, cropped);
+          setVariantImageCell(cell, data);
+        } catch (err) {
+          if (!isCropCancelled(err)) alert(err.message || 'Upload lỗi');
+          e.target.value = '';
+        }
+      }
+    });
+
+    form.querySelector('#variants-list')?.addEventListener('click', (e) => {
+      if (e.target.matches('.btn-clear-variant-image')) {
+        const cell = e.target.closest('.variant-image-cell');
+        if (cell) setVariantImageCell(cell, null);
+        return;
+      }
+      const removeBtn = e.target.closest('.btn-remove-variant');
+      if (removeBtn) {
+        if (removeBtn.disabled) return;
+        const list = form.querySelector('#variants-list');
+        const row = removeBtn.closest('.variant-row');
+        if (!list || !row || list.children.length <= 1) return;
+        const idInput = row.querySelector('input[name$=".Id"]');
+        const hasSavedId = idInput?.value && idInput.value !== '0';
+        if (hasSavedId && !confirm('Xóa variant này? Thay đổi có hiệu lực sau khi Lưu.')) return;
+        row.remove();
+        syncVariantRows(form);
+      }
+    });
+
+    function applyVariantMode() {
+      const hasSize = form.querySelector('#has-variant-size')?.checked;
+      const hasColor = form.querySelector('#has-variant-color')?.checked;
+
+      form.querySelectorAll('.col-variant-size').forEach(el => {
+        el.style.display = hasSize ? '' : 'none';
+        if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
+          el.required = !!hasSize;
+        }
+      });
+      form.querySelectorAll('.col-variant-color').forEach(el => {
+        el.style.display = hasColor ? '' : 'none';
+        if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
+          el.required = !!hasColor;
+        }
+      });
+      form.querySelectorAll('.variant-row--head .col-variant-size').forEach(el => {
+        el.style.display = hasSize ? '' : 'none';
+      });
+      form.querySelectorAll('.variant-row--head .col-variant-color').forEach(el => {
+        el.style.display = hasColor ? '' : 'none';
+      });
+    }
+
+    form.querySelector('#has-variant-size')?.addEventListener('change', applyVariantMode);
+    form.querySelector('#has-variant-color')?.addEventListener('change', applyVariantMode);
+    applyVariantMode();
+
+    form.querySelector('[data-add-variant]')?.addEventListener('click', () => {
+      const list = form.querySelector('#variants-list');
+      const idx = list.children.length;
+      const row = document.createElement('div');
+      row.className = 'variant-row';
+      row.innerHTML = `
+        <span class="col-order variant-order">
+          <span class="order-label">${idx + 1}</span>
+          <button type="button" class="btn-icon btn-order-up" title="Up" aria-label="Up"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+          <button type="button" class="btn-icon btn-order-down" title="Down" aria-label="Down"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+        </span>
+        <input type="hidden" name="Variants[${idx}].Id" />
+        <input name="Variants[${idx}].Sku" class="form-control" required />
+        <input name="Variants[${idx}].VariantLabel" class="form-control col-variant-size" />
+        ${colorSelectHtml(form, idx)}
+        <input name="Variants[${idx}].Price" type="number" step="1000" class="form-control" required />
+        ${variantImageCellHtml(idx)}
+        <label class="col-variant-flag" title="Default"><input type="radio" name="defaultVariant" value="${idx}" class="variant-default-radio" ${idx === 0 ? 'checked' : ''} /></label>
+        <input type="hidden" name="Variants[${idx}].IsDefault" value="${idx === 0 ? 'true' : 'false'}" class="variant-default-flag" />
+        <label class="col-variant-flag" title="Active"><input type="checkbox" name="Variants[${idx}].IsActive" value="true" checked /></label>
+        <input type="hidden" name="Variants[${idx}].SortOrder" value="${idx + 1}" />
+        <button type="button" class="btn-icon btn-icon--danger btn-remove-variant" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>`;
+      list.appendChild(row);
+      applyVariantMode();
+      syncVariantRows(form);
+      bindOrderButtons(form);
+    });
+
+    form.querySelector('#variants-list')?.addEventListener('change', (e) => {
+      if (e.target.matches('input[name="defaultVariant"]')) syncVariantRows(form);
+    });
+
+    form.querySelector('#btn-preview-product')?.addEventListener('click', async () => {
+      if (window.tinymce) tinymce.triggerSave();
+      syncVariantRows(form);
+      const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
+      const fd = new FormData(form);
+      if (token && !fd.get('__RequestVerificationToken')) {
+        fd.append('__RequestVerificationToken', token);
+      }
+      const res = await fetch(`${editBase}/Preview`, { method: 'POST', body: fd });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        alert(data?.error || 'Không tạo được bản xem trước.');
+        return;
+      }
+      window.open(data.url, '_blank');
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (window.tinymce) tinymce.triggerSave();
+      syncVariantRows(form);
+      const res = await fetch(`${editBase}/Save`, { method: 'POST', body: new FormData(form) });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) { location.reload(); return; }
+      } else {
+        destroyEditors();
+        body.innerHTML = await res.text();
+        bindForm();
+        initEditors();
+      }
+    });
+
+    body.querySelector('[data-close]')?.addEventListener('click', closeModal);
+  }
+
+  modal.querySelector('[data-close-modal]')?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const cropModal = document.getElementById('image-crop-modal');
+    if (cropModal && !cropModal.hidden) {
+      document.getElementById('image-crop-cancel')?.click();
+      return;
+    }
+    if (!modal.hidden) closeModal();
+  });
+
+  document.getElementById('btn-add-prod').addEventListener('click', () => openForm(null));
+  document.querySelectorAll('.btn-edit-prod').forEach(b => b.addEventListener('click', () => openForm(b.dataset.id)));
+
+  document.querySelectorAll('.js-archive-prod').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!confirm('Archive sản phẩm này? (không xóa dữ liệu)')) return;
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      const data = await res.json().catch(() => null);
+      if (data?.ok) { location.reload(); return; }
+      alert(data?.error || 'Không archive được.');
+    });
+  });
+})();
+</script>
+}

@@ -1,0 +1,45 @@
+@using NewHarian.Web.Areas.Admin
+@{
+    var pager = ViewBag.Pager as AdminPagerModel;
+}
+@if (pager is not null && pager.TotalCount > 0)
+{
+    string PageUrl(int p)
+    {
+        var qs = new List<string>();
+        foreach (var kv in Context.Request.Query)
+        {
+            if (string.Equals(kv.Key, "page", StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var v in kv.Value)
+            {
+                if (v is null) continue;
+                qs.Add($"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(v)}");
+            }
+        }
+        qs.Add($"page={p}");
+        return Context.Request.Path + "?" + string.Join("&", qs);
+    }
+
+    <nav class="admin-pager" aria-label="Phân trang">
+        <span class="admin-pager__info">Hiển thị @pager.FromItem-@pager.ToItem / @pager.TotalCount</span>
+        <span class="admin-pager__nav">
+            @if (pager.HasPrev)
+            {
+                <a class="btn-secondary" href="@PageUrl(pager.Page - 1)">← Trước</a>
+            }
+            else
+            {
+                <span class="btn-secondary is-disabled" aria-disabled="true">← Trước</span>
+            }
+            <span class="admin-pager__page">Trang @pager.Page / @pager.TotalPages</span>
+            @if (pager.HasNext)
+            {
+                <a class="btn-secondary" href="@PageUrl(pager.Page + 1)">Sau →</a>
+            }
+            else
+            {
+                <span class="btn-secondary is-disabled" aria-disabled="true">Sau →</span>
+            }
+        </span>
+    </nav>
+}

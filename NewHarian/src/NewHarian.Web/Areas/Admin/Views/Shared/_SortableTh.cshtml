@@ -1,0 +1,15 @@
+@model NewHarian.Web.Areas.Admin.SortableThModel
+@using NewHarian.Application.Admin
+@using NewHarian.Web.Areas.Admin
+@{
+    var active = string.Equals(Model.Column, Model.CurrentSort, StringComparison.OrdinalIgnoreCase);
+    var aria = active
+        ? (AdminListQuery.IsAsc(Model.CurrentDir) ? "ascending" : "descending")
+        : "none";
+    var href = AdminSortUi.SortUrl(Context.Request, Model.Column, Model.CurrentSort, Model.CurrentDir);
+    var css = "data-table__sort" + (active ? (AdminListQuery.IsAsc(Model.CurrentDir) ? " is-asc" : " is-desc") : "");
+}
+<th>
+    <a class="@css" href="@href" aria-sort="@aria">@Model.Label@if (active)
+        {<span class="data-table__sort-ind" aria-hidden="true">@(AdminListQuery.IsAsc(Model.CurrentDir) ? " ↑" : " ↓")</span>}</a>
+</th>

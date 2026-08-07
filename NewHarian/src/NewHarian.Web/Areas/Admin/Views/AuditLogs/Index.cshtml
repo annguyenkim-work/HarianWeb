@@ -1,0 +1,80 @@
+@model IReadOnlyList<NewHarian.Web.Areas.Admin.Controllers.AuditLogsController.AuditLogRow>
+@{
+    ViewData["Title"] = "Nhật ký audit";
+    var entityTypes = ViewBag.EntityTypes as IReadOnlyList<string> ?? Array.Empty<string>();
+    var actions = ViewBag.Actions as IReadOnlyList<string> ?? Array.Empty<string>();
+    var entityType = ViewBag.EntityType as string;
+    var actionFilter = ViewBag.Action as string;
+    var q = ViewBag.Q as string;
+}
+
+<div class="admin-toolbar">
+    <h1>Nhật ký audit</h1>
+</div>
+
+<p class="muted">Lịch sử đổi trạng thái đơn hàng, liên hệ, hồ sơ ứng tuyển, đặt lịch (và xác nhận thanh toán).</p>
+
+<form method="get" class="filter-bar filter-bar--row">
+    <label>Entity
+        <select name="entityType" class="form-control">
+            <option value="">- Tất cả -</option>
+            @foreach (var t in entityTypes)
+            {
+                if (t == entityType) { <option value="@t" selected>@t</option> }
+                else { <option value="@t">@t</option> }
+            }
+        </select>
+    </label>
+    <label>Action
+        <select name="action" class="form-control">
+            <option value="">- Tất cả -</option>
+            @foreach (var a in actions)
+            {
+                if (a == actionFilter) { <option value="@a" selected>@a</option> }
+                else { <option value="@a">@a</option> }
+            }
+        </select>
+    </label>
+    <label>Tìm
+        <input name="q" class="form-control" value="@q" placeholder="EntityId / User / JSON" />
+    </label>
+    <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
+</form>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Thời gian (UTC)</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Entity</th>
+            <th>Old → New</th>
+            <th>IP</th>
+        </tr>
+    </thead>
+    <tbody>
+    @if (Model.Count == 0)
+    {
+        <tr><td colspan="6" class="muted">Chưa có bản ghi.</td></tr>
+    }
+    else
+    {
+        foreach (var row in Model)
+        {
+            <tr>
+                <td style="white-space:nowrap">@row.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td><code>@(row.UserId ?? "-")</code></td>
+                <td>@row.Action</td>
+                <td>@row.EntityType #<strong>@row.EntityId</strong></td>
+                <td style="max-width:28rem;font-size:0.85rem;word-break:break-word">
+                    <div class="muted">@row.OldValues</div>
+                    <div>→ @row.NewValues</div>
+                </td>
+                <td>@(row.IpAddress ?? "-")</td>
+            </tr>
+        }
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />

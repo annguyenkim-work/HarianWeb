@@ -1,0 +1,182 @@
+@model NewHarian.Web.ViewComponents.SiteHeaderViewComponent.SiteHeaderVm
+@using System.Globalization
+@{
+    var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    if (lang is not ("en" or "ja")) lang = "vi";
+    var path = Context.Request.Path.Value ?? "/";
+    bool NavActive(string prefix) =>
+        path.Equals(prefix, StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase);
+    var aboutOpen = NavActive("/about") || NavActive("/company");
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    // Home Index: overlay hero until scroll. Other pages: solid scrolled header from load.
+    var isHomeIndex = string.Equals(ctrl, "Home", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(action, "Index", StringComparison.OrdinalIgnoreCase);
+    var stuckFromStart = !isHomeIndex;
+}
+<header class="site-header@(stuckFromStart ? " is-stuck" : "")" id="site-header">
+    <div class="site-header__inner">
+        <a class="site-logo" asp-controller="Home" asp-action="Index" title="@Model.CompanyName">
+            @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+            {
+                <img src="@Model.LogoUrl" alt="@Model.BrandName" class="site-logo__img" />
+            }
+            else
+            {
+                @Model.BrandName
+            }
+        </a>
+
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu">
+            <span class="nav-toggle__bar" aria-hidden="true"></span>
+            <span class="nav-toggle__bar" aria-hidden="true"></span>
+            <span class="nav-toggle__bar" aria-hidden="true"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Main">
+            @foreach (var item in Model.NavItems)
+            {
+                var key = (item.ItemKey ?? "").ToLowerInvariant();
+                var label = key switch
+                {
+                    "home" => Localizer["Nav.Home"].Value,
+                    "products" => Localizer["Nav.Products"].Value,
+                    "services" => Localizer["Nav.Services"].Value,
+                    "about" => Localizer["Nav.About"].Value,
+                    "news" => Localizer["Nav.News"].Value,
+                    "careers" => Localizer["Nav.Careers"].Value,
+                    "contact" => Localizer["Nav.Contact"].Value,
+                    "order-track" => Localizer["Orders.Track"].Value,
+                    _ => item.Label
+                };
+
+                if (key == "about" && item.Children is { Count: > 0 })
+                {
+                    <div class="nav-dropdown@(aboutOpen ? " is-active" : "")">
+                        <button type="button" class="nav-dropdown__btn" aria-expanded="false" aria-haspopup="true">
+                            @label <span class="nav-dropdown__caret" aria-hidden="true">▾</span>
+                        </button>
+                        <div class="nav-dropdown__panel" role="menu">
+                            @foreach (var child in item.Children)
+                            {
+                                var ck = (child.ItemKey ?? "").ToLowerInvariant();
+                                var childLabel = ck switch
+                                {
+                                    "about-page" or "about" => Localizer["Nav.About"].Value,
+                                    "concept" => Localizer["Nav.Concept"].Value,
+                                    "quality" => Localizer["Nav.Quality"].Value,
+                                    "company" => Localizer["Nav.Company"].Value,
+                                    _ => child.Label
+                                };
+                                var childActive = path.Equals(child.Url, StringComparison.OrdinalIgnoreCase)
+                                    || (child.Url != "/" && NavActive(child.Url));
+                                <a role="menuitem" href="@child.Url" class="@(childActive ? "is-active" : null)">@childLabel</a>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (key == "home")
+                {
+                    <a href="/" class="@(path == "/" ? "is-active" : null)">@label</a>
+                }
+                else if (key == "products")
+                {
+                    <a href="/products" class="@(NavActive("/products") && !NavActive("/products/search") ? "is-active" : null)">@label</a>
+                }
+                else
+                {
+                    var href = string.IsNullOrWhiteSpace(item.Url) ? "#" : item.Url;
+                    var active = href != "/" && NavActive(href.TrimEnd('/'));
+                    if (key == "order-track") active = NavActive("/orders");
+                    <a href="@href" class="@(active ? "is-active" : null)">@label</a>
+                }
+            }
+        </nav>
+
+        <div class="site-header__tools">
+            <form class="header-search" method="get" action="/products/search" role="search">
+                <label class="visually-hidden" for="header-q">@Localizer["Search.Title"]</label>
+                <input id="header-q" type="search" name="q" class="header-search__input"
+                       placeholder="@Localizer["Search.Placeholder"]"
+                       value="@(Context.Request.Query["q"].ToString())"
+                       maxlength="100" />
+                <button type="submit" class="header-search__btn" title="@Localizer["Search.Submit"]" aria-label="@Localizer["Search.Submit"]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+                    </svg>
+                </button>
+            </form>
+
+            <a asp-controller="Cart" asp-action="Index" class="header-cart" title="@Localizer["Cart.Title"]" aria-label="@Localizer["Cart.Title"]">
+                <svg class="header-cart__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M6 6h15l-1.5 9h-12z"/>
+                    <path d="M6 6L5 3H2"/>
+                    <circle cx="9" cy="20" r="1.5"/>
+                    <circle cx="18" cy="20" r="1.5"/>
+                </svg>
+                @await Component.InvokeAsync("CartBadge")
+            </a>
+
+            <div class="lang-switcher" role="group" aria-label="Language">
+                <form asp-controller="Home" asp-action="SetLanguage" method="post" class="lang-switcher__form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                    <button type="submit" name="culture" value="vi" class="lang-btn@(lang == "vi" ? " is-active" : "")" aria-pressed="@(lang == "vi" ? "true" : "false")">VI</button>
+                    <button type="submit" name="culture" value="en" class="lang-btn@(lang == "en" ? " is-active" : "")" aria-pressed="@(lang == "en" ? "true" : "false")">EN</button>
+                    <button type="submit" name="culture" value="ja" class="lang-btn@(lang == "ja" ? " is-active" : "")" aria-pressed="@(lang == "ja" ? "true" : "false")">JA</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>
+<script>
+(() => {
+  const header = document.getElementById('site-header');
+  const toggle = document.getElementById('nav-toggle');
+  const nav = document.getElementById('site-nav');
+  function syncStickyState() {
+    const hasHero = !!document.querySelector('.hero-slider');
+    if (!hasHero) {
+      // Non-home (or home without slides): keep solid scrolled header
+      header?.classList.add('is-stuck');
+      return;
+    }
+    header?.classList.toggle('is-stuck', window.scrollY > 12);
+  }
+  // Header script runs before main - wait until hero exists in DOM when on home
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncStickyState);
+  } else {
+    syncStickyState();
+  }
+  window.addEventListener('scroll', syncStickyState, { passive: true });
+  if (toggle && nav) {
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('nav-open', open);
+    });
+  }
+  document.querySelectorAll('.nav-dropdown').forEach(dd => {
+    const btn = dd.querySelector('.nav-dropdown__btn');
+    btn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = dd.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.querySelectorAll('.nav-dropdown').forEach(o => {
+        if (o !== dd) {
+          o.classList.remove('is-open');
+          o.querySelector('.nav-dropdown__btn')?.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  });
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.nav-dropdown.is-open').forEach(dd => {
+      dd.classList.remove('is-open');
+      dd.querySelector('.nav-dropdown__btn')?.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+</script>

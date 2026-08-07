@@ -1,0 +1,83 @@
+@model NewHarian.Application.Catalog.ColorDefinitionSaveRequest
+
+<form asp-area="Admin" asp-controller="Colors" asp-action="Save" method="post" id="color-edit-form">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+
+    <h2>@(Model.Id.HasValue ? "Sửa màu" : "Thêm màu")</h2>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+
+
+    <div class="form-grid">
+
+        <label>
+
+            Tên màu (VI) *
+
+            <input asp-for="NameVi" class="form-control" required />
+
+        </label>
+
+        <label class="full">
+
+            Ý nghĩa (VI)
+
+            <textarea asp-for="MeaningVi" class="form-control" rows="3"></textarea>
+
+        </label>
+
+
+
+        <label>
+
+            Tên màu (EN)
+
+            <input asp-for="NameEn" class="form-control" />
+
+        </label>
+
+        <label class="full">
+
+            Ý nghĩa (EN)
+
+            <textarea asp-for="MeaningEn" class="form-control" rows="3"></textarea>
+
+        </label>
+
+
+
+        <label>
+
+            Tên màu (JA)
+
+            <input asp-for="NameJa" class="form-control" />
+
+        </label>
+
+        <label class="full">
+
+            Ý nghĩa (JA)
+
+            <textarea asp-for="MeaningJa" class="form-control" rows="3"></textarea>
+
+        </label>
+
+    </div>
+
+
+
+    <div class="modal__actions">
+
+        <button type="button" data-close class="btn-secondary">Hủy</button>
+
+        <button type="submit" class="btn-primary">Lưu</button>
+
+    </div>
+
+</form>
+
+

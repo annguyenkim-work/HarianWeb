@@ -1,0 +1,11 @@
+@model NewHarian.Web.ViewComponents.SiteBrandViewComponent.SiteBrandVm
+<a class="site-logo" asp-controller="Home" asp-action="Index" title="@Model.CompanyName">
+@if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+{
+    <img src="@Model.LogoUrl" alt="@Model.BrandName" class="site-logo__img" />
+}
+else
+{
+    @Model.BrandName
+}
+</a>

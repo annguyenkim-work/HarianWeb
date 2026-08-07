@@ -1,0 +1,22 @@
+@model IReadOnlyList<NewHarian.Web.Areas.Admin.Controllers.ShippingController.ShippingRow>
+@{ ViewData["Title"] = "Shipping"; Layout = "_AdminLayout"; }
+<div class="admin-toolbar"><h1>Phí vận chuyển theo tỉnh</h1></div>
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+<table class="data-table">
+<thead><tr><th>Tỉnh</th><th>Phí (đ)</th><th>Active</th><th></th></tr></thead>
+<tbody>
+@foreach (var r in Model) {
+<tr>
+<form asp-action="Save" method="post">
+@Html.AntiForgeryToken()
+<input type="hidden" name="provinceId" value="@r.ProvinceId" />
+<td>@r.Name</td>
+<td><input name="fee" type="number" step="1000" value="@r.Fee" class="form-control" style="width:8rem" /></td>
+<td><input type="hidden" name="isActive" value="false" /><input name="isActive" type="checkbox" value="true" checked="@r.IsActive" /></td>
+<td><button type="submit" class="btn-secondary">Lưu</button></td>
+</form>
+</tr>
+}
+</tbody>
+</table>
+<partial name="_AdminPager" />

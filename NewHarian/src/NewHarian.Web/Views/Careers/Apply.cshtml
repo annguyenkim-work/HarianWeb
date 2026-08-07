@@ -1,0 +1,68 @@
+@model NewHarian.Application.Engagement.CareerFormModel
+@using NewHarian.Domain.Enums
+@{
+    ViewData["Title"] = Localizer["Careers.FormTitle"];
+    var provinces = ViewBag.Provinces as IReadOnlyList<NewHarian.Application.Shipping.ProvinceOptionDto>
+        ?? Array.Empty<NewHarian.Application.Shipping.ProvinceOptionDto>();
+}
+
+<nav class="breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    <a asp-action="Index">@Localizer["Careers.PageTitle"]</a>
+    @if (!string.IsNullOrWhiteSpace(Model.JobSlug))
+    {
+        <span>/</span>
+        <a asp-action="Detail" asp-route-slug="@Model.JobSlug">@(Model.JobTitle ?? Model.JobSlug)</a>
+    }
+    <span>/</span>
+    <span>@Localizer["Careers.FormTitle"]</span>
+</nav>
+
+@if (!string.IsNullOrWhiteSpace(Model.JobTitle))
+{
+    <p class="muted">@Localizer["Careers.ApplyingFor"]: <strong>@Model.JobTitle</strong></p>
+}
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<h1>@Localizer["Careers.FormTitle"]</h1>
+<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:640px">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="SitePostId" />
+    <input type="hidden" asp-for="JobSlug" />
+    <input type="hidden" asp-for="JobTitle" />
+    <input type="hidden" asp-for="AttachmentMediaFileId" />
+    <label class="hp" aria-hidden="true"><input asp-for="Website" tabindex="-1" autocomplete="off" /></label>
+    <label>@Localizer["Careers.Type"] *
+        <select asp-for="ApplicationType" class="form-control">
+            <option value="@((int)ApplicationType.Application)">@Localizer["Careers.TypeApplication"]</option>
+            <option value="@((int)ApplicationType.Inquiry)">@Localizer["Careers.TypeInquiry"]</option>
+        </select>
+    </label>
+    <label>@Localizer["Careers.Gender"]
+        <select asp-for="Gender" class="form-control">
+            <option value="male">@Localizer["Careers.GenderMale"]</option>
+            <option value="female">@Localizer["Careers.GenderFemale"]</option>
+            <option value="other">@Localizer["Careers.GenderOther"]</option>
+        </select>
+    </label>
+    <label>@Localizer["Careers.FullName"] * <input asp-for="FullName" class="form-control" required /></label>
+    <label>@Localizer["Careers.Age"] <input asp-for="Age" type="number" class="form-control" min="16" max="80" /></label>
+    <label>@Localizer["Careers.Prefecture"]
+        <select asp-for="Prefecture" class="form-control">
+            <option value=""></option>
+            @foreach (var p in provinces)
+            {
+                <option value="@p.Name">@p.Name</option>
+            }
+        </select>
+    </label>
+    <label>@Localizer["Careers.City"] <input asp-for="City" class="form-control" /></label>
+    <label>@Localizer["Careers.Address"] <input asp-for="Address" class="form-control" /></label>
+    <label>@Localizer["Contact.Phone"] <input asp-for="Phone" class="form-control" /></label>
+    <label>@Localizer["Contact.Email"] * <input asp-for="Email" type="email" class="form-control" required /></label>
+    <label>@Localizer["Careers.Message"] <textarea asp-for="Message" class="form-control" rows="5"></textarea></label>
+    <label>@Localizer["Careers.Cv"] <input type="file" name="cvFile" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" /></label>
+    <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>
+</form>
+<style>.hp{position:absolute;left:-9999px;height:0;overflow:hidden}</style>

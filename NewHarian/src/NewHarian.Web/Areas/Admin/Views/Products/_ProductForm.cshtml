@@ -1,0 +1,236 @@
+@model NewHarian.Application.Catalog.ProductSaveRequest
+@{
+    var cats = (IReadOnlyList<NewHarian.Application.Catalog.AdminCategoryOptionDto>)ViewBag.Categories;
+    var colors = (IReadOnlyList<NewHarian.Application.Catalog.AdminColorDefinitionOptionDto>)ViewBag.Colors;
+    var adminController = ViewBag.AdminController as string ?? "Products";
+    var isService = Model.Kind == NewHarian.Domain.Enums.CatalogKind.Service
+        || (ViewBag.LockedProductType as NewHarian.Domain.Enums.CatalogKind?) == NewHarian.Domain.Enums.CatalogKind.Service;
+    var entityLabel = isService ? "dịch vụ" : "sản phẩm";
+}
+<form asp-area="Admin" asp-controller="@adminController" asp-action="Save" method="post" id="product-edit-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <h2>@(Model.Id.HasValue ? $"Sửa {entityLabel}" : $"Thêm {entityLabel}")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+
+
+    <div class="form-grid">
+        <label>Danh mục
+            <select asp-for="CategoryId" class="form-control" required>
+                @foreach (var c in cats)
+                {
+                    <option value="@c.Id">@c.Name</option>
+                }
+            </select>
+        </label>
+        @{
+            var lockedType = ViewBag.LockedProductType as NewHarian.Domain.Enums.CatalogKind? ?? Model.Kind;
+        }
+        <input type="hidden" name="Kind" value="@((int)lockedType)" />
+
+        <label>Status
+            <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<NewHarian.Domain.Enums.ProductStatus>()"></select>
+        </label>
+
+        <div class="full form-check-row">
+            <label class="form-check-row__item"><input asp-for="IsFeatured" /> Nổi bật</label>
+            <label class="form-check-row__item"><input asp-for="HasVariantSize" id="has-variant-size" /> Có size / quy cách</label>
+            <label class="form-check-row__item"><input asp-for="HasVariantColor" id="has-variant-color" /> Có màu</label>
+        </div>
+
+        @if (isService)
+        {
+            <div class="full form-inline-hint">
+                <label class="form-inline-hint__check"><input asp-for="HidePrice" id="hide-price" /> Không có giá cố định (ẩn giá trên web - khách chỉ đặt lịch)</label>
+                <span class="muted">Đơn giá variant có thể để 0 khi bật tùy chọn trên.</span>
+            </div>
+        }
+        else
+        {
+            <input type="hidden" asp-for="HidePrice" value="false" />
+        }
+
+        <label class="full">Tên VI * <input asp-for="NameVi" class="form-control" required id="name-vi" /></label>
+        <label class="full">Tên EN <input asp-for="NameEn" class="form-control" /></label>
+        <label class="full">Tên JA <input asp-for="NameJa" class="form-control" /></label>
+        <label class="full">Mô tả ngắn VI <input asp-for="ShortVi" class="form-control" /></label>
+        <label class="full">Mô tả ngắn EN <input asp-for="ShortEn" class="form-control" /></label>
+        <label class="full">Mô tả ngắn JA <input asp-for="ShortJa" class="form-control" /></label>
+        @if (!isService)
+        {
+            <label class="full">Tags
+                <input asp-for="TagsCsv" class="form-control" placeholder="Vd: khoáng chất, kirara" />
+            </label>
+            <p class="muted full">Phân tách bằng dấu phẩy. Dùng để lọc / tìm trên trang khách.</p>
+        }
+    </div>
+
+
+
+    <h3>Mô tả chi tiết</h3>
+
+    <div class="richtext-stack">
+
+        <label>Mô tả VI
+
+            <textarea asp-for="DescVi" class="form-control richtext" rows="8"></textarea>
+
+        </label>
+
+        <label>Mô tả EN
+
+            <textarea asp-for="DescEn" class="form-control richtext" rows="8"></textarea>
+
+        </label>
+
+        <label>Mô tả JA
+
+            <textarea asp-for="DescJa" class="form-control richtext" rows="8"></textarea>
+
+        </label>
+
+    </div>
+
+
+
+    <h3>Ảnh sản phẩm</h3>
+
+    <p class="muted">Một ảnh đại diện (danh sách sản phẩm + gallery chi tiết). JPG/PNG/WEBP/GIF, ≤ 10MB.</p>
+    <p class="img-size-hint"><strong>Kích thước đề xuất:</strong> 800×800 px (vuông). Gallery khách hiển thị tỷ lệ 1:1. Sau khi chọn ảnh, kéo khung vuông để chọn vùng hiển thị trước khi tải lên.</p>
+
+    <input type="hidden" asp-for="MainImageMediaFileId" id="main-image-media-id" />
+
+    <input type="hidden" asp-for="MainImageUrl" id="main-image-url" />
+
+    <div class="product-main-image">
+
+        <div id="main-image-preview" class="main-image-preview">
+
+            @if (!string.IsNullOrWhiteSpace(Model.MainImageUrl))
+
+            {
+
+                <img src="@Model.MainImageUrl" alt="" />
+
+            }
+
+        </div>
+
+        <div>
+
+            <input type="file" id="main-image-input" accept="image/jpeg,image/png,image/webp,image/gif" />
+
+            <button type="button" class="btn-link" id="btn-clear-main-image" @(Model.MainImageMediaFileId is null or <= 0 ? "hidden" : null)>Xóa ảnh</button>
+
+            <span id="main-upload-status" class="muted"></span>
+
+        </div>
+
+    </div>
+
+
+
+    <h3>Variants</h3>
+    <p class="img-size-hint"><strong>Ảnh SKU đề xuất:</strong> 800×800 px (vuông), cùng tỷ lệ ảnh sản phẩm. Chọn ảnh xong sẽ cắt khung vuông trước khi tải lên. Chỉ cần khi muốn gallery nhảy sang ảnh riêng theo biến thể.</p>
+
+    <div class="variants-table">
+
+        <div class="variant-row variant-row--head">
+
+            <span class="col-order">#</span>
+
+            <span>SKU</span>
+
+            <span class="col-variant-size">Size/Quy cách</span>
+
+            <span class="col-variant-color">Màu</span>
+
+            <span>Đơn giá</span>
+
+            <span class="col-variant-image">Ảnh SKU</span>
+
+            <span class="col-variant-flag">Default</span>
+            <span class="col-variant-flag">Active</span>
+            <span class="col-variant-remove"></span>
+        </div>
+
+        <select id="variant-color-options-proto" hidden aria-hidden="true" tabindex="-1">
+            <option value="">- Chọn màu -</option>
+            @foreach (var color in colors)
+            {
+                <option value="@color.Id">@color.NameVi</option>
+            }
+        </select>
+
+        <div id="variants-list">
+        @for (var i = 0; i < Model.Variants.Count; i++)
+        {
+            <div class="variant-row">
+                <span class="col-order variant-order">
+                    <span class="order-label">@(i + 1)</span>
+                    <button type="button" class="btn-icon btn-order-up" title="Up" aria-label="Up"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                    <button type="button" class="btn-icon btn-order-down" title="Down" aria-label="Down"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                </span>
+                <input type="hidden" asp-for="Variants[i].Id" />
+                <input asp-for="Variants[i].Sku" class="form-control" />
+                <input asp-for="Variants[i].VariantLabel" class="form-control col-variant-size" />
+                <select name="Variants[@i].ColorDefinitionId" class="form-control col-variant-color">
+                    <option value="">- Chọn màu -</option>
+                    @foreach (var color in colors)
+                    {
+                        var isSelected = Model.Variants[i].ColorDefinitionId == color.Id;
+                        if (isSelected)
+                        {
+                            <option value="@color.Id" selected="selected">@color.NameVi</option>
+                        }
+                        else
+                        {
+                            <option value="@color.Id">@color.NameVi</option>
+                        }
+                    }
+                </select>
+                <input asp-for="Variants[i].Price" type="number" step="1000" class="form-control" />
+                <div class="col-variant-image variant-image-cell">
+                    <input type="hidden" asp-for="Variants[i].ImageMediaFileId" class="variant-image-id" />
+                    <input type="hidden" asp-for="Variants[i].ImageUrl" class="variant-image-url" />
+                    <div class="variant-image-thumb">
+                        @if (!string.IsNullOrWhiteSpace(Model.Variants[i].ImageUrl))
+                        {
+                            <img src="@Model.Variants[i].ImageUrl" alt="" />
+                        }
+                    </div>
+                    <input type="file" class="variant-image-file" accept="image/jpeg,image/png,image/webp,image/gif" />
+                    <button type="button" class="btn-link btn-clear-variant-image">Xóa ảnh</button>
+                </div>
+                <label class="col-variant-flag" title="Default">
+                    <input type="radio" name="defaultVariant" value="@i" class="variant-default-radio"
+                           @(Model.Variants[i].IsDefault || (i == 0 && !Model.Variants.Any(v => v.IsDefault)) ? "checked" : null) />
+                </label>
+                <input type="hidden" name="Variants[@i].IsDefault" value="@(Model.Variants[i].IsDefault || (i == 0 && !Model.Variants.Any(v => v.IsDefault)) ? "true" : "false")" class="variant-default-flag" />
+                <label class="col-variant-flag" title="Active">
+                    <input asp-for="Variants[i].IsActive" />
+                </label>
+                <input type="hidden" asp-for="Variants[i].SortOrder" />
+                <button type="button" class="btn-icon btn-icon--danger btn-remove-variant" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+            </div>
+        }
+        </div>
+    </div>
+
+    <button type="button" class="btn-secondary" data-add-variant>Thêm variant</button>
+
+
+
+    <div class="modal__actions">
+
+        <button type="button" data-close class="btn-secondary">Hủy</button>
+
+        <button type="button" class="btn-secondary" id="btn-preview-product">Xem trước</button>
+
+        <button type="submit" class="btn-primary">Lưu</button>
+
+    </div>
+
+</form>
+

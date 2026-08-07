@@ -1,0 +1,48 @@
+@model NewHarian.Application.Engagement.CareerFormModel
+@using NewHarian.Domain.Enums
+@{
+    ViewData["Title"] = Localizer["Careers.Confirm"];
+}
+<section class="page-hero"><h1>@Localizer["Careers.Confirm"]</h1></section>
+<main style="max-width:640px">
+    <dl class="confirm-dl">
+        @if (!string.IsNullOrWhiteSpace(Model.JobTitle))
+        {
+            <dt>@Localizer["Careers.ApplyingFor"]</dt><dd>@Model.JobTitle</dd>
+        }
+        <dt>@Localizer["Careers.Type"]</dt><dd>@Model.ApplicationType</dd>
+        <dt>@Localizer["Careers.FullName"]</dt><dd>@Model.FullName</dd>
+        <dt>@Localizer["Contact.Email"]</dt><dd>@Model.Email</dd>
+        <dt>@Localizer["Contact.Phone"]</dt><dd>@(Model.Phone ?? "-")</dd>
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <dt>@Localizer["Careers.Message"]</dt><dd style="white-space:pre-wrap">@Model.Message</dd>
+        }
+        <dt>@Localizer["Careers.Cv"]</dt><dd>@(Model.AttachmentMediaFileId is > 0 ? Localizer["Careers.CvAttached"].Value : "-")</dd>
+    </dl>
+
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center">
+        <a href="@(string.IsNullOrWhiteSpace(Model.JobSlug) ? "/careers" : $"/careers/{Model.JobSlug}/apply")" class="btn-secondary">@Localizer["Checkout.Edit"]</a>
+        <form action="/careers/submit" method="post"
+              data-submit-once
+              data-busy-label="@Localizer["Common.Processing"]">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="SitePostId" />
+            <input type="hidden" asp-for="JobSlug" />
+            <input type="hidden" asp-for="JobTitle" />
+            <input type="hidden" asp-for="ApplicationType" />
+            <input type="hidden" asp-for="Gender" />
+            <input type="hidden" asp-for="FullName" />
+            <input type="hidden" asp-for="Age" />
+            <input type="hidden" asp-for="Prefecture" />
+            <input type="hidden" asp-for="City" />
+            <input type="hidden" asp-for="Address" />
+            <input type="hidden" asp-for="Phone" />
+            <input type="hidden" asp-for="Email" />
+            <input type="hidden" asp-for="Message" />
+            <input type="hidden" asp-for="AttachmentMediaFileId" />
+            <button type="submit" class="btn-primary">@Localizer["Contact.Send"]</button>
+        </form>
+    </div>
+</main>
+@await Html.PartialAsync("_SubmitOnce")

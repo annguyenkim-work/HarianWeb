@@ -1,0 +1,172 @@
+@model NewHarian.Application.Cms.CmsBlockSaveRequest
+@using NewHarian.Domain.Enums
+@using NewHarian.Web.Areas.Admin
+@{
+    var typeLabel = CmsUiLabels.BlockType(Model.BlockType);
+    ViewData["Title"] = Model.Id > 0 ? $"Sửa - {typeLabel}" : $"Thêm - {typeLabel}";
+    Layout = "_AdminLayout";
+    var pageId = Model.PageId;
+    var isImageText = Model.BlockType == ContentBlockType.TextWithImage;
+    var isTable = Model.BlockType == ContentBlockType.DataTable;
+    var isCta = Model.BlockType == ContentBlockType.CtaButton;
+    var isSupported = CmsUiLabels.IsSupported(Model.BlockType);
+    var useRichText = isSupported && !isTable && !isCta;
+    var extraJson = Model.ExtraData ?? """{"rows":[]}""";
+}
+
+<div class="admin-toolbar">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-action="Blocks" asp-route-id="@pageId" class="btn-link">← Nội dung trang</a>
+</div>
+
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+@if (!isSupported)
+{
+    <p class="text-danger">Đây là kiểu khối cũ. Nên tạo mới bằng một trong bốn kiểu hỗ trợ, rồi xóa khối này.</p>
+}
+
+<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:860px" id="block-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="PageId" />
+    <input type="hidden" asp-for="BlockType" />
+    <input type="hidden" asp-for="MediaFileId" />
+    <input type="hidden" asp-for="ExtraData" id="ExtraData" />
+
+    <label><input asp-for="IsPublished" type="checkbox" /> Hiển thị công khai</label>
+
+    <label>Khoảng cách với block tiếp theo (rem)
+        <input asp-for="SpacingAfterRem" type="number" min="0" step="0.05" class="form-control" required />
+    </label>
+    <p class="muted">Mặc định 0,35. Đặt <strong>0</strong> để block sát block kế tiếp (ảnh/chữ liền nhau).</p>
+
+    @if (isImageText || Model.BlockType is ContentBlockType.ZigzagFeature or ContentBlockType.ImageGallery)
+    {
+        <label>Tải ảnh lên
+            <input type="file" name="imageFile" accept="image/*" class="form-control" />
+        </label>
+        <p class="img-size-hint"><strong>Kích thước đề xuất:</strong> 1200×800 px (ngang 3:2). JPG/PNG/WEBP, ≤ 10MB. Các block ảnh liền nhau nên cùng tỷ lệ để layout không lệch chiều cao.</p>
+        <label>Vị trí ảnh
+            <select asp-for="ImagePosition" class="form-control">
+                <option value="right">Ảnh bên phải</option>
+                <option value="left">Ảnh bên trái</option>
+            </select>
+        </label>
+        <label>Liên kết khi bấm ảnh (tuỳ chọn) <input asp-for="LinkUrl" class="form-control" placeholder="/products" /></label>
+    }
+
+    @if (isCta)
+    {
+        <section class="cta-editor">
+            <h2>Nút liên kết</h2>
+            <p class="muted">Khách bấm nút sẽ mở trang trong website (ví dụ <code>/products</code>) hoặc website khác (ví dụ <code>https://...</code>).</p>
+            <label>Đường dẫn khi bấm nút *
+                <input asp-for="LinkUrl" class="form-control" placeholder="/products hoặc https://example.com" />
+            </label>
+            <h3>Chữ trên nút</h3>
+            <label>Tiếng Việt * <input asp-for="TitleVi" class="form-control" placeholder="Xem sản phẩm" /></label>
+            <label>English <input asp-for="TitleEn" class="form-control" placeholder="View products" /></label>
+            <label>日本語 <input asp-for="TitleJa" class="form-control" placeholder="製品を見る" /></label>
+        </section>
+    }
+
+    @if (isTable)
+    {
+        <section class="table-editor">
+            <div class="admin-toolbar" style="margin:0">
+                <h2 style="margin:0">Các dòng bảng</h2>
+                <button type="button" class="btn-secondary" id="btn-add-row">+ Thêm dòng</button>
+            </div>
+            <p class="muted">Mỗi dòng gồm <strong>Nhãn</strong> (cột trái) và <strong>Nội dung</strong> (cột phải), nhập đủ Vi / En / Ja nếu cần.</p>
+            <div id="table-rows" class="table-rows"></div>
+        </section>
+        <h2>Tiêu đề khối (tuỳ chọn)</h2>
+        <label>Tiếng Việt <input asp-for="TitleVi" class="form-control" /></label>
+        <label>English <input asp-for="TitleEn" class="form-control" /></label>
+        <label>日本語 <input asp-for="TitleJa" class="form-control" /></label>
+    }
+
+    @if (useRichText || (!isSupported && !isCta))
+    {
+        <h2>Tiếng Việt</h2>
+        <label>Tiêu đề <input asp-for="TitleVi" class="form-control" /></label>
+        <label>Nội dung
+            <textarea asp-for="BodyVi" class="form-control richtext" rows="8"></textarea>
+        </label>
+
+        <h2>English</h2>
+        <label>Title <input asp-for="TitleEn" class="form-control" /></label>
+        <label>Content
+            <textarea asp-for="BodyEn" class="form-control richtext" rows="6"></textarea>
+        </label>
+
+        <h2>日本語</h2>
+        <label>タイトル <input asp-for="TitleJa" class="form-control" /></label>
+        <label>本文
+            <textarea asp-for="BodyJa" class="form-control richtext" rows="6"></textarea>
+        </label>
+    }
+
+    <button type="submit" class="btn-primary">Lưu</button>
+</form>
+
+@section Scripts {
+@if (useRichText)
+{
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.tinymce) return;
+  var token = document.querySelector('#block-form input[name="__RequestVerificationToken"]')?.value;
+  tinymce.init({
+    selector: '#block-form textarea.richtext',
+    height: 360,
+    menubar: false,
+    plugins: 'lists link table code autoresize image media',
+    toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media table | removeformat | code',
+    branding: false,
+    license_key: 'gpl',
+    promotion: false,
+    automatic_uploads: true,
+    images_reuse_filename: true,
+    file_picker_types: 'image media',
+    images_upload_handler: function (blobInfo) {
+      return new Promise(function (resolve, reject) {
+        var fd = new FormData();
+        fd.append('file', blobInfo.blob(), blobInfo.filename());
+        if (token) fd.append('__RequestVerificationToken', token);
+        fetch('@Url.Action("UploadImage", "Pages")', { method: 'POST', body: fd })
+          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (result) {
+            if (!result.ok || !result.data?.ok || !result.data.url) {
+              reject(result.data?.error || 'Upload ảnh thất bại.');
+              return;
+            }
+            resolve(result.data.url);
+          })
+          .catch(function () { reject('Upload ảnh thất bại.'); });
+      });
+    },
+    content_style: 'body { font-family: Segoe UI, sans-serif; font-size: 14px; } img, video, iframe { max-width: 100%; height: auto; }'
+  });
+  var form = document.getElementById('block-form');
+  if (form) {
+    form.addEventListener('submit', function () {
+      tinymce.triggerSave();
+    });
+  }
+});
+</script>
+}
+@if (isTable)
+{
+<script src="~/js/admin-cms-table-editor.js" asp-append-version="true"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  window.initCmsTableEditor({
+    initialJson: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(extraJson))
+  });
+});
+</script>
+}
+}

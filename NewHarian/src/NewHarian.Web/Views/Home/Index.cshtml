@@ -1,0 +1,301 @@
+@model NewHarian.Application.Cms.PublicPageDto?
+@using NewHarian.Application.Catalog
+@using NewHarian.Application.Cms
+@{
+    ViewData["Title"] = Model?.MetaTitle ?? Model?.Title ?? Localizer["Home.Title"].Value;
+    ViewData["MetaDescription"] = Model?.MetaDescription;
+    var categories = ViewBag.Categories as IReadOnlyList<CategoryCardDto> ?? Array.Empty<CategoryCardDto>();
+    var featured = ViewBag.Featured as IReadOnlyList<ProductCardDto> ?? Array.Empty<ProductCardDto>();
+    var slides = ViewBag.Slides as IReadOnlyList<PublicHomeSlideDto> ?? Array.Empty<PublicHomeSlideDto>();
+}
+
+@if (slides.Count > 0)
+{
+    <section class="hero-slider" id="hero-slider" aria-label="Hero">
+        <div class="hero-slider__track">
+            @for (var i = 0; i < slides.Count; i++)
+            {
+                var s = slides[i];
+                <div class="hero-slider__slide@(i == 0 ? " is-active" : "")" data-index="@i">
+                    @if (!string.IsNullOrWhiteSpace(s.LinkUrl))
+                    {
+                        <a href="@s.LinkUrl" class="hero-slider__link">
+                            <img src="@s.ImageUrl" alt="@(s.Caption ?? "")" />
+                        </a>
+                    }
+                    else
+                    {
+                        <img src="@s.ImageUrl" alt="@(s.Caption ?? "")" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(s.Caption))
+                    {
+                        <p class="hero-slider__caption">@s.Caption</p>
+                    }
+                </div>
+            }
+        </div>
+        @if (slides.Count > 1)
+        {
+            <button type="button" class="hero-slider__btn hero-slider__btn--prev" aria-label="Previous">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15 6l-6 6 6 6"/>
+                </svg>
+            </button>
+            <button type="button" class="hero-slider__btn hero-slider__btn--next" aria-label="Next">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6"/>
+                </svg>
+            </button>
+            <div class="hero-slider__dots" role="tablist">
+                @for (var i = 0; i < slides.Count; i++)
+                {
+                    <button type="button" class="hero-slider__dot@(i == 0 ? " is-active" : "")" data-index="@i" aria-label="Slide @(i + 1)"></button>
+                }
+            </div>
+        }
+        <div class="hero-slider__loupe" id="hero-loupe" aria-hidden="true"></div>
+    </section>
+}
+else if (Model is not null && !string.IsNullOrWhiteSpace(Model.HeroTitle))
+{
+    <section class="home-hero" style="@(string.IsNullOrWhiteSpace(Model.HeroImageUrl) ? null : $"background-image:url('{Model.HeroImageUrl}')")">
+        <div class="home-hero__inner">
+            <h1>@Model.HeroTitle</h1>
+        </div>
+    </section>
+}
+else
+{
+    <section class="hero-placeholder">
+        <h1>@Localizer["Home.Hero"]</h1>
+        <p>@Localizer["Home.Intro"]</p>
+    </section>
+}
+
+@if (Model?.Blocks.Count > 0)
+{
+    <section class="home-cms-blocks">
+        @foreach (var block in Model.Blocks)
+        {
+            <partial name="_ContentBlock" model="block" />
+        }
+    </section>
+}
+
+<section class="home-sections">
+    <div class="home-block">
+        <h2>@Localizer["Home.Categories"]</h2>
+        @if (categories.Count == 0)
+        {
+            <p class="muted">-</p>
+        }
+        else
+        {
+            <div class="card-grid">
+                @foreach (var c in categories)
+                {
+                    <a class="card-link"
+                       asp-controller="@CatalogNav.CategoryHubController(c)"
+                       asp-action="Category"
+                       asp-route-categorySlug="@c.Slug">
+                        @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
+                        {
+                            <img src="@c.ImageUrl" alt="@c.Name" />
+                        }
+                        else
+                        {
+                            <span class="card-thumb-empty" aria-hidden="true"></span>
+                        }
+                        <h3>@c.Name</h3>
+                        <p class="card-meta">@c.ProductCount @Localizer["Products.Items"]</p>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+    <div class="home-block">
+        <h2>@Localizer["Home.Featured"]</h2>
+        @if (featured.Count == 0)
+        {
+            <p class="muted">-</p>
+        }
+        else
+        {
+            <div class="card-grid">
+                @foreach (var p in featured)
+                {
+                    <a class="card-link"
+                       asp-controller="@CatalogNav.ControllerName(p.Kind)"
+                       asp-action="Detail"
+                       asp-route-categorySlug="@p.CategorySlug"
+                       asp-route-productSlug="@p.Slug">
+                        @if (!string.IsNullOrWhiteSpace(p.ImageUrl))
+                        {
+                            <img src="@p.ImageUrl" alt="@p.Name" />
+                        }
+                        else
+                        {
+                            <span class="card-thumb-empty" aria-hidden="true"></span>
+                        }
+                        <h3>@p.Name</h3>
+                        @if (p.Kind == NewHarian.Domain.Enums.CatalogKind.Service && p.HidePrice)
+                        {
+                            <p class="card-meta">@Localizer["Products.PriceOnRequest"]</p>
+                        }
+                        else if (p.HidePrice)
+                        {
+                            <p class="card-meta">@Localizer["Products.PriceOnRequest"]</p>
+                        }
+                        else if (p.FromPrice is decimal price)
+                        {
+                            <p class="card-meta">@Localizer["Products.From"] @price.ToString("N0")đ</p>
+                        }
+                        else if (p.Kind == NewHarian.Domain.Enums.CatalogKind.Service)
+                        {
+                            <p class="card-meta">@Localizer["Products.BookLabel"]</p>
+                        }
+                        else
+                        {
+                            <p class="card-meta">-</p>
+                        }
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@if (slides.Count > 0)
+{
+<script>
+(() => {
+  const root = document.getElementById('hero-slider');
+  if (!root) return;
+
+  const loupe = document.getElementById('hero-loupe');
+  const zoom = 1.65;
+  // Coarse pointer (touch phone) skips hover-loupe; mouse / hybrid / stylus keep it.
+  const isTouchOnly = window.matchMedia('(hover: none) and (pointer: coarse)').matches
+    && !window.matchMedia('(any-pointer: fine)').matches;
+
+  function activeImg() {
+    return root.querySelector('.hero-slider__slide.is-active img');
+  }
+
+  function hideLoupe() {
+    root.classList.remove('is-zooming');
+  }
+
+  function updateLoupe(e) {
+    if (!loupe || isTouchOnly) return;
+    // Ignore pure touch; allow mouse / pen even on hybrid devices
+    if (e.pointerType === 'touch') return;
+    if (e.target.closest('.hero-slider__btn, .hero-slider__dots')) {
+      hideLoupe();
+      return;
+    }
+    const img = activeImg();
+    if (!img) { hideLoupe(); return; }
+    if (!img.naturalWidth) {
+      // Image still loading on slower machines - wait then retry once
+      if (!img.dataset.zoomWait) {
+        img.dataset.zoomWait = '1';
+        img.addEventListener('load', () => { delete img.dataset.zoomWait; }, { once: true });
+      }
+      hideLoupe();
+      return;
+    }
+
+    const rect = root.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+      hideLoupe();
+      return;
+    }
+
+    const scale = Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+    const renderedW = img.naturalWidth * scale;
+    const renderedH = img.naturalHeight * scale;
+    const offsetX = (rect.width - renderedW) / 2;
+    const offsetY = (rect.height - renderedH) / 2;
+    const loupeW = loupe.offsetWidth || 180;
+    const loupeH = loupe.offsetHeight || 180;
+    const src = img.currentSrc || img.src;
+
+    loupe.style.left = `${x}px`;
+    loupe.style.top = `${y}px`;
+    loupe.style.backgroundImage = `url("${src.replace(/"/g, '\\"')}")`;
+    loupe.style.backgroundSize = `${renderedW * zoom}px ${renderedH * zoom}px`;
+    loupe.style.backgroundPosition =
+      `${-(x - offsetX) * zoom + loupeW / 2}px ${-(y - offsetY) * zoom + loupeH / 2}px`;
+    root.classList.add('is-zooming');
+  }
+
+  if (loupe && !isTouchOnly) {
+    root.addEventListener('pointermove', updateLoupe);
+    root.addEventListener('pointerleave', hideLoupe);
+    root.addEventListener('pointercancel', hideLoupe);
+  }
+
+  const slides = [...root.querySelectorAll('.hero-slider__slide')];
+  if (slides.length < 2) return;
+  const dots = [...root.querySelectorAll('.hero-slider__dot')];
+  let i = 0;
+  let timer = null;
+  let hovering = false;
+  function show(n) {
+    i = (n + slides.length) % slides.length;
+    slides.forEach((el, idx) => el.classList.toggle('is-active', idx === i));
+    dots.forEach((el, idx) => el.classList.toggle('is-active', idx === i));
+    hideLoupe();
+  }
+  function next() { show(i + 1); }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+  function start() { stop(); if (!hovering) timer = setInterval(next, 6000); }
+  root.querySelector('.hero-slider__btn--prev')?.addEventListener('click', () => { show(i - 1); start(); });
+  root.querySelector('.hero-slider__btn--next')?.addEventListener('click', () => { next(); start(); });
+  dots.forEach(d => d.addEventListener('click', () => { show(+d.dataset.index); start(); }));
+  root.addEventListener('pointerenter', (e) => {
+    if (e.pointerType === 'touch') return;
+    hovering = true;
+    stop();
+  });
+  root.addEventListener('pointerleave', () => {
+    hovering = false;
+    hideLoupe();
+    start();
+  });
+  start();
+})();
+</script>
+}
+
+<script>
+(() => {
+  const blocks = [...document.querySelectorAll('.home-cms-blocks .cms-block')];
+  if (!blocks.length) return;
+
+  // Alternating entrance so consecutive blocks don't feel repetitive
+  const patterns = ['reveal--left', 'reveal--right', 'reveal--zoom', 'reveal--up'];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  blocks.forEach((el, idx) => {
+    const named = el.dataset.reveal;
+    el.classList.add('reveal', named ? `reveal--${named}` : patterns[idx % patterns.length]);
+    el.style.setProperty('--reveal-delay', `${Math.min(idx, 4) * 70}ms`);
+    if (reduceMotion) el.classList.add('is-visible');
+  });
+  if (reduceMotion) return;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      io.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+
+  blocks.forEach((el) => io.observe(el));
+})();
+</script>

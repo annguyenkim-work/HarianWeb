@@ -1,0 +1,48 @@
+@model NewHarian.Application.Cms.PublicPageDto
+@{
+    ViewData["Title"] = Model.MetaTitle ?? Model.Title;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+    var sectionTitleKey = ViewBag.SectionTitleKey as string;
+    var mapsEmbedUrl = ViewBag.MapsEmbedUrl as string;
+    var twoLevelBreadcrumb = ViewBag.BreadcrumbTwoLevel == true;
+}
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    @if (twoLevelBreadcrumb)
+    {
+        <span>@Model.Title</span>
+    }
+    else if (Model.ModuleCode == "about" && Model.Slug != "about")
+    {
+        <a href="/about">@Localizer["Nav.About"]</a>
+        <span>/</span>
+        <span>@Model.Title</span>
+    }
+    else
+    {
+        <span>@Model.Title</span>
+    }
+</nav>
+
+<main class="content-main content-main--full">
+    @foreach (var block in Model.Blocks)
+    {
+        if (!string.IsNullOrWhiteSpace(sectionTitleKey)
+            && block.BlockType == NewHarian.Domain.Enums.ContentBlockType.DataTable
+            && Model.Blocks.Where(b => b.BlockType == NewHarian.Domain.Enums.ContentBlockType.DataTable).Take(1).Any(b => b.Id == block.Id))
+        {
+            <h2 class="section-title">@Localizer[sectionTitleKey]</h2>
+        }
+        <partial name="_ContentBlock" model="block" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(mapsEmbedUrl))
+    {
+        <section class="maps-embed" aria-label="@Localizer["Company.MapSectionTitle"]">
+            <h2 class="section-title">@Localizer["Company.MapSectionTitle"]</h2>
+            <iframe src="@mapsEmbedUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="@Localizer["Company.MapSectionTitle"]"></iframe>
+        </section>
+    }
+</main>

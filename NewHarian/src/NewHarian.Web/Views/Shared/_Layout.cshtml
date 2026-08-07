@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - @(ViewData["BrandName"] ?? "Harian Corporation VietNam")</title>
+    @{
+        var canonicalUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}";
+        var metaDescription = ViewData["MetaDescription"] as string;
+    }
+    @if (!string.IsNullOrWhiteSpace(metaDescription))
+    {
+        <meta name="description" content="@metaDescription" />
+    }
+    <link rel="canonical" href="@canonicalUrl" />
+    <link rel="alternate" hreflang="vi" href="@(canonicalUrl)?lang=vi" />
+    <link rel="alternate" hreflang="en" href="@(canonicalUrl)?lang=en" />
+    <link rel="alternate" hreflang="ja" href="@(canonicalUrl)?lang=ja" />
+    <link rel="alternate" hreflang="x-default" href="@canonicalUrl" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @await Component.InvokeAsync("SiteHeader")
+
+    <main class="site-main">
+        @RenderBody()
+    </main>
+
+    @await Component.InvokeAsync("SiteFooter")
+    @await Component.InvokeAsync("CookieConsent")
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

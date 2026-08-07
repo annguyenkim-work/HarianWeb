@@ -1,0 +1,2 @@
+@model int
+<span class="cart-badge@(Model > 0 ? "" : " cart-badge--empty")" aria-hidden="@(Model > 0 ? "false" : "true")">@(Model > 0 ? Model.ToString() : "")</span>

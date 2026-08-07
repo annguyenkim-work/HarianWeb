@@ -1,0 +1,40 @@
+@model IReadOnlyList<NewHarian.Application.Email.EmailTemplateListItemDto>
+@{
+    ViewData["Title"] = "Mẫu email";
+}
+
+<div class="admin-toolbar">
+    <h1>Mẫu email</h1>
+    <a class="btn-secondary" asp-controller="Settings" asp-action="Email">Email &amp; SMTP</a>
+</div>
+
+@if (TempData["Success"] is string ok)
+{
+    <p class="text-success">@ok</p>
+}
+
+<p class="muted">Chỉnh tiêu đề và nội dung rich text. Dùng placeholder dạng <code>{{CustomerName}}</code> - hệ thống tự thay khi gửi.</p>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Tên</th>
+            <th>Mã</th>
+            <th>Cập nhật</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var t in Model)
+    {
+        <tr>
+            <td>@t.Name</td>
+            <td><code>@t.Code</code></td>
+            <td>@(t.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+            <td class="actions">
+                <a class="btn-icon" asp-action="Edit" asp-route-id="@t.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

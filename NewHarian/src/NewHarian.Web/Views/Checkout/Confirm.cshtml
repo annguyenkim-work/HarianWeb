@@ -1,0 +1,66 @@
+@model NewHarian.Application.Orders.CheckoutDraft
+@{
+    ViewData["Title"] = Localizer["Checkout.Confirm"];
+    var cart = (NewHarian.Application.Cart.CartDto)ViewBag.Cart;
+    var fee = (decimal)ViewBag.ShippingFee;
+    var total = (decimal)ViewBag.Total;
+    var provinceName = (string)ViewBag.ProvinceName;
+    var isFree = (bool)ViewBag.IsFreeShipping;
+}
+
+<nav class="breadcrumb">
+    <a asp-action="Index">@Localizer["Checkout.Title"]</a> /
+    <span>@Localizer["Checkout.Confirm"]</span>
+</nav>
+
+<h1>@Localizer["Checkout.Confirm"]</h1>
+
+@if (TempData["Error"] is string err)
+{
+    <p class="text-danger">@err</p>
+}
+
+<section class="confirm-block">
+    <h2>@Localizer["Checkout.Customer"]</h2>
+    <p>@Model.CustomerName<br />@Model.CustomerEmail<br />@Model.CustomerPhone</p>
+    <h2>@Localizer["Checkout.ShipTo"]</h2>
+    <p>@Model.ShippingAddress<br />@Model.ShippingDistrict @provinceName</p>
+    @if (!string.IsNullOrEmpty(Model.Notes))
+    {
+        <p><strong>@Localizer["Checkout.Notes"]:</strong> @Model.Notes</p>
+    }
+    <p><strong>@Localizer["Checkout.Payment"]:</strong>
+        @(Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.COD ? Localizer["Checkout.COD"] : Localizer["Checkout.Bank"])
+    </p>
+</section>
+
+<table class="data-table">
+    <thead><tr><th>@Localizer["Cart.Item"]</th><th>@Localizer["Products.Qty"]</th><th>@Localizer["Cart.Price"]</th></tr></thead>
+    <tbody>
+    @foreach (var i in cart.Items)
+    {
+        <tr>
+            <td>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}") (@i.Sku)</td>
+            <td>@i.Quantity</td>
+            <td>@i.LineTotal.ToString("N0")đ</td>
+        </tr>
+    }
+    </tbody>
+    <tfoot>
+        <tr><td colspan="2">@Localizer["Cart.Subtotal"]</td><td>@cart.SubTotal.ToString("N0")đ</td></tr>
+        <tr><td colspan="2">@Localizer["Checkout.Shipping"]</td><td>@(isFree ? Localizer["Checkout.FreeShip"].ToString() : fee.ToString("N0") + "đ")</td></tr>
+        <tr><td colspan="2"><strong>@Localizer["Checkout.Total"]</strong></td><td><strong>@total.ToString("N0")đ</strong></td></tr>
+    </tfoot>
+</table>
+
+<div class="modal__actions" style="justify-content:flex-start;margin-top:1.5rem">
+    <a class="btn-secondary" asp-action="Index">@Localizer["Checkout.Edit"]</a>
+    <form asp-action="Submit" method="post"
+          data-submit-once
+          data-busy-label="@Localizer["Common.Processing"]">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn-primary">@Localizer["Checkout.Place"]</button>
+    </form>
+</div>
+
+@await Html.PartialAsync("_SubmitOnce")

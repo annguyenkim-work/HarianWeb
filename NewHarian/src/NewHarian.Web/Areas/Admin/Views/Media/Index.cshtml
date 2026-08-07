@@ -1,0 +1,26 @@
+@model IReadOnlyList<NewHarian.Domain.Entities.MediaFile>
+@{ ViewData["Title"] = "Media"; Layout = "_AdminLayout"; }
+<div class="admin-toolbar"><h1>Media library</h1></div>
+@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+<p class="img-size-hint" style="max-width:720px;margin-bottom:1rem">
+    <strong>Kích thước đề xuất theo nơi dùng:</strong>
+    Sản phẩm / SKU <strong>800×800</strong> · Danh mục <strong>600×400</strong> · Slide home <strong>1920×600</strong> ·
+    CMS block <strong>1200×800</strong> · Banner trang <strong>1600×500</strong> · Tin tức <strong>1200×630</strong> ·
+    Logo <strong>360×96</strong> · Nền header <strong>1920×240</strong>. File ≤ 10MB (JPG/PNG/WEBP).
+</p>
+<form asp-action="Upload" method="post" enctype="multipart/form-data" class="filter-bar filter-bar--row">
+@Html.AntiForgeryToken()
+<input type="file" name="file" class="form-control" accept="image/*" required />
+<button type="submit" class="btn-primary">Upload ảnh</button>
+</form>
+<div class="card-grid">
+@foreach (var m in Model) {
+  <div class="card-link">
+    @if (m.ContentType.StartsWith("image/")) { <img src="@m.StoredPath" alt="@m.FileName" /> }
+    <p><code>@m.StoredPath</code></p>
+    <p class="muted">@m.FileName - @m.CreatedAt.ToLocalTime().ToString("g")</p>
+  </div>
+}
+</div>
+<partial name="_AdminPager" />
