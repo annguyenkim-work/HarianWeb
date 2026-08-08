@@ -57,10 +57,6 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
     public async Task<IActionResult> UpdateStatus(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await bookings.UpdateStatusAsync(id, status, internalNotes, ct);
-        if (Request.Headers.XRequestedWith == "XMLHttpRequest" || Request.Headers.Accept.ToString().Contains("application/json"))
-            return Json(new { ok, error, status = status.ToString() });
-
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã cập nhật." : (error ?? "Không cập nhật được.");
-        return AdminListRedirect.ToRefererOrIndex(this);
+        return Json(new { ok, error, status = status.ToString() });
     }
 }

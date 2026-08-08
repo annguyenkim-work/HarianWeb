@@ -48,7 +48,8 @@ public static class InfrastructureServiceCollectionExtensions
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrWhiteSpace(connectionString))
-                throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+                throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' not found. Set env ConnectionStrings__DefaultConnection (CI/CD) or local override after pull.");
 
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(connectionString));
