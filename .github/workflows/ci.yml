@@ -20,3 +20,78 @@ jobs:
       - run: dotnet restore tests/NewHarian.Web.Tests/NewHarian.Web.Tests.csproj
       - run: dotnet build tests/NewHarian.Web.Tests/NewHarian.Web.Tests.csproj -c Release --no-restore
       - run: dotnet test tests/NewHarian.Web.Tests/NewHarian.Web.Tests.csproj -c Release --no-build --verbosity normal
+
+  deploy:
+    name: deploy
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: NewHarian
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish
+        run: >
+          dotnet publish src/NewHarian.Web/NewHarian.Web.csproj
+          -c Release
+          -r linux-x64
+          --self-contained false
+          -o ./publish
+
+      - name: Prepare SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          test -n "${SSH_PRIVATE_KEY}" || { echo "Missing secret DEPLOY_SSH_KEY"; exit 1; }
+          test -n "${DEPLOY_HOST}" || { echo "Missing secret DEPLOY_HOST"; exit 1; }
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          PORT="${DEPLOY_PORT:-22}"
+          ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync publish folder to VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          REMOTE_PATH="${DEPLOY_PATH:-/var/www/myweb}"
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -p ${PORT} -o StrictHostKeyChecking=yes" \
+            --exclude 'App_Data/' \
+            --exclude 'wwwroot/uploads/' \
+            ./publish/ \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${REMOTE_PATH}/"
+
+      - name: Restart service and health-check
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SERVICE: ${{ secrets.DEPLOY_SERVICE }}
+          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          SERVICE="${DEPLOY_SERVICE:-myweb.service}"
+          ssh -i ~/.ssh/id_ed25519 -p "$PORT" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "sudo systemctl restart ${SERVICE} && sudo systemctl --no-pager --full status ${SERVICE}"
+          if [ -n "${HEALTH_URL:-}" ]; then
+            sleep 3
+            curl -fsS "$HEALTH_URL" | tee /tmp/health.json
+          fi
