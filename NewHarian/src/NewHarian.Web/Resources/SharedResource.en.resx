@@ -103,7 +103,8 @@
   <data name="Checkout.TransferContent" xml:space="preserve"><value>Transfer note</value></data>
   <data name="Checkout.BankMsg" xml:space="preserve"><value>Please transfer within 48 hours. We process after payment confirmation.</value></data>
   <data name="Checkout.ScanQr" xml:space="preserve"><value>Scan QR to transfer</value></data>
-  <data name="Checkout.QrMissing" xml:space="preserve"><value>QR not configured - use account number (Admin → Bank / QR).</value></data>
+  <data name="Checkout.AccountHolder" xml:space="preserve"><value>Account holder</value></data>
+  <data name="Checkout.QrMissing" xml:space="preserve"><value>VietQR not configured (BIN/account) — please transfer using the account number (Admin → Bank / QR).</value></data>
   <data name="Nav.Contact" xml:space="preserve"><value>Contact</value></data>
   <data name="Nav.Careers" xml:space="preserve"><value>Careers</value></data>
   <data name="Nav.News" xml:space="preserve"><value>News</value></data>

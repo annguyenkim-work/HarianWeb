@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = Localizer["Checkout.Success"];
     var isCod = Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.COD;
+    var isBank = Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.BankTransfer;
 }
 
 <section class="page-hero">
@@ -13,7 +14,7 @@
 {
     <p>@Localizer["Checkout.CodMsg"]</p>
 }
-else
+else if (isBank)
 {
     <partial name="_BankTransferInfo" />
 }

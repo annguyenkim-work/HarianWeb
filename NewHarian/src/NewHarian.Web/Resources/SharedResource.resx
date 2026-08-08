@@ -103,7 +103,8 @@
   <data name="Checkout.TransferContent" xml:space="preserve"><value>Nội dung CK</value></data>
   <data name="Checkout.BankMsg" xml:space="preserve"><value>Vui lòng chuyển khoản trong vòng 48h. Đơn sẽ được xử lý sau khi chúng tôi xác nhận thanh toán.</value></data>
   <data name="Checkout.ScanQr" xml:space="preserve"><value>Quét mã QR để chuyển khoản</value></data>
-  <data name="Checkout.QrMissing" xml:space="preserve"><value>Chưa cấu hình ảnh QR - vui lòng dùng STK bên cạnh (Admin → Ngân hàng / QR).</value></data>
+  <data name="Checkout.AccountHolder" xml:space="preserve"><value>Chủ tài khoản</value></data>
+  <data name="Checkout.QrMissing" xml:space="preserve"><value>Chưa cấu hình VietQR (BIN/STK) — vui lòng chuyển khoản bằng STK bên cạnh (Admin → Ngân hàng / QR).</value></data>
   <data name="Nav.Contact" xml:space="preserve"><value>Liên hệ</value></data>
   <data name="Nav.Careers" xml:space="preserve"><value>Tuyển dụng</value></data>
   <data name="Nav.News" xml:space="preserve"><value>Tin tức</value></data>

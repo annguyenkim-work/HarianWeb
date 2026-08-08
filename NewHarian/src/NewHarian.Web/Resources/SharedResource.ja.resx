@@ -103,7 +103,8 @@
   <data name="Checkout.TransferContent" xml:space="preserve"><value>振込名義</value></data>
   <data name="Checkout.BankMsg" xml:space="preserve"><value>48時間以内にお振込みください。入金確認後に処理します。</value></data>
   <data name="Checkout.ScanQr" xml:space="preserve"><value>QRコードをスキャンして振込</value></data>
-  <data name="Checkout.QrMissing" xml:space="preserve"><value>QR未設定 - 口座番号をご利用ください（管理画面）。</value></data>
+  <data name="Checkout.AccountHolder" xml:space="preserve"><value>口座名義</value></data>
+  <data name="Checkout.QrMissing" xml:space="preserve"><value>VietQR未設定（BIN/口座）— 口座番号でお振込みください（管理画面 → 銀行 / QR）。</value></data>
   <data name="Nav.Contact" xml:space="preserve"><value>お問い合わせ</value></data>
   <data name="Nav.Careers" xml:space="preserve"><value>採用</value></data>
   <data name="Nav.News" xml:space="preserve"><value>ニュース</value></data>

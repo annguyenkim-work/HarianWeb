@@ -10,29 +10,23 @@
     }
     else
     {
-        <div class="status-history__scroll">
-            <table class="data-table status-history__table">
-                <thead>
-                    <tr>
-                        <th>Thời gian</th>
-                        <th>Người thực hiện</th>
-                        <th>Sự kiện</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach (var h in items)
-                {
-                    var actor = string.IsNullOrWhiteSpace(h.ActorName)
-                        ? h.ActorType
-                        : $"{h.ActorType} · {h.ActorName}";
-                    <tr>
-                        <td><time datetime="@h.CreatedAt.ToString("o")">@h.CreatedAt.ToLocalTime().ToString("g")</time></td>
-                        <td>@actor</td>
-                        <td>@h.MessageVi</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>
+        <ol class="status-history__list">
+        @foreach (var h in items)
+        {
+            var actor = string.IsNullOrWhiteSpace(h.ActorName)
+                ? h.ActorType
+                : $"{h.ActorType} · {h.ActorName}";
+            <li class="status-history__item">
+                <div class="status-history__marker" aria-hidden="true"></div>
+                <div class="status-history__body">
+                    <p class="status-history__message">@h.MessageVi</p>
+                    <div class="status-history__meta">
+                        <time datetime="@h.CreatedAt.ToString("o")">@h.CreatedAt.ToLocalTime().ToString("g")</time>
+                        <span class="status-history__actor">@actor</span>
+                    </div>
+                </div>
+            </li>
+        }
+        </ol>
     }
 </section>
