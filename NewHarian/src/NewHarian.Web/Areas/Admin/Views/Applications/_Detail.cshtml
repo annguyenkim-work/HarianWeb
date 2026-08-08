@@ -3,7 +3,7 @@
     Layout = null;
     var statuses = Enum.GetValues<NewHarian.Domain.Enums.ApplicationStatus>();
 }
-<div class="modal" open style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:50" onclick="if(event.target===this)this.remove()">
+<div class="modal" open style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50" onclick="if(event.target===this)this.remove()">
 <div class="modal__box modal__box--wide" onclick="event.stopPropagation()">
 <h2>Application #@Model.Id - @Model.ApplicationType</h2>
 @if (!string.IsNullOrWhiteSpace(Model.JobTitle))
@@ -21,7 +21,7 @@
 }
 <p><strong>@Model.FullName</strong> (@Model.Gender) - @Model.Email</p>
 <p>@Model.Phone · @Model.Address</p>
-<p style="white-space:pre-wrap">@Model.Message</p>
+<p class="modal__message">@Model.Message</p>
 @if (!string.IsNullOrWhiteSpace(Model.AttachmentUrl)) {
   <p>CV: <a href="@Model.AttachmentUrl" target="_blank">@(Model.AttachmentName ?? "file")</a></p>
 }

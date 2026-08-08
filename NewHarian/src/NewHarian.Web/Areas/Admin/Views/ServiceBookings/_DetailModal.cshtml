@@ -1,48 +1,72 @@
 @model NewHarian.Application.Catalog.ServiceBookingDetailDto
+@using NewHarian.Domain.Enums
 
 <h2>@Model.BookingNumber</h2>
 
-<dl class="detail-list">
-    <dt>Khách</dt><dd>@Model.CustomerName</dd>
-    <dt>Email</dt><dd>@Model.CustomerEmail</dd>
-    <dt>SĐT</dt><dd>@Model.CustomerPhone</dd>
-    <dt>Dịch vụ</dt><dd>@Model.ProductName - @Model.VariantLabel</dd>
-    <dt>Lịch hẹn</dt><dd>@Model.PreferredDate.ToString("yyyy-MM-dd") @Model.PreferredTime</dd>
-    <dt>Địa chỉ</dt><dd>@(Model.ServiceAddress ?? "-")</dd>
-    <dt>Ghi chú KH</dt><dd>@(Model.Notes ?? "-")</dd>
-    <dt>Ngôn ngữ</dt><dd>@Model.LanguageCode</dd>
-    <dt>Tạo lúc</dt><dd>@Model.CreatedAt.ToLocalTime().ToString("g")</dd>
-</dl>
-<form id="booking-detail-form" asp-area="Admin" asp-controller="ServiceBookings" asp-action="UpdateStatus" method="post" class="form-stack">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="id" value="@Model.Id" />
-    <label>Status
-        <select name="status" class="form-control">
-            @foreach (NewHarian.Domain.Enums.ServiceBookingStatus s in Enum.GetValues(typeof(NewHarian.Domain.Enums.ServiceBookingStatus)))
-            {
-                if (s == Model.Status)
-                {
-                    <option value="@s" selected>@s</option>
-                }
-                else
-                {
-                    <option value="@s">@s</option>
-                }
-            }
-        </select>
-    </label>
-    <label>Ghi chú nội bộ
-        <textarea name="internalNotes" class="form-control" rows="3">@Model.InternalNotes</textarea>
-    </label>
-    <p id="booking-detail-msg" class="muted" hidden></p>
-    <div class="modal__actions">
-        <button type="button" class="btn-secondary" data-close>Đóng</button>
-        <button type="submit" class="btn-primary">Lưu</button>
+<div class="detail-grid">
+    <div class="detail-field">
+        <span class="detail-field__label">Khách</span>
+        <span class="detail-field__value">@Model.CustomerName</span>
     </div>
-</form>
+    <div class="detail-field">
+        <span class="detail-field__label">Email</span>
+        <span class="detail-field__value">@Model.CustomerEmail</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">SĐT</span>
+        <span class="detail-field__value">@Model.CustomerPhone</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Status</span>
+        <span class="detail-field__value">@Model.Status</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Dịch vụ</span>
+        <span class="detail-field__value">@Model.ProductName - @Model.VariantLabel</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Lịch hẹn</span>
+        <span class="detail-field__value">@Model.PreferredDate.ToString("yyyy-MM-dd") @Model.PreferredTime</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Tạo lúc</span>
+        <span class="detail-field__value">@Model.CreatedAt.ToLocalTime().ToString("g")</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Địa chỉ</span>
+        <span class="detail-field__value">@(Model.ServiceAddress ?? "-")</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Ghi chú KH</span>
+        <span class="detail-field__value">@(Model.Notes ?? "-")</span>
+    </div>
+</div>
+
+<label>Ghi chú nội bộ
+    <textarea name="internalNotes" class="form-control" rows="2">@Model.InternalNotes</textarea>
+</label>
+
+<div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+@if (Model.Status == ServiceBookingStatus.New)
+{
+    <button type="button" class="btn-primary" data-action="status" data-status="Confirmed" data-id="@Model.Id">Xác nhận lịch</button>
+}
+@if (Model.Status == ServiceBookingStatus.Confirmed)
+{
+    <button type="button" class="btn-primary" data-action="status" data-status="Completed" data-id="@Model.Id">Hoàn thành</button>
+}
+@if (Model.Status is ServiceBookingStatus.New or ServiceBookingStatus.Confirmed)
+{
+    <button type="button" class="btn-link" data-action="status" data-status="Cancelled" data-id="@Model.Id">Hủy lịch</button>
+}
+</div>
 
 @{
     var histories = ViewBag.Histories as IReadOnlyList<NewHarian.Application.Admin.StatusHistoryItemDto>
                     ?? Array.Empty<NewHarian.Application.Admin.StatusHistoryItemDto>();
 }
 <partial name="_StatusHistory" model="histories" />
+
+<div class="modal__actions">
+    <button type="button" class="btn-secondary" data-close>Đóng</button>
+</div>

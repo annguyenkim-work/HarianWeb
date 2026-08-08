@@ -3,12 +3,15 @@
     Layout = null;
     var statuses = Enum.GetValues<NewHarian.Domain.Enums.InquiryStatus>();
 }
-<div class="modal" open style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:50" onclick="if(event.target===this)this.remove()">
+<div class="modal" open style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50" onclick="if(event.target===this)this.remove()">
 <div class="modal__box modal__box--wide" onclick="event.stopPropagation()">
 <h2>Inquiry #@Model.Id</h2>
 <p><strong>@Model.Name</strong> - @Model.Email - @(Model.Phone ?? "")</p>
-<p>@Model.Address</p>
-<p style="white-space:pre-wrap">@Model.Message</p>
+@if (!string.IsNullOrWhiteSpace(Model.Address))
+{
+    <p>@Model.Address</p>
+}
+<p class="modal__message">@Model.Message</p>
 <form asp-action="UpdateStatus" method="post">
 @Html.AntiForgeryToken()
 <input type="hidden" name="id" value="@Model.Id" />
@@ -17,8 +20,8 @@
 </select></label>
 <label>Ghi chú <textarea name="internalNotes" class="form-control" rows="3">@Model.InternalNotes</textarea></label>
 <div class="modal__actions">
-<button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Đóng</button>
-<button type="submit" class="btn-primary">Lưu</button>
+    <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Đóng</button>
+    <button type="submit" class="btn-primary">Lưu</button>
 </div>
 </form>
 </div>

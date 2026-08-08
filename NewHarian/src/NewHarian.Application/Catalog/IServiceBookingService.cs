@@ -57,5 +57,5 @@ public interface IServiceBookingService
         DateOnly? to = null,
         CancellationToken ct = default);
     Task<ServiceBookingDetailDto?> GetAsync(int id, CancellationToken ct = default);
-    Task<bool> UpdateStatusAsync(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct = default);
+    Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct = default);
 }
