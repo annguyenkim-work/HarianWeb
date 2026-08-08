@@ -9,7 +9,10 @@ cd src/NewHarian.Web
 dotnet run
 ```
 
-Cấu hình DB + SMTP **không** commit mật khẩu trong `appsettings.json` — CI/CD dùng secrets/env (`ConnectionStrings__DefaultConnection`, `Email__Smtp__*`). Local: làm bước override riêng sau khi push bản sạch.
+Cấu hình DB + SMTP **không** commit mật khẩu trong `appsettings.json`.
+
+- **CI/CD / server:** secrets → env (`ConnectionStrings__DefaultConnection`, `Email__Smtp__User`, `Email__Smtp__Password`, `Email__Smtp__From`, …).
+- **Local:** copy `appsettings.Development.local.json.example` → `appsettings.Development.local.json` (đã gitignore), điền giá trị thật rồi `dotnet run`.
 
 Seed admin: `admin@harian.local` / `Admin@12345` — **change on any shared/production deploy**.
 

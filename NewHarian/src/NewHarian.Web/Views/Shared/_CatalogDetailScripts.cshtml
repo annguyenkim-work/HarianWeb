@@ -195,7 +195,7 @@
     if (cartVariant) cartVariant.value = data.id;
     goToVariantGallery(radio, data.gallerySlideIndex);
     if (bookLink) {
-      const url = new URL(bookLink.href);
+      const url = new URL(bookLink.href, window.location.origin);
       url.searchParams.set('variantId', data.id);
       bookLink.href = url.pathname + url.search;
     }

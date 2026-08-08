@@ -11,7 +11,7 @@
 
 <h1>@Localizer["Products.BookCta"]: @product.Name</h1>
 
-<form asp-controller="Services" asp-action="SubmitBook"
+<form asp-route="serviceBookSubmit"
       asp-route-categorySlug="@product.CategorySlug"
       asp-route-productSlug="@product.Slug"
       method="post" class="form-stack"
