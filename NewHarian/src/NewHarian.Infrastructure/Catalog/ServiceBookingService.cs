@@ -249,7 +249,7 @@ public class ServiceBookingService(
             b.Status, b.LanguageCode, b.CreatedAt);
     }
 
-    public async Task<bool> UpdateStatusAsync(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct = default)
+    public async Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct = default)
     {
         logger.LogInformation("UpdateBookingStatus Start Id={Id} Status={Status}", id, status);
         try
@@ -257,9 +257,16 @@ public class ServiceBookingService(
             var b = await db.ServiceBookings.FirstOrDefaultAsync(x => x.Id == id, ct);
             if (b is null)
             {
-                logger.LogWarning("UpdateBookingStatus Done rejected Id={Id}", id);
-                return false;
+                logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, "Không tìm thấy.");
+                return (false, "Không tìm thấy.");
             }
+            if (!IsAllowedTransition(b.Status, status))
+            {
+                var msg = $"Không chuyển từ {b.Status} → {status}.";
+                logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, msg);
+                return (false, msg);
+            }
+
             var from = b.Status;
             b.Status = status;
             if (internalNotes is not null) b.InternalNotes = internalNotes;
@@ -279,13 +286,27 @@ public class ServiceBookingService(
                 status,
                 ct: ct);
             logger.LogInformation("UpdateBookingStatus Done Id={Id} Status={Status}", id, status);
-            return true;
+            return (true, null);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "UpdateBookingStatus Error Id={Id}", id);
             throw;
         }
+    }
+
+    /// <summary>New → Confirmed → Completed; cancel from New or Confirmed only.</summary>
+    private static bool IsAllowedTransition(ServiceBookingStatus from, ServiceBookingStatus to)
+    {
+        if (to == ServiceBookingStatus.Cancelled)
+            return from is ServiceBookingStatus.New or ServiceBookingStatus.Confirmed;
+
+        return (from, to) switch
+        {
+            (ServiceBookingStatus.New, ServiceBookingStatus.Confirmed) => true,
+            (ServiceBookingStatus.Confirmed, ServiceBookingStatus.Completed) => true,
+            _ => false
+        };
     }
 
     private async Task<string?> GetSettingAsync(string key)

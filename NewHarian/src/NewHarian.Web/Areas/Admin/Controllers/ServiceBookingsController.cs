@@ -56,11 +56,11 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct)
     {
-        var ok = await bookings.UpdateStatusAsync(id, status, internalNotes, ct);
+        var (ok, error) = await bookings.UpdateStatusAsync(id, status, internalNotes, ct);
         if (Request.Headers.XRequestedWith == "XMLHttpRequest" || Request.Headers.Accept.ToString().Contains("application/json"))
-            return Json(new { ok, error = ok ? null : "Không tìm thấy.", status = status.ToString() });
+            return Json(new { ok, error, status = status.ToString() });
 
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã cập nhật." : "Không tìm thấy.";
+        TempData[ok ? "Success" : "Error"] = ok ? "Đã cập nhật." : (error ?? "Không cập nhật được.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }
