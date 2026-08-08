@@ -127,6 +127,11 @@
                     categorySlug = Model.CategorySlug,
                     productSlug = Model.Slug,
                     variantId = defaultVariant?.Id
+                }) ?? Url.Action("Book", "Services", new
+                {
+                    categorySlug = Model.CategorySlug,
+                    productSlug = Model.Slug,
+                    variantId = defaultVariant?.Id
                 });
                 <a class="btn-primary" id="book-link" href="@bookUrl">@Localizer["Products.BookCta"]</a>
             }

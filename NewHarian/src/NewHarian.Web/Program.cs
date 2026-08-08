@@ -11,6 +11,12 @@ using NewHarian.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Local-only secrets/overrides (gitignored). Optional — CI/CD uses env vars instead.
+builder.Configuration.AddJsonFile(
+    $"appsettings.{builder.Environment.EnvironmentName}.local.json",
+    optional: true,
+    reloadOnChange: true);
+
 builder.Services.AddInfrastructure(builder.Configuration);
 // App logs → AppLogEntries + LogCleanupHostedService (retention 10d / 90d)
 builder.Services.AddAppLogging(builder.Configuration);
@@ -135,6 +141,32 @@ app.MapHealthChecks("/health", new HealthCheckOptions
         await context.Response.WriteAsJsonAsync(payload);
     }
 });
+
+app.MapControllerRoute(
+    name: "serviceBookThanks",
+    pattern: "services/{categorySlug}/{productSlug}/book/thanks",
+    defaults: new { controller = "Services", action = "BookThanks" });
+
+app.MapControllerRoute(
+    name: "serviceBookSubmit",
+    pattern: "services/{categorySlug}/{productSlug}/book",
+    defaults: new { controller = "Services", action = "SubmitBook" },
+    constraints: new { httpMethod = new Microsoft.AspNetCore.Routing.Constraints.HttpMethodRouteConstraint("POST") });
+
+app.MapControllerRoute(
+    name: "serviceBook",
+    pattern: "services/{categorySlug}/{productSlug}/book",
+    defaults: new { controller = "Services", action = "Book" });
+
+app.MapControllerRoute(
+    name: "serviceDetail",
+    pattern: "services/{categorySlug}/{productSlug}",
+    defaults: new { controller = "Services", action = "Detail" });
+
+app.MapControllerRoute(
+    name: "serviceCategory",
+    pattern: "services/{categorySlug}",
+    defaults: new { controller = "Services", action = "Category" });
 
 app.MapControllerRoute(
     name: "productBookThanks",
