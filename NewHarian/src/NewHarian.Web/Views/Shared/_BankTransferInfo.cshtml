@@ -17,7 +17,7 @@
             <p>@Localizer["Checkout.BankName"]: <strong>@bankName</strong></p>
             @if (!string.IsNullOrWhiteSpace(accountHolder))
             {
-                <p>Chủ tài khoản: <strong>@accountHolder</strong></p>
+                <p>@Localizer["Checkout.AccountHolder"]: <strong>@accountHolder</strong></p>
             }
             <p>@Localizer["Checkout.BankAccount"]: <strong>@bankAccount</strong></p>
             <p>@Localizer["Checkout.BankBranch"]: @bankBranch</p>
