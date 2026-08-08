@@ -1,9 +1,10 @@
 @model dynamic
 @{
-    // Expect ViewBag or Model bag: BankName, BankAccount, BankBranch, BankQr, AmountText, TransferContent
+    // Expect ViewBag: BankName, BankAccount, BankBranch, AccountHolderName, BankQr, AmountText, TransferContent
     string? bankName = ViewBag.BankName as string;
     string? bankAccount = ViewBag.BankAccount as string;
     string? bankBranch = ViewBag.BankBranch as string;
+    string? accountHolder = ViewBag.AccountHolderName as string;
     string? bankQr = ViewBag.BankQr as string;
     string? amountText = ViewBag.AmountText as string;
     string? transferContent = ViewBag.TransferContent as string;
@@ -14,6 +15,10 @@
     <div class="bank-box__grid">
         <div class="bank-box__info">
             <p>@Localizer["Checkout.BankName"]: <strong>@bankName</strong></p>
+            @if (!string.IsNullOrWhiteSpace(accountHolder))
+            {
+                <p>Chủ tài khoản: <strong>@accountHolder</strong></p>
+            }
             <p>@Localizer["Checkout.BankAccount"]: <strong>@bankAccount</strong></p>
             <p>@Localizer["Checkout.BankBranch"]: @bankBranch</p>
             <p>@Localizer["Checkout.TransferAmount"]: <strong>@amountText</strong></p>

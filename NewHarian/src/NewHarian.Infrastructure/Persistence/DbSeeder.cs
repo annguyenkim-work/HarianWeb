@@ -80,9 +80,10 @@ public static class DbSeeder
                 new SiteSetting { Key = "company.facebook", Value = "", Group = "company" },
                 new SiteSetting { Key = "company.instagram", Value = "", Group = "company" },
                 new SiteSetting { Key = "company.bank.name", Value = "Vietcombank", Group = "company" },
+                new SiteSetting { Key = "company.bank.bin", Value = "", Group = "company" },
                 new SiteSetting { Key = "company.bank.account", Value = "0123456789", Group = "company" },
+                new SiteSetting { Key = "company.bank.account_name", Value = "", Group = "company" },
                 new SiteSetting { Key = "company.bank.branch", Value = "Chi nhánh Hà Nội", Group = "company" },
-                new SiteSetting { Key = "company.bank.qr", Value = "", Group = "company" },
                 new SiteSetting { Key = "contactcta.title.vi", Value = "Liên hệ với chúng tôi", Group = "contactcta" },
                 new SiteSetting { Key = "contactcta.title.en", Value = "Contact us", Group = "contactcta" },
                 new SiteSetting { Key = "contactcta.title.ja", Value = "お問い合わせ", Group = "contactcta" },
@@ -116,9 +117,11 @@ public static class DbSeeder
             await EnsureSettingAsync(db, "company.facebook", "", "company");
             await EnsureSettingAsync(db, "company.instagram", "", "company");
             await EnsureSettingAsync(db, "company.bank.name", "Vietcombank", "company");
+            await EnsureSettingAsync(db, "company.bank.bin", "", "company");
             await EnsureSettingAsync(db, "company.bank.account", "0123456789", "company");
+            await EnsureSettingAsync(db, "company.bank.account_name", "", "company");
             await EnsureSettingAsync(db, "company.bank.branch", "Chi nhánh Hà Nội", "company");
-            await EnsureSettingAsync(db, "company.bank.qr", "", "company");
+            await RemoveSettingAsync(db, "company.bank.qr");
             await EnsureSettingAsync(db, "contactcta.title.vi", "Liên hệ với chúng tôi", "contactcta");
             await EnsureSettingAsync(db, "contactcta.title.en", "Contact us", "contactcta");
             await EnsureSettingAsync(db, "contactcta.title.ja", "お問い合わせ", "contactcta");
@@ -772,6 +775,14 @@ public static class DbSeeder
     {
         if (await db.SiteSettings.AnyAsync(s => s.Key == key)) return;
         db.SiteSettings.Add(new SiteSetting { Key = key, Value = value, Group = group });
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task RemoveSettingAsync(AppDbContext db, string key)
+    {
+        var row = await db.SiteSettings.FirstOrDefaultAsync(s => s.Key == key);
+        if (row is null) return;
+        db.SiteSettings.Remove(row);
         await db.SaveChangesAsync();
     }
 

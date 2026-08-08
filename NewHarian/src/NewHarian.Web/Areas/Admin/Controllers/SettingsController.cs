@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Payments;
 using NewHarian.Application.Validation;
 using NewHarian.Domain.Entities;
 using NewHarian.Infrastructure.Email;
@@ -17,41 +18,44 @@ public class SettingsController(
     IMediaStorage media,
     ConfigurableEmailSender email,
     IConfiguration config,
+    IVietQrService vietQr,
     ILogger<SettingsController> logger) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         var map = await LoadMapAsync(ct, "company");
-        return View(new BankSettingsVm
+        var vm = new BankSettingsVm
         {
+            BankBin = map.GetValueOrDefault("company.bank.bin") ?? "",
             BankName = map.GetValueOrDefault("company.bank.name") ?? "",
             BankAccount = map.GetValueOrDefault("company.bank.account") ?? "",
-            BankBranch = map.GetValueOrDefault("company.bank.branch") ?? "",
-            BankQr = map.GetValueOrDefault("company.bank.qr") ?? ""
-        });
+            AccountHolderName = map.GetValueOrDefault("company.bank.account_name") ?? "",
+            BankBranch = map.GetValueOrDefault("company.bank.branch") ?? ""
+        };
+        vm.VietQrPreviewDataUrl = BuildPreviewQr(vm);
+        return View(vm);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(BankSettingsVm model, IFormFile? qrFile, CancellationToken ct)
+    public async Task<IActionResult> Index(BankSettingsVm model, CancellationToken ct)
     {
         logger.LogInformation("SaveBankSettings Start");
         try
         {
-            await UpsertAsync("company.bank.name", model.BankName ?? "", "company", ct);
-            await UpsertAsync("company.bank.account", model.BankAccount ?? "", "company", ct);
-            await UpsertAsync("company.bank.branch", model.BankBranch ?? "", "company", ct);
+            var bin = (model.BankBin ?? "").Trim();
+            if (!string.IsNullOrEmpty(bin) && VnBankCatalog.FindByBin(bin) is { } bank)
+                model.BankName = bank.DisplayName;
 
-            if (qrFile is { Length: > 0 })
-            {
-                await using var stream = qrFile.OpenReadStream();
-                var uploaded = await media.SaveImageAsync(stream, qrFile.FileName, qrFile.ContentType, User.Identity?.Name, ct, "bank");
-                model.BankQr = uploaded.Url;
-                await UpsertAsync("company.bank.qr", uploaded.Url, "company", ct);
-            }
+            await UpsertAsync("company.bank.bin", bin, "company", ct);
+            await UpsertAsync("company.bank.name", (model.BankName ?? "").Trim(), "company", ct);
+            await UpsertAsync("company.bank.account", (model.BankAccount ?? "").Trim(), "company", ct);
+            await UpsertAsync("company.bank.account_name", (model.AccountHolderName ?? "").Trim(), "company", ct);
+            await UpsertAsync("company.bank.branch", model.BankBranch ?? "", "company", ct);
+            await RemoveSettingAsync("company.bank.qr", ct);
 
             logger.LogInformation("SaveBankSettings Done");
-            TempData["Success"] = "Đã lưu thông tin ngân hàng / QR.";
+            TempData["Success"] = "Đã lưu thông tin ngân hàng / VietQR.";
             return RedirectToAction(nameof(Index), new { area = "Admin" });
         }
         catch (Exception ex)
@@ -59,6 +63,13 @@ public class SettingsController(
             logger.LogError(ex, "SaveBankSettings Error");
             throw;
         }
+    }
+
+    private string? BuildPreviewQr(BankSettingsVm vm)
+    {
+        if (string.IsNullOrWhiteSpace(vm.BankBin) || string.IsNullOrWhiteSpace(vm.BankAccount))
+            return null;
+        return vietQr.CreatePngDataUrl(vm.BankBin, vm.BankAccount, 10000, "HAR-ORDER-TEST", vm.AccountHolderName);
     }
 
     public async Task<IActionResult> Brand(CancellationToken ct)
@@ -293,12 +304,22 @@ public class SettingsController(
         await db.SaveChangesAsync(ct);
     }
 
+    private async Task RemoveSettingAsync(string key, CancellationToken ct)
+    {
+        var row = await db.SiteSettings.FirstOrDefaultAsync(s => s.Key == key, ct);
+        if (row is null) return;
+        db.SiteSettings.Remove(row);
+        await db.SaveChangesAsync(ct);
+    }
+
     public class BankSettingsVm
     {
+        public string BankBin { get; set; } = "";
         public string BankName { get; set; } = "";
         public string BankAccount { get; set; } = "";
+        public string AccountHolderName { get; set; } = "";
         public string BankBranch { get; set; } = "";
-        public string BankQr { get; set; } = "";
+        public string? VietQrPreviewDataUrl { get; set; }
     }
 
     public class BrandSettingsVm
