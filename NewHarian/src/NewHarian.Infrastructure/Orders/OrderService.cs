@@ -5,6 +5,7 @@ using NewHarian.Application.Admin;
 using NewHarian.Application.Cart;
 using NewHarian.Application.Email;
 using NewHarian.Application.Orders;
+using NewHarian.Application.Payments;
 using NewHarian.Application.Shipping;
 using NewHarian.Domain.Entities;
 using NewHarian.Domain.Enums;
@@ -22,6 +23,7 @@ public class OrderService(
     IAuditService audit,
     IStatusHistoryService history,
     IAdminNotificationService notifications,
+    IBankTransferDisplayService bankTransfer,
     ILogger<OrderService> logger) : IOrderService
 {
     public async Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(CheckoutDraft draft, CancellationToken ct = default)
@@ -505,16 +507,15 @@ public class OrderService(
         var bankBlock = "";
         if (order.PaymentMethod == PaymentMethod.BankTransfer)
         {
-            var bankName = await GetSettingAsync("company.bank.name");
-            var bankAcc = await GetSettingAsync("company.bank.account");
-            var bankBranch = await GetSettingAsync("company.bank.branch");
-            var bankQr = await GetSettingAsync("company.bank.qr");
+            var bank = await bankTransfer.BuildAsync(order.Total, order.OrderNumber, ct);
             bankBlock =
                 "<hr/><p><strong>Thông tin chuyển khoản</strong></p>" +
-                $"<p>Ngân hàng: {EmailTemplateService.Enc(bankName)}<br/>STK: {EmailTemplateService.Enc(bankAcc)}<br/>Chi nhánh: {EmailTemplateService.Enc(bankBranch)}<br/>" +
+                $"<p>Ngân hàng: {EmailTemplateService.Enc(bank.BankName)}<br/>" +
+                $"Chủ TK: {EmailTemplateService.Enc(bank.AccountHolderName)}<br/>" +
+                $"STK: {EmailTemplateService.Enc(bank.BankAccount)}<br/>Chi nhánh: {EmailTemplateService.Enc(bank.BankBranch)}<br/>" +
                 $"Số tiền: <strong>{order.Total:N0}đ</strong><br/>Nội dung: <strong>{EmailTemplateService.Enc(order.OrderNumber)}</strong></p>";
-            if (!string.IsNullOrWhiteSpace(bankQr))
-                bankBlock += $"<p><img src=\"{EmailTemplateService.Enc(bankQr)}\" alt=\"QR chuyển khoản\" style=\"max-width:240px;height:auto;margin-top:8px\" /></p>";
+            if (!string.IsNullOrWhiteSpace(bank.QrSrc))
+                bankBlock += $"<p><img src=\"{bank.QrSrc}\" alt=\"QR chuyển khoản\" style=\"max-width:240px;height:auto;margin-top:8px\" /></p>";
         }
 
         var vars = new Dictionary<string, string?>

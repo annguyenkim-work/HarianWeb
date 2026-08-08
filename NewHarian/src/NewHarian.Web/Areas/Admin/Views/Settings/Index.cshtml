@@ -1,33 +1,42 @@
 @model NewHarian.Web.Areas.Admin.Controllers.SettingsController.BankSettingsVm
+@using NewHarian.Application.Payments
 @{
-    ViewData["Title"] = "Cài đặt ngân hàng / QR";
+    ViewData["Title"] = "Cài đặt ngân hàng / VietQR";
     Layout = "_AdminLayout";
 }
 
 <div class="admin-toolbar">
-    <h1>Thanh toán - Ngân hàng &amp; QR</h1>
+    <h1>Thanh toán - Ngân hàng &amp; VietQR</h1>
 </div>
 
 @if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
 
-<p class="muted">Ảnh QR dùng trên trang đặt hàng thành công và tra cứu đơn (khi chờ chuyển khoản). Email xác nhận đơn cũng đính kèm QR (nếu có).</p>
+<p class="muted">Điền BIN + STK (+ tên chủ TK) để sinh VietQR động trên trang thành công đơn, tra cứu đơn và email khách (số tiền + mã đơn).</p>
 
-<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:520px">
+<form method="post" class="form-stack" style="max-width:520px">
     @Html.AntiForgeryToken()
-    <label>Ngân hàng <input asp-for="BankName" class="form-control" required /></label>
-    <label>Số tài khoản <input asp-for="BankAccount" class="form-control" required /></label>
-    <label>Chi nhánh <input asp-for="BankBranch" class="form-control" /></label>
-    <label>Upload mã QR (JPG/PNG/WEBP)
-        <input type="file" name="qrFile" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" />
+    <label>Ngân hàng (BIN NAPAS)
+        <select asp-for="BankBin" class="form-control" required>
+            <option value="">-- Chọn ngân hàng --</option>
+            @foreach (var b in VnBankCatalog.All)
+            {
+                <option value="@b.Bin">@b.DisplayName (@b.Bin)</option>
+            }
+        </select>
     </label>
-    <p class="img-size-hint"><strong>Kích thước đề xuất:</strong> 400×400 px (vuông). Nên để QR rõ, nền trắng, không viền trang trí che mã.</p>
-    @if (!string.IsNullOrWhiteSpace(Model.BankQr))
+    <label>Tên ngân hàng hiển thị <input asp-for="BankName" class="form-control" placeholder="Tự điền khi chọn BIN" /></label>
+    <label>Số tài khoản <input asp-for="BankAccount" class="form-control" required /></label>
+    <label>Tên chủ tài khoản <input asp-for="AccountHolderName" class="form-control" required placeholder="vd. Nguyen Van A" /></label>
+    <label>Chi nhánh <input asp-for="BankBranch" class="form-control" /></label>
+
+    @if (!string.IsNullOrWhiteSpace(Model.VietQrPreviewDataUrl))
     {
         <div>
-            <p>QR hiện tại:</p>
-            <img src="@Model.BankQr" alt="QR" class="bank-qr-img" />
-            <input type="hidden" asp-for="BankQr" />
+            <p><strong>Xem trước VietQR</strong> (mẫu 10.000đ / nội dung HAR-ORDER-TEST):</p>
+            <img src="@Model.VietQrPreviewDataUrl" alt="VietQR preview" class="bank-qr-img" />
+            <p class="muted">Quét thử bằng app ngân hàng để kiểm tra STK trước khi nhận đơn thật.</p>
         </div>
     }
+
     <button type="submit" class="btn-primary">Lưu</button>
 </form>

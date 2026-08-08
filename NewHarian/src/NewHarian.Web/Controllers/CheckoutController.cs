@@ -2,13 +2,12 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Cart;
 using NewHarian.Application.Orders;
+using NewHarian.Application.Payments;
 using NewHarian.Application.Shipping;
 using NewHarian.Application.Validation;
 using NewHarian.Domain.Enums;
-using NewHarian.Infrastructure.Persistence;
 
 namespace NewHarian.Web.Controllers;
 
@@ -16,7 +15,7 @@ public class CheckoutController(
     ICartService cart,
     IShippingService shipping,
     IOrderService orders,
-    AppDbContext db) : Controller
+    IBankTransferDisplayService bankTransfer) : Controller
 {
     private const string DraftKey = "CheckoutDraft";
     private const string LastOrderKey = "LastPlacedOrder";
@@ -133,10 +132,17 @@ public class CheckoutController(
         var order = await orders.GetByOrderNumberAsync(orderNumber, ct);
         if (order is null) return NotFound();
 
-        ViewBag.BankName = await GetSettingAsync("company.bank.name");
-        ViewBag.BankAccount = await GetSettingAsync("company.bank.account");
-        ViewBag.BankBranch = await GetSettingAsync("company.bank.branch");
-        ViewBag.BankQr = await GetSettingAsync("company.bank.qr");
+        if (order.PaymentMethod == PaymentMethod.BankTransfer)
+        {
+            var bank = await bankTransfer.BuildAsync(order.Total, order.OrderNumber, ct);
+            ViewBag.BankName = bank.BankName;
+            ViewBag.BankAccount = bank.BankAccount;
+            ViewBag.BankBranch = bank.BankBranch;
+            ViewBag.AccountHolderName = bank.AccountHolderName;
+            ViewBag.BankQr = bank.QrSrc;
+            ViewBag.AmountText = bank.AmountText;
+            ViewBag.TransferContent = bank.TransferContent;
+        }
         return View(order);
     }
 
@@ -169,7 +175,4 @@ public class CheckoutController(
 
     private void SaveDraft(CheckoutDraft draft)
         => HttpContext.Session.SetString(DraftKey, JsonSerializer.Serialize(draft));
-
-    private async Task<string?> GetSettingAsync(string key)
-        => await db.SiteSettings.AsNoTracking().Where(s => s.Key == key).Select(s => s.Value).FirstOrDefaultAsync();
 }

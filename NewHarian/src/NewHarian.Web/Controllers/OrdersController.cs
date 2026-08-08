@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Orders;
+using NewHarian.Application.Payments;
 using NewHarian.Application.Validation;
-using NewHarian.Infrastructure.Persistence;
+using NewHarian.Domain.Enums;
 
 namespace NewHarian.Web.Controllers;
 
-public class OrdersController(IOrderService orders, AppDbContext db) : Controller
+public class OrdersController(IOrderService orders, IBankTransferDisplayService bankTransfer) : Controller
 {
     [HttpGet("/orders/track")]
     public IActionResult Track() => View(new TrackForm());
@@ -34,7 +34,17 @@ public class OrdersController(IOrderService orders, AppDbContext db) : Controlle
         }
 
         ViewBag.Order = order;
-        await LoadBankAsync(ct);
+        if (order.Status == OrderStatus.PendingPayment && order.PaymentMethod == PaymentMethod.BankTransfer)
+        {
+            var bank = await bankTransfer.BuildAsync(order.Total, order.OrderNumber, ct);
+            ViewBag.BankName = bank.BankName;
+            ViewBag.BankAccount = bank.BankAccount;
+            ViewBag.BankBranch = bank.BankBranch;
+            ViewBag.AccountHolderName = bank.AccountHolderName;
+            ViewBag.BankQr = bank.QrSrc;
+            ViewBag.AmountText = bank.AmountText;
+            ViewBag.TransferContent = bank.TransferContent;
+        }
         return View(form);
     }
 
@@ -51,17 +61,6 @@ public class OrdersController(IOrderService orders, AppDbContext db) : Controlle
         TempData[ok ? "Success" : "Error"] = ok ? "Đã hủy đơn hàng." : error;
         return RedirectToAction(nameof(Track));
     }
-
-    private async Task LoadBankAsync(CancellationToken ct)
-    {
-        ViewBag.BankName = await GetSettingAsync("company.bank.name", ct);
-        ViewBag.BankAccount = await GetSettingAsync("company.bank.account", ct);
-        ViewBag.BankBranch = await GetSettingAsync("company.bank.branch", ct);
-        ViewBag.BankQr = await GetSettingAsync("company.bank.qr", ct);
-    }
-
-    private async Task<string?> GetSettingAsync(string key, CancellationToken ct)
-        => await db.SiteSettings.AsNoTracking().Where(s => s.Key == key).Select(s => s.Value).FirstOrDefaultAsync(ct);
 
     public class TrackForm
     {

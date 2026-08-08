@@ -42,8 +42,6 @@
         @if (order.Status == NewHarian.Domain.Enums.OrderStatus.PendingPayment
              && order.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.BankTransfer)
         {
-            ViewBag.AmountText = order.Total.ToString("N0") + "đ";
-            ViewBag.TransferContent = order.OrderNumber;
             <partial name="_BankTransferInfo" />
 
             <form asp-action="Cancel" method="post" onsubmit="return confirm(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Orders.CancelConfirm"].Value)));" style="margin-top:1rem">

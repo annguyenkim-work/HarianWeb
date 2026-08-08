@@ -112,6 +112,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAdminSitePostService, AdminSitePostService>();
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddSingleton<NewHarian.Application.Payments.IVnPayService, NewHarian.Infrastructure.Payments.VnPayService>();
+        services.AddSingleton<NewHarian.Application.Payments.IVietQrService, NewHarian.Infrastructure.Payments.VietQrService>();
+        services.AddScoped<NewHarian.Application.Payments.IBankTransferDisplayService, NewHarian.Infrastructure.Payments.BankTransferDisplayService>();
         services.AddHttpContextAccessor();
 
         return services;
