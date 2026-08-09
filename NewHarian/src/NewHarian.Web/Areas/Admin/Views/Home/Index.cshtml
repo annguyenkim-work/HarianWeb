@@ -11,6 +11,10 @@
     var gmvValues = (Model.GmvByDay ?? []).Select(x => x.Amount).ToList();
     var orderLabels = (Model.OrdersByStatus ?? []).Select(x => x.Label).ToList();
     var orderValues = (Model.OrdersByStatus ?? []).Select(x => x.Count).ToList();
+    var orderSourceLabels = (Model.OrdersBySource ?? []).Select(x => x.Label).ToList();
+    var orderSourceValues = (Model.OrdersBySource ?? []).Select(x => x.Count).ToList();
+    var revenueSourceLabels = (Model.RevenueBySource ?? []).Select(x => x.Label).ToList();
+    var revenueSourceValues = (Model.RevenueBySource ?? []).Select(x => x.Amount).ToList();
     var bookingLabels = (Model.BookingsByStatus ?? []).Select(x => x.Label).ToList();
     var bookingValues = (Model.BookingsByStatus ?? []).Select(x => x.Count).ToList();
     var bookingGmvLabels = (Model.BookingGmvByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
@@ -88,6 +92,32 @@
             }
         </section>
         <section class="dash-chart-card">
+            <h2>Đơn hàng theo nguồn</h2>
+            <p class="muted">Số đơn theo Source trong khoảng đã chọn</p>
+            <canvas id="chart-orders-source"></canvas>
+            @if (Model.OrdersBySource is null || Model.OrdersBySource.Count == 0)
+            {
+                <p class="muted">Không có đơn trong khoảng đã chọn.</p>
+            }
+        </section>
+        <section class="dash-chart-card">
+            <div class="dash-chart-card__head">
+                <div>
+                    <h2>Doanh thu theo nguồn</h2>
+                    <p class="muted">Confirmed / Processing / Shipped / Delivered</p>
+                </div>
+                <div class="dash-chart-total">
+                    <span class="dash-chart-total__label">Tổng</span>
+                    <span class="dash-chart-total__value">@Vnd(Model.OrderRevenueBySourceTotal)</span>
+                </div>
+            </div>
+            <canvas id="chart-revenue-source"></canvas>
+            @if (Model.RevenueBySource is null || Model.RevenueBySource.Count == 0)
+            {
+                <p class="muted">Không có doanh thu ghi nhận trong khoảng đã chọn.</p>
+            }
+        </section>
+        <section class="dash-chart-card">
             <h2>Đơn hàng theo status</h2>
             <canvas id="chart-orders-status"></canvas>
             @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
@@ -116,6 +146,10 @@
   const gmvValues = @Html.Raw(JsonSerializer.Serialize(gmvValues, jsonOpts));
   const orderLabels = @Html.Raw(JsonSerializer.Serialize(orderLabels, jsonOpts));
   const orderValues = @Html.Raw(JsonSerializer.Serialize(orderValues, jsonOpts));
+  const orderSourceLabels = @Html.Raw(JsonSerializer.Serialize(orderSourceLabels, jsonOpts));
+  const orderSourceValues = @Html.Raw(JsonSerializer.Serialize(orderSourceValues, jsonOpts));
+  const revenueSourceLabels = @Html.Raw(JsonSerializer.Serialize(revenueSourceLabels, jsonOpts));
+  const revenueSourceValues = @Html.Raw(JsonSerializer.Serialize(revenueSourceValues, jsonOpts));
   const bookingLabels = @Html.Raw(JsonSerializer.Serialize(bookingLabels, jsonOpts));
   const bookingValues = @Html.Raw(JsonSerializer.Serialize(bookingValues, jsonOpts));
   const bookingGmvLabels = @Html.Raw(JsonSerializer.Serialize(bookingGmvLabels, jsonOpts));
@@ -157,7 +191,7 @@
   lineMoneyChart(document.getElementById('chart-gmv'), gmvLabels, gmvValues, '#2d6a4f', 'rgba(45,106,79,0.12)');
   lineMoneyChart(document.getElementById('chart-bookings-gmv'), bookingGmvLabels, bookingGmvValues, '#1d3557', 'rgba(29,53,87,0.12)');
 
-  function doughnut(id, labels, values) {
+  function doughnut(id, labels, values, moneyMode) {
     const el = document.getElementById(id);
     if (!el || !labels.length) return;
     new Chart(el, {
@@ -171,13 +205,20 @@
       },
       options: {
         responsive: true,
-        plugins: { legend: { position: 'bottom' } }
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: moneyMode ? {
+            callbacks: { label: ctx => `${ctx.label}: ${money(ctx.parsed ?? 0)}` }
+          } : undefined
+        }
       }
     });
   }
 
-  doughnut('chart-orders-status', orderLabels, orderValues);
-  doughnut('chart-bookings-status', bookingLabels, bookingValues);
+  doughnut('chart-orders-source', orderSourceLabels, orderSourceValues, false);
+  doughnut('chart-revenue-source', revenueSourceLabels, revenueSourceValues, true);
+  doughnut('chart-orders-status', orderLabels, orderValues, false);
+  doughnut('chart-bookings-status', bookingLabels, bookingValues, false);
 })();
 </script>
 }
