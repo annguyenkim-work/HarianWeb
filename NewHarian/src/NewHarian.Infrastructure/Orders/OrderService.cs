@@ -316,6 +316,10 @@ public partial class OrderService(
             if (request.Source is not (OrderSource.Store or OrderSource.Shopee or OrderSource.TikTok))
                 return RejectManual("Nguồn phải là Cửa hàng, Shopee hoặc TikTok.");
 
+            if (request.Status is not (OrderStatus.Confirmed or OrderStatus.Processing
+                or OrderStatus.Shipped or OrderStatus.Delivered))
+                return RejectManual("Trạng thái không hợp lệ. Chọn: Xác nhận / Đang xử lý / Đã giao vận / Hoàn thành.");
+
             if (string.IsNullOrWhiteSpace(request.CustomerName))
                 return RejectManual("Vui lòng nhập tên khách.");
 
@@ -379,6 +383,7 @@ public partial class OrderService(
             }
 
             var now = DateTime.UtcNow;
+            var status = request.Status;
             var orderNumber = await NextOrderNumberAsync(ct);
             var order = new Order
             {
@@ -392,13 +397,15 @@ public partial class OrderService(
                 SubTotal = subTotal,
                 ShippingFee = 0,
                 Total = subTotal,
-                Status = OrderStatus.Confirmed,
+                Status = status,
                 PaymentMethod = PaymentMethod.Offline,
                 Source = request.Source,
                 ExternalRef = string.IsNullOrWhiteSpace(request.ExternalRef) ? null : request.ExternalRef.Trim(),
                 LanguageCode = "vi",
                 CreatedAt = now,
                 ConfirmedAt = now,
+                ShippedAt = status is OrderStatus.Shipped or OrderStatus.Delivered ? now : null,
+                DeliveredAt = status == OrderStatus.Delivered ? now : null,
                 Payment = new Payment
                 {
                     Method = PaymentMethod.Offline,
@@ -414,12 +421,13 @@ public partial class OrderService(
             db.Orders.Add(order);
             await db.SaveChangesAsync(ct);
 
+            var statusLabel = StatusHistoryMessages.ForOrder(StatusHistoryEventTypes.StatusChanged, status);
             await history.AppendOrderAsync(
                 order.Id,
                 StatusHistoryEventTypes.ManualCreated,
                 null,
-                OrderStatus.Confirmed,
-                messageVi: $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)})",
+                status,
+                messageVi: $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) — {statusLabel}",
                 ct: ct);
 
             await audit.WriteAsync(
@@ -431,6 +439,7 @@ public partial class OrderService(
                 {
                     order.OrderNumber,
                     Source = request.Source.ToString(),
+                    Status = status.ToString(),
                     order.ExternalRef,
                     order.Total,
                     Lines = orderItems.Count
@@ -438,8 +447,8 @@ public partial class OrderService(
                 ct);
 
             logger.LogInformation(
-                "CreateManualOrder Done OrderNumber={OrderNumber} Source={Source} Total={Total}",
-                order.OrderNumber, request.Source, order.Total);
+                "CreateManualOrder Done OrderNumber={OrderNumber} Source={Source} Status={Status} Total={Total}",
+                order.OrderNumber, request.Source, status, order.Total);
             return (true, null, order.OrderNumber);
         }
         catch (Exception ex)

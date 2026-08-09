@@ -61,6 +61,8 @@ public class ManualOrderLineRequest
 public class ManualOrderCreateRequest
 {
     public OrderSource Source { get; set; } = OrderSource.Store;
+    /// <summary>Default Delivered (Hoàn thành) for walk-in / offline capture.</summary>
+    public OrderStatus Status { get; set; } = OrderStatus.Delivered;
     public string? ExternalRef { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string? CustomerPhone { get; set; }

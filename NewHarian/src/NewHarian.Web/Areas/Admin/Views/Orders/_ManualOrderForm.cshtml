@@ -4,8 +4,18 @@
 @{
     Layout = null;
     var sources = new[] { OrderSource.Store, OrderSource.Shopee, OrderSource.TikTok };
+    var statuses = new (OrderStatus Value, string Label)[]
+    {
+        (OrderStatus.Delivered, "Hoàn thành"),
+        (OrderStatus.Confirmed, "Đã xác nhận"),
+        (OrderStatus.Processing, "Đang xử lý"),
+        (OrderStatus.Shipped, "Đã giao vận"),
+    };
     if (Model.Lines is null || Model.Lines.Count == 0)
         Model.Lines = new List<ManualOrderLineRequest> { new() };
+    if (Model.Status is not (OrderStatus.Confirmed or OrderStatus.Processing
+        or OrderStatus.Shipped or OrderStatus.Delivered))
+        Model.Status = OrderStatus.Delivered;
 }
 
 <form asp-area="Admin" asp-controller="Orders" asp-action="Create" method="post" class="manual-order-form"
@@ -28,6 +38,22 @@
                     else
                     {
                         <option value="@s">@OrderSourceLabels.Vi(s)</option>
+                    }
+                }
+            </select>
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">Trạng thái *</span>
+            <select asp-for="Status" class="form-control" required>
+                @foreach (var st in statuses)
+                {
+                    if (Model.Status == st.Value)
+                    {
+                        <option value="@st.Value" selected>@st.Label</option>
+                    }
+                    else
+                    {
+                        <option value="@st.Value">@st.Label</option>
                     }
                 }
             </select>
@@ -84,7 +110,7 @@
             </div>
         }
     </div>
-    <p class="manual-order-form__hint muted">Gõ để tìm sản phẩm theo tên hoặc SKU, chọn từ gợi ý. Đơn tạo ở Confirmed + đã thanh toán (Offline).</p>
+    <p class="manual-order-form__hint muted">Gõ để tìm sản phẩm theo tên hoặc SKU. Mặc định trạng thái <strong>Hoàn thành</strong> (đã thanh toán Offline); có thể đổi trước khi tạo.</p>
     <button type="button" class="btn-secondary" id="btn-add-line">+ Thêm dòng</button>
 
     <div class="modal__actions">
