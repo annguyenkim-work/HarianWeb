@@ -16,6 +16,8 @@ public sealed record DashboardDayCountDto(DateOnly Date, int Total, int Complete
 
 public sealed record DashboardStatusCountDto(string Key, string Label, int Count);
 
+public sealed record DashboardSourceAmountDto(string Key, string Label, decimal Amount);
+
 public sealed class AdminDashboardDto
 {
     public required DashboardDateRange Range { get; init; }
@@ -23,6 +25,9 @@ public sealed class AdminDashboardDto
     public IReadOnlyList<DashboardDayPointDto>? GmvByDay { get; init; }
     public decimal OrderGmvTotal { get; init; }
     public IReadOnlyList<DashboardStatusCountDto>? OrdersByStatus { get; init; }
+    public IReadOnlyList<DashboardStatusCountDto>? OrdersBySource { get; init; }
+    public IReadOnlyList<DashboardSourceAmountDto>? RevenueBySource { get; init; }
+    public decimal OrderRevenueBySourceTotal { get; init; }
     public IReadOnlyList<DashboardStatusCountDto>? BookingsByStatus { get; init; }
     public IReadOnlyList<DashboardDayCountDto>? BookingsByDay { get; init; }
     public IReadOnlyList<DashboardDayPointDto>? BookingGmvByDay { get; init; }

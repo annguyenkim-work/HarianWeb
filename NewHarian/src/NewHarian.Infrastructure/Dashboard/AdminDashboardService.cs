@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Dashboard;
+using NewHarian.Application.Orders;
 using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Persistence;
 
@@ -83,6 +84,36 @@ public sealed class AdminDashboardService(AppDbContext db) : IAdminDashboardServ
             .Where(x => x.Count > 0)
             .ToList();
 
+        var orderSourceCountRaw = await db.Orders.AsNoTracking()
+            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive)
+            .GroupBy(o => o.Source)
+            .Select(g => new { Source = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var ordersBySource = Enum.GetValues<OrderSource>()
+            .Select(s => new DashboardStatusCountDto(
+                s.ToString(),
+                OrderSourceLabels.Vi(s),
+                orderSourceCountRaw.FirstOrDefault(x => x.Source == s)?.Count ?? 0))
+            .Where(x => x.Count > 0)
+            .ToList();
+
+        var orderSourceRevenueRaw = await db.Orders.AsNoTracking()
+            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive
+                        && ConfirmedRevenueStatuses.Contains(o.Status))
+            .GroupBy(o => o.Source)
+            .Select(g => new { Source = g.Key, Amount = g.Sum(x => x.Total) })
+            .ToListAsync(ct);
+
+        var revenueBySource = Enum.GetValues<OrderSource>()
+            .Select(s => new DashboardSourceAmountDto(
+                s.ToString(),
+                OrderSourceLabels.Vi(s),
+                orderSourceRevenueRaw.FirstOrDefault(x => x.Source == s)?.Amount ?? 0m))
+            .Where(x => x.Amount > 0)
+            .ToList();
+        var orderRevenueBySourceTotal = revenueBySource.Sum(x => x.Amount);
+
         var bookingStatusRaw = await db.ServiceBookings.AsNoTracking()
             .Where(b => b.CreatedAt >= utcFrom && b.CreatedAt < utcToExclusive)
             .GroupBy(b => b.Status)
@@ -136,6 +167,9 @@ public sealed class AdminDashboardService(AppDbContext db) : IAdminDashboardServ
             GmvByDay = gmvByDay,
             OrderGmvTotal = orderGmvTotal,
             OrdersByStatus = ordersByStatus,
+            OrdersBySource = ordersBySource,
+            RevenueBySource = revenueBySource,
+            OrderRevenueBySourceTotal = orderRevenueBySourceTotal,
             BookingsByStatus = bookingsByStatus,
             BookingsByDay = bookingsByDay,
             BookingGmvByDay = bookingGmvByDay,
