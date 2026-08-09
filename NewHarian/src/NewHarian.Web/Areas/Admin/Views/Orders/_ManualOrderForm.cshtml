@@ -8,7 +8,8 @@
         Model.Lines = new List<ManualOrderLineRequest> { new() };
 }
 
-<form asp-area="Admin" asp-controller="Orders" asp-action="Create" method="post" class="manual-order-form">
+<form asp-area="Admin" asp-controller="Orders" asp-action="Create" method="post" class="manual-order-form"
+      data-suggest-url="@Url.Action("SuggestVariants", "Orders", new { area = "Admin" })">
     @Html.AntiForgeryToken()
     <h2>Thêm đơn hàng</h2>
 
@@ -66,9 +67,10 @@
         @for (var i = 0; i < Model.Lines.Count; i++)
         {
             <div class="manual-order-line">
-                <label>
-                    <span>SKU *</span>
-                    <input name="Lines[@i].Sku" value="@Model.Lines[i].Sku" class="form-control" required />
+                <label class="sku-suggest">
+                    <span>Sản phẩm / SKU *</span>
+                    <input name="Lines[@i].Sku" value="@Model.Lines[i].Sku" class="form-control js-sku-input" autocomplete="off" required placeholder="Gõ tên hoặc SKU…" />
+                    <ul class="sku-suggest__list" hidden></ul>
                 </label>
                 <label>
                     <span>SL *</span>
@@ -76,13 +78,13 @@
                 </label>
                 <label>
                     <span>Đơn giá</span>
-                    <input name="Lines[@i].UnitPrice" type="number" min="0" step="1" value="@(Model.Lines[i].UnitPrice?.ToString(System.Globalization.CultureInfo.InvariantCulture))" class="form-control" placeholder="Để trống = giá SP" />
+                    <input name="Lines[@i].UnitPrice" type="number" min="0" step="1" value="@(Model.Lines[i].UnitPrice?.ToString(System.Globalization.CultureInfo.InvariantCulture))" class="form-control js-sku-price" placeholder="Để trống = giá SP" />
                 </label>
                 <button type="button" class="btn-icon btn-icon--danger" data-remove-line title="Xóa dòng" aria-label="Xóa dòng"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
             </div>
         }
     </div>
-    <p class="manual-order-form__hint muted">Đơn được tạo ở trạng thái Confirmed + đã thanh toán (Offline). Để trống đơn giá sẽ lấy giá variant hiện tại.</p>
+    <p class="manual-order-form__hint muted">Gõ để tìm sản phẩm theo tên hoặc SKU, chọn từ gợi ý. Đơn tạo ở Confirmed + đã thanh toán (Offline).</p>
     <button type="button" class="btn-secondary" id="btn-add-line">+ Thêm dòng</button>
 
     <div class="modal__actions">
@@ -93,9 +95,10 @@
 
 <template id="manual-order-line-tpl">
     <div class="manual-order-line">
-        <label>
-            <span>SKU *</span>
-            <input name="Lines[__i__].Sku" class="form-control" required />
+        <label class="sku-suggest">
+            <span>Sản phẩm / SKU *</span>
+            <input name="Lines[__i__].Sku" class="form-control js-sku-input" autocomplete="off" required placeholder="Gõ tên hoặc SKU…" />
+            <ul class="sku-suggest__list" hidden></ul>
         </label>
         <label>
             <span>SL *</span>
@@ -103,7 +106,7 @@
         </label>
         <label>
             <span>Đơn giá</span>
-            <input name="Lines[__i__].UnitPrice" type="number" min="0" step="1" class="form-control" placeholder="Để trống = giá SP" />
+            <input name="Lines[__i__].UnitPrice" type="number" min="0" step="1" class="form-control js-sku-price" placeholder="Để trống = giá SP" />
         </label>
         <button type="button" class="btn-icon btn-icon--danger" data-remove-line title="Xóa dòng" aria-label="Xóa dòng"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
     </div>

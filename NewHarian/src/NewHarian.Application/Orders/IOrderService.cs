@@ -78,6 +78,13 @@ public record OrderImportResult(
     IReadOnlyList<string> CreatedOrderNumbers,
     IReadOnlyList<OrderImportError> Errors);
 
+public record VariantSuggestDto(
+    string Sku,
+    string ProductName,
+    string VariantLabel,
+    decimal Price,
+    string Display);
+
 public interface IOrderService
 {
     Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(CheckoutDraft draft, CancellationToken ct = default);
@@ -96,9 +103,10 @@ public interface IOrderService
         CancellationToken ct = default);
     Task<OrderSummaryDto?> AdminGetAsync(int id, CancellationToken ct = default);
     Task<(bool Ok, string? Error, string? OrderNumber)> CreateManualOrderAsync(ManualOrderCreateRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<VariantSuggestDto>> SuggestVariantsAsync(string? q, int take = 15, CancellationToken ct = default);
     byte[] BuildOrderImportTemplate();
     Task<OrderImportResult> ImportOrdersAsync(Stream excelStream, CancellationToken ct = default);
-    Task<byte[]> ExportOrdersCsvAsync(
+    Task<byte[]> ExportOrdersExcelAsync(
         OrderStatus? status,
         PaymentMethod? payment,
         string? q,

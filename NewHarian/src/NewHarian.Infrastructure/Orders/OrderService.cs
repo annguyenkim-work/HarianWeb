@@ -455,6 +455,50 @@ public partial class OrderService(
         return (false, error, null);
     }
 
+    public async Task<IReadOnlyList<VariantSuggestDto>> SuggestVariantsAsync(
+        string? q,
+        int take = 15,
+        CancellationToken ct = default)
+    {
+        var term = (q ?? string.Empty).Trim();
+        if (term.Length < 1)
+            return Array.Empty<VariantSuggestDto>();
+
+        take = Math.Clamp(take, 1, 30);
+        var lower = term.ToLowerInvariant();
+
+        var rows = await db.ProductVariants.AsNoTracking()
+            .Where(v => v.IsActive && v.Product.Status != ProductStatus.Archived)
+            .Where(v =>
+                v.Sku.ToLower().Contains(lower) ||
+                v.VariantLabel.ToLower().Contains(lower) ||
+                v.Product.Translations.Any(t => t.Name.ToLower().Contains(lower)))
+            .OrderBy(v => v.Sku)
+            .Take(take)
+            .Select(v => new
+            {
+                v.Sku,
+                v.VariantLabel,
+                v.Price,
+                Name = v.Product.Translations
+                    .Where(t => t.LanguageCode == "vi")
+                    .Select(t => t.Name)
+                    .FirstOrDefault()
+                    ?? v.Product.Translations.Select(t => t.Name).FirstOrDefault()
+                    ?? v.Product.Slug
+            })
+            .ToListAsync(ct);
+
+        return rows.Select(v =>
+        {
+            var label = string.IsNullOrWhiteSpace(v.VariantLabel)
+                ? v.Name
+                : $"{v.Name} — {v.VariantLabel}";
+            var display = $"{label} ({v.Sku}) · {v.Price:N0}đ";
+            return new VariantSuggestDto(v.Sku, v.Name, v.VariantLabel, v.Price, display);
+        }).ToList();
+    }
+
     public async Task<(bool Ok, string? Error)> AdminUpdateStatusAsync(int id, OrderStatus status, string? internalNotes, CancellationToken ct = default)
     {
         logger.LogInformation("AdminUpdateStatus Start Id={Id} Status={Status}", id, status);

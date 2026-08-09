@@ -63,9 +63,11 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
         dir = AdminListQuery.NormalizeDir(dir, AdminListQuery.DefaultDirForColumn(sort));
         (from, to) = AdminListQuery.NormalizeDateRange(from, to);
 
-        var bytes = await orders.ExportOrdersCsvAsync(status, payment, q, sort, dir, from, to, source, ct);
-        var fileName = $"orders-{DateTime.Now:yyyyMMdd-HHmm}.csv";
-        return File(bytes, "text/csv; charset=utf-8", fileName);
+        var bytes = await orders.ExportOrdersExcelAsync(status, payment, q, sort, dir, from, to, source, ct);
+        var fileName = $"orders-{DateTime.Now:yyyyMMdd-HHmm}.xlsx";
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileName);
     }
 
     [HttpGet]
@@ -89,6 +91,13 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
     public IActionResult Create()
     {
         return PartialView("_ManualOrderForm", new ManualOrderCreateRequest());
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SuggestVariants(string? q, CancellationToken ct)
+    {
+        var items = await orders.SuggestVariantsAsync(q, 15, ct);
+        return Json(items);
     }
 
     [HttpPost]
