@@ -1,5 +1,4 @@
-using System.Globalization;
-using System.Text;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Orders;
@@ -9,7 +8,7 @@ namespace NewHarian.Infrastructure.Orders;
 
 public partial class OrderService
 {
-    public async Task<byte[]> ExportOrdersCsvAsync(
+    public async Task<byte[]> ExportOrdersExcelAsync(
         OrderStatus? status,
         PaymentMethod? payment,
         string? q,
@@ -38,45 +37,47 @@ public partial class OrderService
                     return $"{x.Sku} x{x.Quantity} ({name})";
                 })));
 
-        var sb = new StringBuilder();
-        sb.Append('\uFEFF'); // UTF-8 BOM for Excel
-        sb.AppendLine(string.Join(',',
-            "OrderNumber", "Source", "ExternalRef", "CustomerName", "Phone", "Email",
-            "Status", "PaymentMethod", "Total", "CreatedAt", "Items"));
-
-        // Need ExternalRef — not on AdminOrderListItemDto; load for ids
         var refs = await db.Orders.AsNoTracking()
             .Where(o => ids.Contains(o.Id))
             .Select(o => new { o.Id, o.ExternalRef })
             .ToDictionaryAsync(o => o.Id, o => o.ExternalRef, ct);
 
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("Orders");
+        var headers = new[]
+        {
+            "OrderNumber", "Source", "ExternalRef", "CustomerName", "Phone", "Email",
+            "Status", "PaymentMethod", "Total", "CreatedAt", "Items"
+        };
+        for (var c = 0; c < headers.Length; c++)
+            ws.Cell(1, c + 1).Value = headers[c];
+        ws.Row(1).Style.Font.Bold = true;
+
+        var row = 2;
         foreach (var o in list)
         {
             refs.TryGetValue(o.Id, out var ext);
             itemsMap.TryGetValue(o.Id, out var items);
-            sb.Append(Csv(o.OrderNumber)).Append(',');
-            sb.Append(Csv(OrderSourceLabels.Vi(o.Source))).Append(',');
-            sb.Append(Csv(ext)).Append(',');
-            sb.Append(Csv(o.CustomerName)).Append(',');
-            sb.Append(Csv(o.CustomerPhone)).Append(',');
-            sb.Append(Csv(o.CustomerEmail)).Append(',');
-            sb.Append(Csv(o.Status.ToString())).Append(',');
-            sb.Append(Csv(o.PaymentMethod.ToString())).Append(',');
-            sb.Append(o.Total.ToString(CultureInfo.InvariantCulture)).Append(',');
-            sb.Append(Csv(o.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))).Append(',');
-            sb.Append(Csv(items ?? string.Empty));
-            sb.AppendLine();
+            ws.Cell(row, 1).Value = o.OrderNumber;
+            ws.Cell(row, 2).Value = OrderSourceLabels.Vi(o.Source);
+            ws.Cell(row, 3).Value = ext ?? string.Empty;
+            ws.Cell(row, 4).Value = o.CustomerName;
+            ws.Cell(row, 5).Value = o.CustomerPhone ?? string.Empty;
+            ws.Cell(row, 6).Value = o.CustomerEmail;
+            ws.Cell(row, 7).Value = o.Status.ToString();
+            ws.Cell(row, 8).Value = o.PaymentMethod.ToString();
+            ws.Cell(row, 9).Value = o.Total;
+            ws.Cell(row, 9).Style.NumberFormat.Format = "#,##0";
+            ws.Cell(row, 10).Value = o.CreatedAt.ToLocalTime();
+            ws.Cell(row, 10).Style.DateFormat.Format = "yyyy-mm-dd hh:mm";
+            ws.Cell(row, 11).Value = items ?? string.Empty;
+            row++;
         }
 
-        logger.LogInformation("ExportOrders Done Count={Count}", list.Count);
-        return Encoding.UTF8.GetBytes(sb.ToString());
-    }
-
-    private static string Csv(string? value)
-    {
-        var s = value ?? string.Empty;
-        if (s.Contains('"') || s.Contains(',') || s.Contains('\n') || s.Contains('\r'))
-            return $"\"{s.Replace("\"", "\"\"")}\"";
-        return s;
+        ws.Columns().AdjustToContents();
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        logger.LogInformation("ExportOrders Done Count={Count} Format=xlsx", list.Count);
+        return ms.ToArray();
     }
 }

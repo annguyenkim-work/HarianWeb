@@ -184,9 +184,99 @@
     });
   }
 
+  function wireSkuSuggest(form) {
+    const url = form.dataset.suggestUrl;
+    if (!url || form.dataset.skuWired === '1') return;
+    form.dataset.skuWired = '1';
+    let timer = null;
+
+    const hideLists = (except) => {
+      form.querySelectorAll('.sku-suggest__list').forEach(list => {
+        if (list !== except) {
+          list.hidden = true;
+          list.innerHTML = '';
+        }
+      });
+    };
+
+    form.addEventListener('input', (e) => {
+      const input = e.target.closest('.js-sku-input');
+      if (!input) return;
+      const wrap = input.closest('.sku-suggest');
+      const list = wrap?.querySelector('.sku-suggest__list');
+      if (!list) return;
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 1) {
+        hideLists();
+        return;
+      }
+      timer = setTimeout(async () => {
+        try {
+          const res = await fetch(url + '?q=' + encodeURIComponent(q));
+          const items = await res.json();
+          if (!Array.isArray(items) || items.length === 0) {
+            list.innerHTML = '<li class="sku-suggest__empty">Không tìm thấy</li>';
+            list.hidden = false;
+            hideLists(list);
+            return;
+          }
+          list.innerHTML = items.map(it => {
+            const sku = it.sku ?? it.Sku ?? '';
+            const price = it.price ?? it.Price ?? '';
+            const display = it.display ?? it.Display ?? sku;
+            return `<li role="option" tabindex="-1" data-sku="${escapeAttr(sku)}" data-price="${escapeAttr(price)}">${escapeHtml(display)}</li>`;
+          }).join('');
+          list.hidden = false;
+          hideLists(list);
+        } catch {
+          hideLists();
+        }
+      }, 220);
+    });
+
+    form.addEventListener('click', (e) => {
+      const opt = e.target.closest('.sku-suggest__list [data-sku]');
+      if (!opt) return;
+      e.preventDefault();
+      const wrap = opt.closest('.sku-suggest');
+      const row = opt.closest('.manual-order-line');
+      const input = wrap?.querySelector('.js-sku-input');
+      const price = row?.querySelector('.js-sku-price');
+      const list = wrap?.querySelector('.sku-suggest__list');
+      if (input) input.value = opt.dataset.sku || '';
+      if (price && opt.dataset.price !== undefined && opt.dataset.price !== '') {
+        price.value = String(Math.round(Number(opt.dataset.price)));
+      }
+      if (list) {
+        list.hidden = true;
+        list.innerHTML = '';
+      }
+    });
+
+    form.addEventListener('focusin', (e) => {
+      if (!e.target.closest('.sku-suggest')) hideLists();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!form.contains(e.target)) hideLists();
+      else if (!e.target.closest('.sku-suggest')) hideLists();
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/`/g, '');
+  }
+
   function bindCreateForm() {
     const form = createBody.querySelector('form');
     if (!form) return;
+    wireSkuSuggest(form);
 
     createBody.querySelector('#btn-add-line')?.addEventListener('click', () => {
       const tpl = createBody.querySelector('#manual-order-line-tpl');
