@@ -178,7 +178,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.CustomerEmail);
             e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => new { x.Source, x.CreatedAt });
             e.Property(x => x.OrderNumber).HasMaxLength(32);
+            e.Property(x => x.ExternalRef).HasMaxLength(100);
             e.Property(x => x.SubTotal).HasPrecision(18, 2);
             e.Property(x => x.ShippingFee).HasPrecision(18, 2);
             e.Property(x => x.Total).HasPrecision(18, 2);

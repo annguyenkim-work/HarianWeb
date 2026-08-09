@@ -1,0 +1,110 @@
+@model NewHarian.Application.Orders.ManualOrderCreateRequest
+@using NewHarian.Application.Orders
+@using NewHarian.Domain.Enums
+@{
+    Layout = null;
+    var sources = new[] { OrderSource.Store, OrderSource.Shopee, OrderSource.TikTok };
+    if (Model.Lines is null || Model.Lines.Count == 0)
+        Model.Lines = new List<ManualOrderLineRequest> { new() };
+}
+
+<form asp-area="Admin" asp-controller="Orders" asp-action="Create" method="post" class="manual-order-form">
+    @Html.AntiForgeryToken()
+    <h2>Thêm đơn hàng</h2>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="detail-grid">
+        <label class="detail-field">
+            <span class="detail-field__label">Nguồn *</span>
+            <select asp-for="Source" class="form-control" required>
+                @foreach (var s in sources)
+                {
+                    if (Model.Source == s)
+                    {
+                        <option value="@s" selected>@OrderSourceLabels.Vi(s)</option>
+                    }
+                    else
+                    {
+                        <option value="@s">@OrderSourceLabels.Vi(s)</option>
+                    }
+                }
+            </select>
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">Mã ngoài</span>
+            <input asp-for="ExternalRef" class="form-control" maxlength="100" placeholder="Mã Shopee / TikTok…" />
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">Tên khách *</span>
+            <input asp-for="CustomerName" class="form-control" required maxlength="200" />
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">SĐT *</span>
+            <input asp-for="CustomerPhone" class="form-control" required maxlength="30" />
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">Email</span>
+            <input asp-for="CustomerEmail" type="email" class="form-control" maxlength="200" />
+        </label>
+        <label class="detail-field detail-field--wide">
+            <span class="detail-field__label">Địa chỉ</span>
+            <input asp-for="ShippingAddress" class="form-control" maxlength="500" />
+        </label>
+        <label class="detail-field detail-field--wide">
+            <span class="detail-field__label">Ghi chú KH</span>
+            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+        </label>
+        <label class="detail-field detail-field--wide">
+            <span class="detail-field__label">Ghi chú nội bộ</span>
+            <textarea asp-for="InternalNotes" class="form-control" rows="2"></textarea>
+        </label>
+    </div>
+
+    <h3 class="manual-order-form__lines-title">Dòng hàng</h3>
+    <div id="manual-order-lines" class="manual-order-lines">
+        @for (var i = 0; i < Model.Lines.Count; i++)
+        {
+            <div class="manual-order-line">
+                <label>
+                    <span>SKU *</span>
+                    <input name="Lines[@i].Sku" value="@Model.Lines[i].Sku" class="form-control" required />
+                </label>
+                <label>
+                    <span>SL *</span>
+                    <input name="Lines[@i].Quantity" type="number" min="1" value="@(Model.Lines[i].Quantity <= 0 ? 1 : Model.Lines[i].Quantity)" class="form-control" required />
+                </label>
+                <label>
+                    <span>Đơn giá</span>
+                    <input name="Lines[@i].UnitPrice" type="number" min="0" step="1" value="@(Model.Lines[i].UnitPrice?.ToString(System.Globalization.CultureInfo.InvariantCulture))" class="form-control" placeholder="Để trống = giá SP" />
+                </label>
+                <button type="button" class="btn-icon btn-icon--danger" data-remove-line title="Xóa dòng" aria-label="Xóa dòng"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+            </div>
+        }
+    </div>
+    <p class="manual-order-form__hint muted">Đơn được tạo ở trạng thái Confirmed + đã thanh toán (Offline). Để trống đơn giá sẽ lấy giá variant hiện tại.</p>
+    <button type="button" class="btn-secondary" id="btn-add-line">+ Thêm dòng</button>
+
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close>Hủy</button>
+        <button type="submit" class="btn-primary">Tạo đơn</button>
+    </div>
+</form>
+
+<template id="manual-order-line-tpl">
+    <div class="manual-order-line">
+        <label>
+            <span>SKU *</span>
+            <input name="Lines[__i__].Sku" class="form-control" required />
+        </label>
+        <label>
+            <span>SL *</span>
+            <input name="Lines[__i__].Quantity" type="number" min="1" value="1" class="form-control" required />
+        </label>
+        <label>
+            <span>Đơn giá</span>
+            <input name="Lines[__i__].UnitPrice" type="number" min="0" step="1" class="form-control" placeholder="Để trống = giá SP" />
+        </label>
+        <button type="button" class="btn-icon btn-icon--danger" data-remove-line title="Xóa dòng" aria-label="Xóa dòng"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+    </div>
+</template>

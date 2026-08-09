@@ -1,0 +1,28 @@
+@{
+    Layout = null;
+}
+
+<form asp-area="Admin" asp-controller="Orders" asp-action="Import" method="post" enctype="multipart/form-data" class="import-orders-form">
+    @Html.AntiForgeryToken()
+    <h2>Import đơn hàng (Excel)</h2>
+
+    @if (ViewBag.Error is string err)
+    {
+        <p class="text-danger">@err</p>
+    }
+
+    <p class="muted">
+        Tải <a asp-action="ImportTemplate">template mẫu</a>, điền dữ liệu, rồi upload file <strong>.xlsx</strong>.
+        Các dòng cùng <code>OrderGroup</code> sẽ thành một đơn.
+    </p>
+
+    <label class="detail-field detail-field--wide">
+        <span class="detail-field__label">File Excel *</span>
+        <input type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="form-control" required />
+    </label>
+
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close>Hủy</button>
+        <button type="submit" class="btn-primary">Import</button>
+    </div>
+</form>

@@ -454,6 +454,7 @@
   cursor: default;
 }
 .admin-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.admin-toolbar__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .dash-range label {
   display: flex;
   align-items: center;
@@ -887,6 +888,22 @@
 }
 .status-history__meta time { white-space: nowrap; }
 .status-history__actor { color: #555; }
+
+.manual-order-form__lines-title { font-size: 1rem; margin: 1.25rem 0 0.5rem; }
+.manual-order-form__hint { margin: 0.5rem 0; font-size: 0.85rem; }
+.manual-order-lines { display: grid; gap: 0.65rem; margin-bottom: 0.75rem; }
+.manual-order-line {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr 1fr auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+.manual-order-line label { display: grid; gap: 0.25rem; font-size: 0.85rem; margin: 0; }
+@media (max-width: 640px) {
+  .manual-order-line { grid-template-columns: 1fr; }
+}
+.import-orders-errors { margin: 0.5rem 0 1rem; padding-left: 1.25rem; }
+.import-orders-form .detail-field { display: grid; gap: 0.35rem; margin: 1rem 0; }
 
 
 .richtext-stack { display: grid; gap: 1rem; margin: 1rem 0; }

@@ -21,6 +21,8 @@ public class Order
     public decimal Total { get; set; }
     public OrderStatus Status { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
+    public OrderSource Source { get; set; } = OrderSource.Website;
+    public string? ExternalRef { get; set; }
     public string LanguageCode { get; set; } = "vi";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }

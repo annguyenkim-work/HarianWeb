@@ -1,4 +1,6 @@
 @model IReadOnlyList<NewHarian.Application.Orders.AdminOrderListItemDto>
+@using NewHarian.Application.Orders
+@using NewHarian.Domain.Enums
 @{
     ViewData["Title"] = "Đơn hàng";
     Layout = "_AdminLayout";
@@ -6,10 +8,25 @@
     var dir = (string)(ViewBag.Dir ?? "desc");
     DateOnly? from = ViewBag.From as DateOnly?;
     DateOnly? to = ViewBag.To as DateOnly?;
+    var selectedSource = ViewBag.Source as OrderSource?;
 }
 
 <div class="admin-toolbar">
     <h1>Đơn hàng</h1>
+    <div class="admin-toolbar__actions">
+        <a class="btn-secondary"
+           asp-action="Export"
+           asp-route-status="@ViewBag.Status"
+           asp-route-payment="@ViewBag.Payment"
+           asp-route-source="@ViewBag.Source"
+           asp-route-q="@ViewBag.Q"
+           asp-route-sort="@sort"
+           asp-route-dir="@dir"
+           asp-route-from="@(from?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(to?.ToString("yyyy-MM-dd"))">Export</a>
+        <button type="button" class="btn-secondary" id="btn-import-orders" title="Import Excel">Import</button>
+        <button type="button" class="btn-icon btn-primary" id="btn-add-order" title="Thêm đơn" aria-label="Thêm đơn"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+    </div>
 </div>
 
 <form method="get" class="filter-bar filter-bar--row">
@@ -17,9 +34,9 @@
     <input type="hidden" name="dir" value="@dir" />
     <select name="status" aria-label="Trạng thái">
         <option value="">Trạng thái</option>
-        @foreach (NewHarian.Domain.Enums.OrderStatus s in Enum.GetValues(typeof(NewHarian.Domain.Enums.OrderStatus)))
+        @foreach (OrderStatus s in Enum.GetValues(typeof(OrderStatus)))
         {
-            if (ViewBag.Status as NewHarian.Domain.Enums.OrderStatus? == s)
+            if (ViewBag.Status as OrderStatus? == s)
             {
                 <option value="@s" selected>@s</option>
             }
@@ -31,16 +48,30 @@
     </select>
     <select name="payment" aria-label="Thanh toán">
         <option value="">Thanh toán</option>
-        @foreach (NewHarian.Domain.Enums.PaymentMethod p in Enum.GetValues(typeof(NewHarian.Domain.Enums.PaymentMethod)))
+        @foreach (PaymentMethod p in Enum.GetValues(typeof(PaymentMethod)))
         {
-            if (p == NewHarian.Domain.Enums.PaymentMethod.OnlineGateway) { continue; }
-            if (ViewBag.Payment as NewHarian.Domain.Enums.PaymentMethod? == p)
+            if (p == PaymentMethod.OnlineGateway) { continue; }
+            if (ViewBag.Payment as PaymentMethod? == p)
             {
                 <option value="@p" selected>@p</option>
             }
             else
             {
                 <option value="@p">@p</option>
+            }
+        }
+    </select>
+    <select name="source" aria-label="Nguồn">
+        <option value="">Nguồn</option>
+        @foreach (OrderSource src in Enum.GetValues(typeof(OrderSource)))
+        {
+            if (selectedSource == src)
+            {
+                <option value="@src" selected>@OrderSourceLabels.Vi(src)</option>
+            }
+            else
+            {
+                <option value="@src">@OrderSourceLabels.Vi(src)</option>
             }
         }
     </select>
@@ -64,6 +95,7 @@
             <partial name="_SortableTh" model='new SortableThModel { Column = "orderNumber", Label = "Mã đơn", CurrentSort = sort, CurrentDir = dir }' />
             <partial name="_SortableTh" model='new SortableThModel { Column = "customer", Label = "Khách", CurrentSort = sort, CurrentDir = dir }' />
             <partial name="_SortableTh" model='new SortableThModel { Column = "total", Label = "Tổng", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "source", Label = "Nguồn", CurrentSort = sort, CurrentDir = dir }' />
             <partial name="_SortableTh" model='new SortableThModel { Column = "payment", Label = "PT TT", CurrentSort = sort, CurrentDir = dir }' />
             <partial name="_SortableTh" model='new SortableThModel { Column = "status", Label = "Status", CurrentSort = sort, CurrentDir = dir }' />
             <partial name="_SortableTh" model='new SortableThModel { Column = "createdAt", Label = "Ngày", CurrentSort = sort, CurrentDir = dir }' />
@@ -77,6 +109,7 @@
             <td>@o.OrderNumber</td>
             <td>@o.CustomerName<br /><span class="muted">@o.CustomerEmail</span></td>
             <td>@o.Total.ToString("N0")đ</td>
+            <td>@OrderSourceLabels.Vi(o.Source)</td>
             <td>@o.PaymentMethod</td>
             <td class="col-status">@o.Status</td>
             <td>@o.CreatedAt.ToLocalTime().ToString("g")</td>
@@ -93,12 +126,25 @@
     <div class="admin-modal__panel modal__box modal__box--order-detail" id="order-modal-body"></div>
 </div>
 
+<dialog id="order-create-modal" class="modal">
+    <div class="modal__box modal__box--wide" id="order-create-modal-body"></div>
+</dialog>
+
+<dialog id="order-import-modal" class="modal">
+    <div class="modal__box modal__box--wide" id="order-import-modal-body"></div>
+</dialog>
+
 @section Scripts {
 <script>
 (() => {
   const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
   const modal = document.getElementById('order-modal');
   const body = document.getElementById('order-modal-body');
+  const createModal = document.getElementById('order-create-modal');
+  const createBody = document.getElementById('order-create-modal-body');
+  const importModal = document.getElementById('order-import-modal');
+  const importBody = document.getElementById('order-import-modal-body');
+
   const open = async (id) => {
     const res = await fetch('@Url.Action("Detail")?id=' + id);
     body.innerHTML = await res.text();
@@ -129,6 +175,88 @@
     if (json.ok) location.reload();
     else alert(json.error || 'Lỗi');
   });
+
+  function reindexLines(root) {
+    root.querySelectorAll('.manual-order-line').forEach((row, i) => {
+      row.querySelectorAll('[name]').forEach(inp => {
+        inp.name = inp.name.replace(/Lines\[\d+]/, `Lines[${i}]`);
+      });
+    });
+  }
+
+  function bindCreateForm() {
+    const form = createBody.querySelector('form');
+    if (!form) return;
+
+    createBody.querySelector('#btn-add-line')?.addEventListener('click', () => {
+      const tpl = createBody.querySelector('#manual-order-line-tpl');
+      const wrap = createBody.querySelector('#manual-order-lines');
+      if (!tpl || !wrap) return;
+      wrap.insertAdjacentHTML('beforeend', tpl.innerHTML.replaceAll('__i__', '0'));
+      reindexLines(wrap);
+    });
+
+    createBody.querySelector('#manual-order-lines')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-remove-line]');
+      if (!btn) return;
+      const wrap = createBody.querySelector('#manual-order-lines');
+      const rows = wrap.querySelectorAll('.manual-order-line');
+      if (rows.length <= 1) return;
+      btn.closest('.manual-order-line')?.remove();
+      reindexLines(wrap);
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) {
+          location.href = data.redirect || location.pathname;
+          return;
+        }
+      } else {
+        createBody.innerHTML = await res.text();
+        bindCreateForm();
+      }
+    });
+
+    createBody.querySelector('[data-close]')?.addEventListener('click', () => createModal.close());
+  }
+
+  async function openCreate() {
+    createBody.innerHTML = await (await fetch('@Url.Action("Create")')).text();
+    createModal.showModal();
+    bindCreateForm();
+  }
+
+  function bindImportForm() {
+    const form = importBody.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+        importBody.innerHTML = await res.text();
+        bindImportForm();
+      });
+    }
+    importBody.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        importModal.close();
+        if (btn.hasAttribute('data-reload')) location.reload();
+      });
+    });
+  }
+
+  async function openImport() {
+    importBody.innerHTML = await (await fetch('@Url.Action("Import")')).text();
+    importModal.showModal();
+    bindImportForm();
+  }
+
+  document.getElementById('btn-add-order')?.addEventListener('click', () => openCreate());
+  document.getElementById('btn-import-orders')?.addEventListener('click', () => openImport());
 })();
 </script>
 }

@@ -22,6 +22,7 @@ public sealed class StatusHistoryService(
         OrderStatus? toStatus,
         bool actorIsGuest = false,
         string? guestActorName = null,
+        string? messageVi = null,
         CancellationToken ct = default)
     {
         try
@@ -36,7 +37,9 @@ public sealed class StatusHistoryService(
                 ActorType = actorType,
                 ActorUserId = userId,
                 ActorName = actorName,
-                MessageVi = StatusHistoryMessages.ForOrder(eventType, toStatus),
+                MessageVi = string.IsNullOrWhiteSpace(messageVi)
+                    ? StatusHistoryMessages.ForOrder(eventType, toStatus)
+                    : messageVi.Trim(),
                 CreatedAt = DateTime.UtcNow
             });
             await db.SaveChangesAsync(ct);
