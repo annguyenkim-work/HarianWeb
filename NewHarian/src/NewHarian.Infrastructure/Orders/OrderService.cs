@@ -14,7 +14,7 @@ using NewHarian.Infrastructure.Persistence;
 
 namespace NewHarian.Infrastructure.Orders;
 
-public class OrderService(
+public partial class OrderService(
     AppDbContext db,
     ICartService cart,
     IShippingService shipping,
@@ -72,6 +72,7 @@ public class OrderService(
                 Total = total,
                 Status = orderStatus,
                 PaymentMethod = draft.PaymentMethod,
+                Source = OrderSource.Website,
                 LanguageCode = string.IsNullOrWhiteSpace(draft.LanguageCode) ? "vi" : draft.LanguageCode,
                 CreatedAt = DateTime.UtcNow,
                 Payment = new Payment
@@ -109,7 +110,7 @@ public class OrderService(
                 order.Status,
                 actorIsGuest: true,
                 guestActorName: order.CustomerEmail,
-                ct);
+                ct: ct);
 
             await notifications.PublishAsync(
                 AdminNotificationTypes.OrderCreated,
@@ -191,7 +192,7 @@ public class OrderService(
                 OrderStatus.Cancelled,
                 actorIsGuest: true,
                 guestActorName: o.CustomerEmail,
-                ct);
+                ct: ct);
 
             await notifications.PublishAsync(
                 AdminNotificationTypes.OrderCancelledByGuest,
@@ -237,11 +238,13 @@ public class OrderService(
         string? dir = null,
         DateOnly? from = null,
         DateOnly? to = null,
+        OrderSource? source = null,
         CancellationToken ct = default)
     {
         var query = db.Orders.AsNoTracking().AsQueryable();
         if (status.HasValue) query = query.Where(o => o.Status == status);
         if (payment.HasValue) query = query.Where(o => o.PaymentMethod == payment);
+        if (source.HasValue) query = query.Where(o => o.Source == source);
         if (!string.IsNullOrWhiteSpace(q))
         {
             var term = q.Trim().ToLower();
@@ -280,6 +283,8 @@ public class OrderService(
             ("payment", false) => query.OrderByDescending(o => o.PaymentMethod).ThenByDescending(o => o.Id),
             ("status", true) => query.OrderBy(o => o.Status).ThenByDescending(o => o.Id),
             ("status", false) => query.OrderByDescending(o => o.Status).ThenByDescending(o => o.Id),
+            ("source", true) => query.OrderBy(o => o.Source).ThenByDescending(o => o.Id),
+            ("source", false) => query.OrderByDescending(o => o.Source).ThenByDescending(o => o.Id),
             ("createdAt", true) => query.OrderBy(o => o.CreatedAt).ThenByDescending(o => o.Id),
             _ => query.OrderByDescending(o => o.CreatedAt).ThenByDescending(o => o.Id),
         };
@@ -287,18 +292,167 @@ public class OrderService(
         var list = await query.ToListAsync(ct);
         return list.Select(o => new AdminOrderListItemDto(
             o.Id, o.OrderNumber, o.CustomerName, o.CustomerEmail, o.CustomerPhone,
-            o.Total, o.PaymentMethod, o.Status, o.CreatedAt)).ToList();
+            o.Total, o.PaymentMethod, o.Status, o.Source, o.CreatedAt)).ToList();
     }
 
     private static readonly HashSet<string> OrderSortKeys = new(StringComparer.OrdinalIgnoreCase)
     {
-        "orderNumber", "customer", "total", "payment", "status", "createdAt"
+        "orderNumber", "customer", "total", "payment", "status", "createdAt", "source"
     };
 
     public async Task<OrderSummaryDto?> AdminGetAsync(int id, CancellationToken ct = default)
     {
         var o = await LoadOrderQuery().FirstOrDefaultAsync(x => x.Id == id, ct);
         return o is null ? null : ToSummary(o);
+    }
+
+    public async Task<(bool Ok, string? Error, string? OrderNumber)> CreateManualOrderAsync(
+        ManualOrderCreateRequest request,
+        CancellationToken ct = default)
+    {
+        logger.LogInformation("CreateManualOrder Start Source={Source}", request.Source);
+        try
+        {
+            if (request.Source is not (OrderSource.Store or OrderSource.Shopee or OrderSource.TikTok))
+                return RejectManual("Nguồn phải là Cửa hàng, Shopee hoặc TikTok.");
+
+            if (string.IsNullOrWhiteSpace(request.CustomerName))
+                return RejectManual("Vui lòng nhập tên khách.");
+
+            if (string.IsNullOrWhiteSpace(request.CustomerPhone))
+                return RejectManual("Vui lòng nhập số điện thoại.");
+
+            var lines = (request.Lines ?? [])
+                .Where(l => !string.IsNullOrWhiteSpace(l.Sku))
+                .ToList();
+            if (lines.Count == 0)
+                return RejectManual("Cần ít nhất một dòng hàng (SKU).");
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                if (lines[i].Quantity <= 0)
+                    return RejectManual($"Dòng {i + 1}: số lượng phải > 0.");
+                if (lines[i].UnitPrice is < 0)
+                    return RejectManual($"Dòng {i + 1}: đơn giá không hợp lệ.");
+            }
+
+            var skuKeys = lines.Select(l => l.Sku.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var skuLower = skuKeys.Select(s => s.ToLowerInvariant()).ToList();
+            var variants = await db.ProductVariants.AsNoTracking()
+                .Include(v => v.Product).ThenInclude(p => p.Translations)
+                .Where(v => v.IsActive && skuLower.Contains(v.Sku.ToLower()))
+                .ToListAsync(ct);
+
+            var bySku = variants
+                .GroupBy(v => v.Sku, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+            var orderItems = new List<OrderItem>();
+            decimal subTotal = 0;
+            for (var i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                var sku = line.Sku.Trim();
+                if (!bySku.TryGetValue(sku, out var variant))
+                    return RejectManual($"Dòng {i + 1}: không tìm thấy SKU '{sku}'.");
+
+                var unit = line.UnitPrice ?? variant.Price;
+                var lineTotal = unit * line.Quantity;
+                subTotal += lineTotal;
+
+                var productName = variant.Product.Translations
+                    .OrderBy(t => t.LanguageCode == "vi" ? 0 : 1)
+                    .Select(t => t.Name)
+                    .FirstOrDefault() ?? variant.Product.Slug;
+
+                orderItems.Add(new OrderItem
+                {
+                    ProductId = variant.ProductId,
+                    ProductVariantId = variant.Id,
+                    ProductName = productName,
+                    VariantLabel = variant.VariantLabel,
+                    Sku = variant.Sku,
+                    UnitPrice = unit,
+                    Quantity = line.Quantity,
+                    LineTotal = lineTotal
+                });
+            }
+
+            var now = DateTime.UtcNow;
+            var orderNumber = await NextOrderNumberAsync(ct);
+            var order = new Order
+            {
+                OrderNumber = orderNumber,
+                CustomerName = request.CustomerName.Trim(),
+                CustomerEmail = request.CustomerEmail?.Trim() ?? string.Empty,
+                CustomerPhone = request.CustomerPhone.Trim(),
+                ShippingAddress = request.ShippingAddress?.Trim() ?? string.Empty,
+                Notes = request.Notes?.Trim(),
+                InternalNotes = request.InternalNotes?.Trim(),
+                SubTotal = subTotal,
+                ShippingFee = 0,
+                Total = subTotal,
+                Status = OrderStatus.Confirmed,
+                PaymentMethod = PaymentMethod.Offline,
+                Source = request.Source,
+                ExternalRef = string.IsNullOrWhiteSpace(request.ExternalRef) ? null : request.ExternalRef.Trim(),
+                LanguageCode = "vi",
+                CreatedAt = now,
+                ConfirmedAt = now,
+                Payment = new Payment
+                {
+                    Method = PaymentMethod.Offline,
+                    Status = PaymentStatus.Paid,
+                    Amount = subTotal,
+                    CreatedAt = now,
+                    PaidAt = now
+                }
+            };
+            foreach (var item in orderItems)
+                order.Items.Add(item);
+
+            db.Orders.Add(order);
+            await db.SaveChangesAsync(ct);
+
+            await history.AppendOrderAsync(
+                order.Id,
+                StatusHistoryEventTypes.ManualCreated,
+                null,
+                OrderStatus.Confirmed,
+                messageVi: $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)})",
+                ct: ct);
+
+            await audit.WriteAsync(
+                "Order.ManualCreated",
+                "Order",
+                order.Id.ToString(),
+                null,
+                new
+                {
+                    order.OrderNumber,
+                    Source = request.Source.ToString(),
+                    order.ExternalRef,
+                    order.Total,
+                    Lines = orderItems.Count
+                },
+                ct);
+
+            logger.LogInformation(
+                "CreateManualOrder Done OrderNumber={OrderNumber} Source={Source} Total={Total}",
+                order.OrderNumber, request.Source, order.Total);
+            return (true, null, order.OrderNumber);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "CreateManualOrder Error Source={Source}", request.Source);
+            throw;
+        }
+    }
+
+    private (bool Ok, string? Error, string? OrderNumber) RejectManual(string error)
+    {
+        logger.LogWarning("CreateManualOrder Done rejected Error={Error}", error);
+        return (false, error, null);
     }
 
     public async Task<(bool Ok, string? Error)> AdminUpdateStatusAsync(int id, OrderStatus status, string? internalNotes, CancellationToken ct = default)
@@ -465,6 +619,8 @@ public class OrderService(
         o.InternalNotes,
         o.PaymentMethod,
         o.Status,
+        o.Source,
+        o.ExternalRef,
         o.SubTotal,
         o.ShippingFee,
         o.Total,

@@ -1,4 +1,5 @@
 @model NewHarian.Application.Orders.OrderSummaryDto
+@using NewHarian.Application.Orders
 
 <h2>@Model.OrderNumber</h2>
 
@@ -9,11 +10,19 @@
     </div>
     <div class="detail-field">
         <span class="detail-field__label">Email</span>
-        <span class="detail-field__value">@Model.CustomerEmail</span>
+        <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.CustomerEmail) ? "-" : Model.CustomerEmail)</span>
     </div>
     <div class="detail-field">
         <span class="detail-field__label">SĐT</span>
         <span class="detail-field__value">@(Model.CustomerPhone ?? "-")</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Nguồn</span>
+        <span class="detail-field__value">@OrderSourceLabels.Vi(Model.Source)</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Mã ngoài</span>
+        <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.ExternalRef) ? "-" : Model.ExternalRef)</span>
     </div>
     <div class="detail-field">
         <span class="detail-field__label">PT TT</span>
@@ -89,5 +98,6 @@
 <partial name="_StatusHistory" model="histories" />
 
 <div class="modal__actions">
+    <a class="btn-secondary" href="@Url.Action("Print", new { id = Model.Id })" target="_blank" rel="noopener">In phiếu</a>
     <button type="button" class="btn-secondary" data-close>Đóng</button>
 </div>

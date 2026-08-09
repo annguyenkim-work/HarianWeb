@@ -24,7 +24,18 @@ public enum PaymentMethod
 {
     BankTransfer = 0,
     COD = 1,
-    OnlineGateway = 2
+    OnlineGateway = 2,
+    /// <summary>Staff-recorded paid (store / marketplace) — Phase 4 manual &amp; import.</summary>
+    Offline = 3
+}
+
+/// <summary>Where the order originated. Hard-coded for Phase 4.</summary>
+public enum OrderSource
+{
+    Website = 0,
+    Store = 1,
+    Shopee = 2,
+    TikTok = 3
 }
 
 public enum InquiryStatus

@@ -1,0 +1,39 @@
+@model NewHarian.Application.Orders.OrderImportResult
+@{
+    Layout = null;
+}
+
+<div class="import-orders-result">
+    <h2>Kết quả import</h2>
+    <p>Đã tạo <strong>@Model.CreatedCount</strong> đơn.
+        @if (Model.CreatedOrderNumbers.Count > 0)
+        {
+            <span class="muted">(@string.Join(", ", Model.CreatedOrderNumbers))</span>
+        }
+    </p>
+
+    @if (Model.Errors.Count > 0)
+    {
+        <h3>Lỗi (@Model.Errors.Count)</h3>
+        <ul class="import-orders-errors">
+        @foreach (var e in Model.Errors)
+        {
+            <li>
+                @if (e.Row is int row)
+                {
+                    <span>Dòng @row</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(e.OrderGroup))
+                {
+                    <span> · nhóm @e.OrderGroup</span>
+                }
+                : @e.Message
+            </li>
+        }
+        </ul>
+    }
+
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close data-reload>Đóng</button>
+    </div>
+</div>

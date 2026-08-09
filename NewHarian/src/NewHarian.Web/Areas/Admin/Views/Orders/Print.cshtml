@@ -1,0 +1,137 @@
+@model NewHarian.Application.Orders.OrderSummaryDto
+@using NewHarian.Application.Orders
+@{
+    Layout = null;
+    var title = $"Phiếu đơn {Model.OrderNumber}";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@title</title>
+    <style>
+        :root { color-scheme: light; }
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            color: #111;
+            margin: 0;
+            padding: 1.5rem;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+        h1 { font-size: 1.35rem; margin: 0 0 0.25rem; }
+        .meta { color: #444; margin-bottom: 1.25rem; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.35rem 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .label { color: #666; font-size: 0.8rem; }
+        .value { font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border-bottom: 1px solid #ddd; padding: 0.45rem 0.35rem; text-align: left; }
+        th { font-size: 0.8rem; color: #555; }
+        td.num, th.num { text-align: right; }
+        .totals { margin-top: 0.75rem; text-align: right; }
+        .totals strong { font-size: 1.1rem; }
+        .notes { margin-top: 1rem; white-space: pre-wrap; }
+        .toolbar { margin-bottom: 1rem; display: flex; gap: 0.5rem; }
+        .btn {
+            border: 1px solid #333;
+            background: #111;
+            color: #fff;
+            padding: 0.45rem 0.9rem;
+            cursor: pointer;
+            border-radius: 4px;
+            text-decoration: none;
+            font: inherit;
+        }
+        .btn-secondary { background: #fff; color: #111; }
+        @@media print {
+            body { padding: 0; }
+            .toolbar { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" class="btn" onclick="window.print()">In / Lưu PDF</button>
+        <button type="button" class="btn btn-secondary" onclick="window.close()">Đóng</button>
+    </div>
+
+    <h1>Phiếu đơn hàng</h1>
+    <p class="meta">@Model.OrderNumber · @OrderSourceLabels.Vi(Model.Source) · @Model.CreatedAt.ToLocalTime().ToString("g")</p>
+
+    <div class="grid">
+        <div>
+            <div class="label">Khách</div>
+            <div class="value">@Model.CustomerName</div>
+        </div>
+        <div>
+            <div class="label">SĐT</div>
+            <div class="value">@(Model.CustomerPhone ?? "-")</div>
+        </div>
+        <div>
+            <div class="label">Email</div>
+            <div class="value">@(string.IsNullOrWhiteSpace(Model.CustomerEmail) ? "-" : Model.CustomerEmail)</div>
+        </div>
+        <div>
+            <div class="label">Mã ngoài</div>
+            <div class="value">@(string.IsNullOrWhiteSpace(Model.ExternalRef) ? "-" : Model.ExternalRef)</div>
+        </div>
+        <div>
+            <div class="label">PT thanh toán</div>
+            <div class="value">@Model.PaymentMethod</div>
+        </div>
+        <div>
+            <div class="label">Trạng thái</div>
+            <div class="value">@Model.Status</div>
+        </div>
+        <div style="grid-column: 1 / -1">
+            <div class="label">Địa chỉ</div>
+            <div class="value">@Model.ShippingAddress @(Model.ShippingDistrict) @Model.ProvinceName</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Sản phẩm</th>
+                <th>SKU</th>
+                <th class="num">SL</th>
+                <th class="num">Đơn giá</th>
+                <th class="num">Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var i in Model.Items)
+        {
+            var name = string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}";
+            <tr>
+                <td>@name</td>
+                <td>@i.Sku</td>
+                <td class="num">@i.Quantity</td>
+                <td class="num">@i.UnitPrice.ToString("N0")đ</td>
+                <td class="num">@i.LineTotal.ToString("N0")đ</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <div>SP: @Model.SubTotal.ToString("N0")đ + ship @Model.ShippingFee.ToString("N0")đ</div>
+        <div><strong>Tổng: @Model.Total.ToString("N0")đ</strong></div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+    {
+        <div class="notes"><span class="label">Ghi chú KH</span><br />@Model.Notes</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.InternalNotes))
+    {
+        <div class="notes"><span class="label">Ghi chú nội bộ</span><br />@Model.InternalNotes</div>
+    }
+</body>
+</html>

@@ -5,6 +5,7 @@ namespace NewHarian.Application.Admin;
 public static class StatusHistoryEventTypes
 {
     public const string Created = "Created";
+    public const string ManualCreated = "ManualCreated";
     public const string CodConfirmed = "CodConfirmed";
     public const string PaymentConfirmed = "PaymentConfirmed";
     public const string StatusChanged = "StatusChanged";
@@ -17,6 +18,8 @@ public static class StatusHistoryMessages
     {
         if (eventType == StatusHistoryEventTypes.Created)
             return "Đơn hàng được tạo";
+        if (eventType == StatusHistoryEventTypes.ManualCreated)
+            return "Tạo đơn thủ công";
         if (eventType == StatusHistoryEventTypes.CodConfirmed)
             return "Tiếp nhận đơn (xác nhận COD)";
         if (eventType == StatusHistoryEventTypes.PaymentConfirmed)
@@ -69,6 +72,7 @@ public interface IStatusHistoryService
         OrderStatus? toStatus,
         bool actorIsGuest = false,
         string? guestActorName = null,
+        string? messageVi = null,
         CancellationToken ct = default);
 
     Task AppendBookingAsync(
