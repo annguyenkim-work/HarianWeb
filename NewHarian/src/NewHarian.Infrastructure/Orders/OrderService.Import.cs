@@ -183,6 +183,7 @@ public partial class OrderService
                 var request = new ManualOrderCreateRequest
                 {
                     Source = source,
+                    Status = OrderStatus.Delivered,
                     ExternalRef = head.ExternalRef,
                     CustomerName = head.CustomerName,
                     CustomerPhone = head.CustomerPhone,
