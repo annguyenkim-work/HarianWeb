@@ -3,6 +3,13 @@
     ViewData["Title"] = Localizer["Dealers.Confirm"];
 }
 <section class="page-hero"><h1>@Localizer["Dealers.Confirm"]</h1></section>
+<nav class="breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    <a href="/dealers/home">@Localizer["Nav.Dealers"]</a>
+    <span>/</span>
+    <span>@Localizer["Dealers.Confirm"]</span>
+</nav>
 <main class="content-main content-main--full" style="max-width:640px">
     <dl class="confirm-dl">
         <dt>@Localizer["Contact.Name"]</dt><dd>@Model.FullName</dd>

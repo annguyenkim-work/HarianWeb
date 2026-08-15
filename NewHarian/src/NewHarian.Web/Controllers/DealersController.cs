@@ -2,15 +2,25 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using NewHarian.Application.Cms;
 using NewHarian.Application.Dealers;
 using NewHarian.Application.Validation;
 
 namespace NewHarian.Web.Controllers;
 
-public class DealersController(IDealerService dealers) : Controller
+public class DealersController(IDealerService dealers, ICmsPageService cms) : Controller
 {
     private const string SessionKey = "dealers.draft";
     private string Lang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
+    [HttpGet("/dealers")]
+    [HttpGet("/dealers/home")]
+    public async Task<IActionResult> Home(CancellationToken ct)
+    {
+        var page = await cms.GetPublishedBySlugAsync("dealers/home", Lang, ct);
+        if (page is null) return NotFound();
+        return View("~/Views/Shared/CmsContentPage.cshtml", page);
+    }
 
     [HttpGet("/dealers/register")]
     public IActionResult Index()
