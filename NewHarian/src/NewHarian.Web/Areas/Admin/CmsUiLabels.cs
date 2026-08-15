@@ -29,6 +29,7 @@ public static class CmsUiLabels
         "company" => "Công ty",
         "legal" => "Pháp lý",
         "contact" => "Liên hệ",
+        "dealers" => "Đại lý",
         _ => code
     };
 }

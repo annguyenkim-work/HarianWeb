@@ -506,6 +506,59 @@ public static class DbSeeder
 
         await EnsureSettingAsync(db, "maps.embed_url", "", "maps");
 
+        await EnsurePageAsync(db, "dealers/home", "dealers", 2,
+            ("vi", "Đại lý", "Chương trình đại lý", "Đại lý Harian"),
+            ("en", "Dealers", "Dealer program", "Harian dealers"),
+            ("ja", "代理店", "代理店プログラム", "Harian代理店"));
+
+        var dealersHome = await db.Pages.Include(p => p.ContentBlocks).FirstAsync(p => p.Slug == "dealers/home");
+        if (!dealersHome.ContentBlocks.Any())
+        {
+            db.ContentBlocks.Add(new ContentBlock
+            {
+                PageId = dealersHome.Id,
+                BlockType = ContentBlockType.RichText,
+                SortOrder = 10,
+                IsPublished = true,
+                Translations =
+                {
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "vi",
+                        Title = "Đồng hành cùng Harian",
+                        Body = "<p>Harian tìm kiếm đối tác đại lý để phân phối hóa chất và dịch vụ chất lượng Nhật Bản tại Việt Nam. Điền hồ sơ đăng ký, chúng tôi sẽ liên hệ sau khi xét duyệt.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "en",
+                        Title = "Partner with Harian",
+                        Body = "<p>Harian is looking for dealer partners to distribute Japanese-quality chemicals and services in Vietnam. Submit your application and we will contact you after review.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "ja",
+                        Title = "Harianとともに",
+                        Body = "<p>Harianはベトナムで日本品質の化学品・サービスを扱う代理店パートナーを募集しています。お申し込み後、審査のうえご連絡します。</p>"
+                    }
+                }
+            });
+            db.ContentBlocks.Add(new ContentBlock
+            {
+                PageId = dealersHome.Id,
+                BlockType = ContentBlockType.CtaButton,
+                SortOrder = 20,
+                IsPublished = true,
+                LinkUrl = "/dealers/register",
+                Translations =
+                {
+                    new ContentBlockTranslation { LanguageCode = "vi", Title = "Đăng ký đại lý" },
+                    new ContentBlockTranslation { LanguageCode = "en", Title = "Apply as a dealer" },
+                    new ContentBlockTranslation { LanguageCode = "ja", Title = "代理店に登録" }
+                }
+            });
+            await db.SaveChangesAsync();
+        }
+
         await EnsurePageAsync(db, "contact", "contact", 5,
             ("vi", "Liên hệ", "Liên hệ", "Liên hệ Harian"),
             ("en", "Contact", "Contact", "Contact Harian"),
@@ -588,8 +641,20 @@ public static class DbSeeder
         var menu = await db.Menus.Include(m => m.Items).ThenInclude(i => i.Translations)
             .FirstOrDefaultAsync(m => m.Code == "header-main");
         if (menu is null) return;
-        if (menu.Items.Any(i => i.ItemKey == "dealers" || i.Url == "/dealers/register"))
+
+        var existing = menu.Items.FirstOrDefault(i =>
+            i.ItemKey == "dealers"
+            || i.Url is "/dealers/register" or "/dealers/home" or "/dealers");
+        if (existing is not null)
+        {
+            if (existing.Url != "/dealers/home" || existing.ItemKey != "dealers")
+            {
+                existing.Url = "/dealers/home";
+                existing.ItemKey = "dealers";
+                await db.SaveChangesAsync();
+            }
             return;
+        }
 
         var contact = menu.Items.FirstOrDefault(i => i.ParentId == null
             && (i.ItemKey == "contact" || i.Url == "/contact"));
@@ -605,7 +670,7 @@ public static class DbSeeder
             order = menu.Items.Where(i => i.ParentId == null).Select(i => i.SortOrder).DefaultIfEmpty(0).Max() + 1;
         }
 
-        menu.Items.Add(MenuItemWith("dealers", "/dealers/register", order, "Đại lý", "Dealers", "代理店"));
+        menu.Items.Add(MenuItemWith("dealers", "/dealers/home", order, "Đại lý", "Dealers", "代理店"));
         await db.SaveChangesAsync();
     }
 
@@ -640,7 +705,7 @@ public static class DbSeeder
                 company,
                 MenuItemWith("news", "/news", 5, "Tin tức", "News", "ニュース"),
                 MenuItemWith("careers", "/careers", 6, "Tuyển dụng", "Careers", "採用"),
-                MenuItemWith("dealers", "/dealers/register", 7, "Đại lý", "Dealers", "代理店"),
+                MenuItemWith("dealers", "/dealers/home", 7, "Đại lý", "Dealers", "代理店"),
                 MenuItemWith("contact", "/contact", 8, "Liên hệ", "Contact", "お問い合わせ"),
                 MenuItemWith("order-track", "/Orders/Track", 9, "Tra cứu đơn", "Order lookup", "注文照会")
             }
