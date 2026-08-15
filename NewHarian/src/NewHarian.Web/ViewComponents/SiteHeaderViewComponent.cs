@@ -1,19 +1,14 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Cms;
-using NewHarian.Infrastructure.Persistence;
 
 namespace NewHarian.Web.ViewComponents;
 
-public class SiteHeaderViewComponent(AppDbContext db, ICmsPageService cms) : ViewComponent
+public class SiteHeaderViewComponent(ISiteChromeCache chrome, ICmsPageService cms) : ViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync()
     {
-        var keys = new[] { "company.brand", "company.logo", "company.name" };
-        var map = await db.SiteSettings.AsNoTracking()
-            .Where(s => keys.Contains(s.Key))
-            .ToDictionaryAsync(s => s.Key, s => s.Value);
+        var map = await chrome.GetSettingsAsync();
 
         var brand = map.GetValueOrDefault("company.brand");
         if (string.IsNullOrWhiteSpace(brand)) brand = "Harian";

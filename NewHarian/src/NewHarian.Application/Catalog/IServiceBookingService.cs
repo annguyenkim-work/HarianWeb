@@ -48,13 +48,15 @@ public record ServiceBookingDetailDto(
 public interface IServiceBookingService
 {
     Task<(bool Ok, string? Error, string? BookingNumber)> CreateAsync(ServiceBookingRequest request, CancellationToken ct = default);
-    Task<IReadOnlyList<ServiceBookingListItemDto>> ListAsync(
+    Task<(IReadOnlyList<ServiceBookingListItemDto> Items, int Total)> ListAsync(
         ServiceBookingStatus? status,
         string? q = null,
         string? sort = null,
         string? dir = null,
         DateOnly? from = null,
         DateOnly? to = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken ct = default);
     Task<ServiceBookingDetailDto?> GetAsync(int id, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct = default);

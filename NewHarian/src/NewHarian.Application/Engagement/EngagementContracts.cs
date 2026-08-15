@@ -25,11 +25,13 @@ public record InquiryDetailDto(
 public interface IInquiryService
 {
     Task<(bool Ok, string? Error, int? Id)> SubmitAsync(ContactFormModel model, string lang, CancellationToken ct = default);
-    Task<IReadOnlyList<InquiryListItemDto>> ListAsync(
+    Task<(IReadOnlyList<InquiryListItemDto> Items, int Total)> ListAsync(
         InquiryStatus? status,
         string? q = null,
         string? sort = null,
         string? dir = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken ct = default);
     Task<InquiryDetailDto?> GetAsync(int id, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, InquiryStatus status, string? notes, string? userId, CancellationToken ct = default);

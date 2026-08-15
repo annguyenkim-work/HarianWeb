@@ -20,12 +20,23 @@
                     @if (!string.IsNullOrWhiteSpace(s.LinkUrl))
                     {
                         <a href="@s.LinkUrl" class="hero-slider__link">
-                            <img src="@s.ImageUrl" alt="@(s.Caption ?? "")" />
+                            @if (i == 0)
+                            {
+                                <img src="@s.ImageUrl" alt="@(s.Caption ?? "")" fetchpriority="high" />
+                            }
+                            else
+                            {
+                                <img data-src="@s.ImageUrl" alt="@(s.Caption ?? "")" loading="lazy" />
+                            }
                         </a>
+                    }
+                    else if (i == 0)
+                    {
+                        <img src="@s.ImageUrl" alt="@(s.Caption ?? "")" fetchpriority="high" />
                     }
                     else
                     {
-                        <img src="@s.ImageUrl" alt="@(s.Caption ?? "")" />
+                        <img data-src="@s.ImageUrl" alt="@(s.Caption ?? "")" loading="lazy" />
                     }
                     @if (!string.IsNullOrWhiteSpace(s.Caption))
                     {
@@ -100,7 +111,7 @@ else
                        asp-route-categorySlug="@c.Slug">
                         @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
                         {
-                            <img src="@c.ImageUrl" alt="@c.Name" />
+                            <img src="@c.ImageUrl" alt="@c.Name" loading="lazy" />
                         }
                         else
                         {
@@ -131,7 +142,7 @@ else
                        asp-route-productSlug="@p.Slug">
                         @if (!string.IsNullOrWhiteSpace(p.ImageUrl))
                         {
-                            <img src="@p.ImageUrl" alt="@p.Name" />
+                            <img src="@p.ImageUrl" alt="@p.Name" loading="lazy" />
                         }
                         else
                         {
@@ -244,10 +255,16 @@ else
   let i = 0;
   let timer = null;
   let hovering = false;
+  function ensureSrc(slide) {
+    const img = slide.querySelector('img');
+    if (img && img.dataset.src && !img.getAttribute('src'))
+      img.src = img.dataset.src;
+  }
   function show(n) {
     i = (n + slides.length) % slides.length;
     slides.forEach((el, idx) => el.classList.toggle('is-active', idx === i));
     dots.forEach((el, idx) => el.classList.toggle('is-active', idx === i));
+    ensureSrc(slides[i]);
     hideLoupe();
   }
   function next() { show(i + 1); }

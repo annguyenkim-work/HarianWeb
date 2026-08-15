@@ -32,9 +32,8 @@ public class InquiriesController(IInquiryService inquiries) : Controller
         ViewBag.Sort = sort;
         ViewBag.Dir = dir;
 
-        var (items, pager) = AdminPaging.Apply(
-            await inquiries.ListAsync(status, q, sort, dir, ct), page);
-        ViewBag.Pager = pager;
+        var (items, total) = await inquiries.ListAsync(status, q, sort, dir, page, AdminPagerModel.DefaultPageSize, ct);
+        ViewBag.Pager = AdminPaging.Create(total, page);
         return View(items);
     }
 

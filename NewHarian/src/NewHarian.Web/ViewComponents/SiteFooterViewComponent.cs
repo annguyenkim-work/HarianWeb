@@ -1,23 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NewHarian.Infrastructure.Persistence;
+using NewHarian.Application.Cms;
 
 namespace NewHarian.Web.ViewComponents;
 
-public class SiteFooterViewComponent(AppDbContext db) : ViewComponent
+public class SiteFooterViewComponent(ISiteChromeCache chrome) : ViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync()
     {
-        var keys = new[]
-        {
-            "company.name", "company.brand", "company.logo",
-            "company.phone", "company.phone2", "company.email", "company.address",
-            "company.tagline.vi", "company.tagline.en", "company.tagline.ja",
-            "company.facebook", "company.instagram"
-        };
-        var map = await db.SiteSettings.AsNoTracking()
-            .Where(s => keys.Contains(s.Key))
-            .ToDictionaryAsync(s => s.Key, s => s.Value);
+        var map = await chrome.GetSettingsAsync();
 
         var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         if (lang is not ("en" or "ja")) lang = "vi";

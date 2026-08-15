@@ -42,9 +42,8 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
         ViewBag.From = from;
         ViewBag.To = to;
 
-        var (items, pager) = AdminPaging.Apply(
-            await orders.AdminListAsync(status, payment, q, sort, dir, from, to, source, ct), page);
-        ViewBag.Pager = pager;
+        var (items, total) = await orders.AdminListAsync(status, payment, q, sort, dir, from, to, source, page, AdminPagerModel.DefaultPageSize, ct);
+        ViewBag.Pager = AdminPaging.Create(total, page);
         return View(items);
     }
 

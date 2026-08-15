@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Cms;
@@ -9,7 +10,7 @@ using NewHarian.Infrastructure.Persistence;
 
 namespace NewHarian.Infrastructure.Cms;
 
-public sealed class CmsPageService(AppDbContext db) : ICmsPageService
+public sealed class CmsPageService(AppDbContext db, IMemoryCache cache) : ICmsPageService
 {
     public async Task<PublicPageDto?> GetPublishedBySlugAsync(string slug, string lang, CancellationToken ct = default)
     {
@@ -74,8 +75,16 @@ public sealed class CmsPageService(AppDbContext db) : ICmsPageService
             .ToList();
     }
 
-    public Task<IReadOnlyList<PublicMenuItemDto>> GetHeaderNavAsync(string lang, CancellationToken ct = default)
-        => GetMenuItemsAsync("header-main", lang, ct);
+    public async Task<IReadOnlyList<PublicMenuItemDto>> GetHeaderNavAsync(string lang, CancellationToken ct = default)
+    {
+        lang = NormalizeLang(lang);
+        var items = await cache.GetOrCreateAsync(SiteChromeCache.HeaderNavKey(lang), async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+            return await GetMenuItemsAsync("header-main", lang, ct);
+        });
+        return items ?? Array.Empty<PublicMenuItemDto>();
+    }
 
     private static PublicMenuItemDto? MapMenuItem(MenuItem i, string lang, bool activeOnly)
     {

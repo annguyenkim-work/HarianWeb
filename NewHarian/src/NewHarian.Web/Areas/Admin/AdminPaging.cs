@@ -40,4 +40,15 @@ public static class AdminPaging
         };
         return (items, pager);
     }
+
+    public static AdminPagerModel Create(int totalCount, int page, int pageSize = AdminPagerModel.DefaultPageSize)
+    {
+        var (p, size, _) = NewHarian.Application.Admin.AdminListQuery.PageBounds(page, pageSize, totalCount, AdminPagerModel.DefaultPageSize);
+        return new AdminPagerModel
+        {
+            Page = p,
+            PageSize = size,
+            TotalCount = totalCount
+        };
+    }
 }

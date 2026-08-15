@@ -98,11 +98,13 @@ public sealed class InquiryService(
         }
     }
 
-    public async Task<IReadOnlyList<InquiryListItemDto>> ListAsync(
+    public async Task<(IReadOnlyList<InquiryListItemDto> Items, int Total)> ListAsync(
         InquiryStatus? status,
         string? q = null,
         string? sort = null,
         string? dir = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken ct = default)
     {
         var query = db.Inquiries.AsNoTracking().AsQueryable();
@@ -136,9 +138,14 @@ public sealed class InquiryService(
             _ => query.OrderByDescending(i => i.CreatedAt).ThenByDescending(i => i.Id),
         };
 
-        return await query
+        var total = await query.CountAsync(ct);
+        var (_, take, skip) = AdminListQuery.PageBounds(page, pageSize, total);
+        var list = await query
+            .Skip(skip)
+            .Take(take)
             .Select(i => new InquiryListItemDto(i.Id, i.CreatedAt, i.Name, i.Email, i.Phone, i.Status, i.HandledByUserId))
             .ToListAsync(ct);
+        return (list, total);
     }
 
     private static readonly HashSet<string> InquirySortKeys = new(StringComparer.OrdinalIgnoreCase)
