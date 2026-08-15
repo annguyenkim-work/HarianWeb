@@ -24,27 +24,8 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
     }
 
     [HttpGet]
-    public async Task<IActionResult> Edit(int id, CancellationToken ct)
-    {
-        var page = await cms.GetPageAsync(id, ct);
-        if (page is null) return NotFound();
-        if (string.Equals(page.ModuleCode, "careers", StringComparison.OrdinalIgnoreCase))
-            return RedirectToAction("Index", "Posts", new { kind = "Job", area = "Admin" });
-        return View(new CmsPageSaveRequest
-        {
-            Id = page.Id,
-            IsPublished = page.IsPublished,
-            TitleVi = page.TitleVi,
-            MetaTitleVi = page.MetaTitleVi,
-            MetaDescriptionVi = page.MetaDescriptionVi,
-            TitleEn = page.TitleEn,
-            MetaTitleEn = page.MetaTitleEn,
-            MetaDescriptionEn = page.MetaDescriptionEn,
-            TitleJa = page.TitleJa,
-            MetaTitleJa = page.MetaTitleJa,
-            MetaDescriptionJa = page.MetaDescriptionJa
-        });
-    }
+    public IActionResult Edit(int id)
+        => RedirectToAction(nameof(Blocks), new { id, area = "Admin" });
 
     [HttpPost]
     [ValidateAntiForgeryToken]

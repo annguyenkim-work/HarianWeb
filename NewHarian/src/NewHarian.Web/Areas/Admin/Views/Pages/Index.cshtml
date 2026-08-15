@@ -54,8 +54,6 @@
             <td>@(p.IsPublished ? "Có" : "Không")</td>
             <td>@(p.UpdatedAt?.ToLocalTime().ToString("g") ?? "-")</td>
             <td>
-                <a asp-action="Edit" asp-route-id="@p.Id">Thông tin trang</a>
-                ·
                 <a asp-action="Blocks" asp-route-id="@p.Id">Nội dung</a>
             </td>
         </tr>
