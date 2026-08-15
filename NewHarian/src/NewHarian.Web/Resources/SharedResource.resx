@@ -69,6 +69,16 @@
   <data name="Orders.Lookup" xml:space="preserve"><value>Tra cứu</value></data>
   <data name="Orders.NotFound" xml:space="preserve"><value>Không tìm thấy đơn hàng. Vui lòng kiểm tra lại mã đơn và email.</value></data>
   <data name="Orders.Status" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="Orders.Timeline" xml:space="preserve"><value>Tiến trình đơn hàng</value></data>
+  <data name="Orders.Step.Created" xml:space="preserve"><value>Đặt hàng</value></data>
+  <data name="Orders.Step.Awaiting" xml:space="preserve"><value>Chờ xác nhận</value></data>
+  <data name="Orders.Step.PendingPayment" xml:space="preserve"><value>Chờ thanh toán</value></data>
+  <data name="Orders.Step.Confirmed" xml:space="preserve"><value>Đã xác nhận</value></data>
+  <data name="Orders.Step.Processing" xml:space="preserve"><value>Đang xử lý</value></data>
+  <data name="Orders.Step.Shipped" xml:space="preserve"><value>Đang giao</value></data>
+  <data name="Orders.Step.Delivered" xml:space="preserve"><value>Đã giao</value></data>
+  <data name="Orders.Step.Cancelled" xml:space="preserve"><value>Đã hủy</value></data>
+  <data name="Orders.Step.Updated" xml:space="preserve"><value>Cập nhật</value></data>
   <data name="Orders.Cancel" xml:space="preserve"><value>Hủy đơn hàng</value></data>
   <data name="Orders.CancelConfirm" xml:space="preserve"><value>Bạn chắc chắn muốn hủy đơn? Đơn chưa thanh toán sẽ bị hủy.</value></data>
   <data name="Checkout.Title" xml:space="preserve"><value>Thanh toán</value></data>

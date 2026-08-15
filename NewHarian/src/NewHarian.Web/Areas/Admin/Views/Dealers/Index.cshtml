@@ -35,7 +35,7 @@
             }
         }
     </select>
-    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm tên / email / SĐT" class="form-control filter-bar__search" />
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm tên / email / SĐT / CCCD" class="form-control filter-bar__search" />
     <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
 </form>
 
@@ -101,10 +101,12 @@
     const id = btn.dataset.id;
     const notes = body.querySelector('[name="internalNotes"]')?.value ?? '';
     const pct = body.querySelector('[name="discountPercent"]')?.value ?? '';
+    const citizenId = body.querySelector('[name="citizenId"]')?.value ?? '';
     const fd = new FormData();
     fd.append('__RequestVerificationToken', token);
     fd.append('id', id);
     fd.append('internalNotes', notes);
+    fd.append('citizenId', citizenId);
     let url = '';
     if (btn.dataset.action === 'approve') {
       url = '@Url.Action("Approve")';

@@ -69,6 +69,16 @@
   <data name="Orders.Lookup" xml:space="preserve"><value>Look up</value></data>
   <data name="Orders.NotFound" xml:space="preserve"><value>Order not found. Please check order number and email.</value></data>
   <data name="Orders.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Orders.Timeline" xml:space="preserve"><value>Order progress</value></data>
+  <data name="Orders.Step.Created" xml:space="preserve"><value>Placed</value></data>
+  <data name="Orders.Step.Awaiting" xml:space="preserve"><value>Awaiting confirmation</value></data>
+  <data name="Orders.Step.PendingPayment" xml:space="preserve"><value>Awaiting payment</value></data>
+  <data name="Orders.Step.Confirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Orders.Step.Processing" xml:space="preserve"><value>Processing</value></data>
+  <data name="Orders.Step.Shipped" xml:space="preserve"><value>Shipped</value></data>
+  <data name="Orders.Step.Delivered" xml:space="preserve"><value>Delivered</value></data>
+  <data name="Orders.Step.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Orders.Step.Updated" xml:space="preserve"><value>Updated</value></data>
   <data name="Orders.Cancel" xml:space="preserve"><value>Cancel order</value></data>
   <data name="Orders.CancelConfirm" xml:space="preserve"><value>Cancel this unpaid order?</value></data>
   <data name="Checkout.Title" xml:space="preserve"><value>Checkout</value></data>

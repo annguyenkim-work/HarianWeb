@@ -201,6 +201,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Phone).HasMaxLength(20);
             e.Property(x => x.Email).HasMaxLength(200);
             e.Property(x => x.Address).HasMaxLength(500);
+            e.Property(x => x.CitizenId).HasMaxLength(20);
             e.Property(x => x.Message).HasMaxLength(2000);
             e.Property(x => x.DiscountPercent).HasPrecision(5, 2);
             e.Property(x => x.LanguageCode).HasMaxLength(5);

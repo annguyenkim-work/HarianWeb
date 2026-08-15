@@ -65,9 +65,9 @@ public class DealersController(IDealerService dealers) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Approve(int id, decimal discountPercent, string? internalNotes, CancellationToken ct)
+    public async Task<IActionResult> Approve(int id, decimal discountPercent, string? internalNotes, string? citizenId, CancellationToken ct)
     {
-        var (ok, error) = await dealers.ApproveAsync(id, discountPercent, internalNotes, User.Identity?.Name, ct);
+        var (ok, error) = await dealers.ApproveAsync(id, discountPercent, internalNotes, User.Identity?.Name, citizenId, ct);
         return Json(new { ok, error });
     }
 
@@ -81,9 +81,9 @@ public class DealersController(IDealerService dealers) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Save(int id, decimal discountPercent, string? internalNotes, CancellationToken ct)
+    public async Task<IActionResult> Save(int id, decimal discountPercent, string? internalNotes, string? citizenId, CancellationToken ct)
     {
-        var (ok, error) = await dealers.SaveApprovedAsync(id, discountPercent, internalNotes, User.Identity?.Name, ct);
+        var (ok, error) = await dealers.SaveApprovedAsync(id, discountPercent, internalNotes, User.Identity?.Name, citizenId, ct);
         return Json(new { ok, error });
     }
 }

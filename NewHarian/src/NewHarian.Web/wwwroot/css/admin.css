@@ -808,6 +808,9 @@
   min-width: 0;
 }
 .detail-field--wide { grid-column: 1 / -1; }
+.detail-grid .form-control {
+  width: 100%;
+}
 .detail-field__label {
   font-size: 0.8rem;
   font-weight: 600;

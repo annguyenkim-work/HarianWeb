@@ -48,6 +48,7 @@ public sealed class DealerService(
                 FullName = model.FullName.Trim(),
                 Phone = model.Phone.Trim(),
                 Email = model.Email.Trim(),
+                CitizenId = GuestValidation.NormalizeCitizenId(model.CitizenId),
                 Address = model.Address.Trim(),
                 Message = string.IsNullOrWhiteSpace(model.Message) ? null : model.Message.Trim(),
                 Status = DealerStatus.Pending,
@@ -77,6 +78,7 @@ public sealed class DealerService(
                     ["CustomerName"] = EmailTemplateService.Enc(entity.FullName),
                     ["CustomerEmail"] = EmailTemplateService.Enc(entity.Email),
                     ["CustomerPhone"] = EmailTemplateService.Enc(entity.Phone),
+                    ["CitizenId"] = EmailTemplateService.Enc(entity.CitizenId),
                     ["Address"] = EmailTemplateService.Enc(entity.Address),
                     ["Message"] = EmailTemplateService.Enc(entity.Message)
                 }, ct);
@@ -115,7 +117,8 @@ public sealed class DealerService(
             query = query.Where(d =>
                 d.FullName.ToLower().Contains(term) ||
                 d.Email.ToLower().Contains(term) ||
-                d.Phone.ToLower().Contains(term));
+                d.Phone.ToLower().Contains(term) ||
+                (d.CitizenId != null && d.CitizenId.Contains(term)));
         }
 
         var sortKey = AdminListQuery.NormalizeSort(sort, SortKeys, "createdAt");
@@ -148,7 +151,7 @@ public sealed class DealerService(
         return d is null ? null : ToDetail(d);
     }
 
-    public async Task<(bool Ok, string? Error)> ApproveAsync(int id, decimal discountPercent, string? notes, string? userId, CancellationToken ct = default)
+    public async Task<(bool Ok, string? Error)> ApproveAsync(int id, decimal discountPercent, string? notes, string? userId, string? citizenId = null, CancellationToken ct = default)
     {
         logger.LogInformation("ApproveDealer Start Id={Id}", id);
         try
@@ -167,6 +170,11 @@ public sealed class DealerService(
             }
 
             var from = d.Status;
+            if (!TrySetCitizenId(d, citizenId, out var cccdError))
+            {
+                logger.LogWarning("ApproveDealer Done rejected Id={Id} Error={Error}", id, cccdError);
+                return (false, cccdError);
+            }
             d.Status = DealerStatus.Approved;
             d.DiscountPercent = discountPercent;
             if (notes is not null) d.InternalNotes = notes;
@@ -224,7 +232,7 @@ public sealed class DealerService(
         }
     }
 
-    public async Task<(bool Ok, string? Error)> SaveApprovedAsync(int id, decimal discountPercent, string? notes, string? userId, CancellationToken ct = default)
+    public async Task<(bool Ok, string? Error)> SaveApprovedAsync(int id, decimal discountPercent, string? notes, string? userId, string? citizenId = null, CancellationToken ct = default)
     {
         logger.LogInformation("SaveDealer Start Id={Id}", id);
         try
@@ -247,6 +255,11 @@ public sealed class DealerService(
                 return (false, "Chỉ sửa đại lý đã duyệt.");
             }
 
+            if (!TrySetCitizenId(d, citizenId, out var cccdError))
+            {
+                logger.LogWarning("SaveDealer Done rejected Id={Id} Error={Error}", id, cccdError);
+                return (false, cccdError);
+            }
             d.DiscountPercent = discountPercent;
             if (notes is not null) d.InternalNotes = notes;
             d.ReviewedByUserId = userId ?? d.ReviewedByUserId;
@@ -275,6 +288,7 @@ public sealed class DealerService(
                 FullName = request.FullName,
                 Phone = request.Phone,
                 Email = request.Email,
+                CitizenId = request.CitizenId,
                 Address = request.Address,
                 Message = request.Message
             });
@@ -295,6 +309,7 @@ public sealed class DealerService(
                 FullName = request.FullName.Trim(),
                 Phone = request.Phone.Trim(),
                 Email = request.Email.Trim(),
+                CitizenId = GuestValidation.NormalizeCitizenId(request.CitizenId),
                 Address = request.Address.Trim(),
                 Message = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim(),
                 Status = DealerStatus.Approved,
@@ -325,7 +340,7 @@ public sealed class DealerService(
             .Where(d => d.Status == DealerStatus.Approved)
             .OrderBy(d => d.FullName)
             .Select(d => new DealerOptionDto(
-                d.Id, d.FullName, d.Phone, d.Email, d.Address, d.DiscountPercent ?? 0))
+                d.Id, d.FullName, d.Phone, d.Email, d.Address, d.CitizenId, d.DiscountPercent ?? 0))
             .ToListAsync(ct);
     }
 
@@ -339,6 +354,8 @@ public sealed class DealerService(
             return "Số điện thoại không hợp lệ.";
         if (!GuestValidation.IsEmail(model.Email))
             return "Email không hợp lệ.";
+        if (!GuestValidation.IsCitizenId(model.CitizenId))
+            return "CCCD phải gồm 9 hoặc 12 chữ số.";
         if (!GuestValidation.HasLength(model.Address, 5, GuestValidation.AddressMax))
             return "Vui lòng điền địa chỉ (5-500 ký tự).";
         if (!GuestValidation.FitsMax(model.Message, GuestValidation.NotesMax))
@@ -346,8 +363,21 @@ public sealed class DealerService(
         return null;
     }
 
+    private static bool TrySetCitizenId(Dealer d, string? citizenId, out string? error)
+    {
+        var candidate = string.IsNullOrWhiteSpace(citizenId) ? d.CitizenId : citizenId;
+        if (!GuestValidation.IsCitizenId(candidate))
+        {
+            error = "CCCD phải gồm 9 hoặc 12 chữ số.";
+            return false;
+        }
+        d.CitizenId = GuestValidation.NormalizeCitizenId(candidate);
+        error = null;
+        return true;
+    }
+
     private static DealerDetailDto ToDetail(Dealer d) => new(
-        d.Id, d.CreatedAt, d.FullName, d.Phone, d.Email, d.Address, d.Message,
+        d.Id, d.CreatedAt, d.FullName, d.Phone, d.Email, d.CitizenId, d.Address, d.Message,
         d.Status, d.DiscountPercent, d.InternalNotes, d.ReviewedByUserId, d.LanguageCode, d.ReviewedAt);
 
     private async Task<string?> GetSettingAsync(string key, CancellationToken ct)

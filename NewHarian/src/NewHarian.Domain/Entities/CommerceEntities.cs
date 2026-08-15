@@ -103,6 +103,7 @@ public class Dealer
     public string Phone { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
+    public string? CitizenId { get; set; }
     public string? Message { get; set; }
     public DealerStatus Status { get; set; } = DealerStatus.Pending;
     public decimal? DiscountPercent { get; set; }
