@@ -865,7 +865,8 @@ public static class DbSeeder
         }
 
         foreach (var row in existing.Where(t =>
-                     t.Code is EmailTemplateCodes.OrderCustomer or EmailTemplateCodes.OrderStaff))
+                     t.Code is EmailTemplateCodes.OrderCustomer or EmailTemplateCodes.OrderStaff
+                         or EmailTemplateCodes.DealerStaff))
         {
             var changed = false;
             if (!row.PlaceholdersHelp.Contains("CitizenId", StringComparison.Ordinal))

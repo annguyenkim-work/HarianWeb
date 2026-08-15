@@ -35,10 +35,11 @@ public class DealersController(IDealerService dealers) : Controller
         if (!GuestValidation.HasLength(model.FullName, 2, GuestValidation.NameMax)
             || string.IsNullOrWhiteSpace(model.Phone) || !GuestValidation.IsPhone(model.Phone)
             || !GuestValidation.IsEmail(model.Email)
+            || !GuestValidation.IsCitizenId(model.CitizenId)
             || !GuestValidation.HasLength(model.Address, 5, GuestValidation.AddressMax)
             || !GuestValidation.FitsMax(model.Message, GuestValidation.NotesMax))
         {
-            ModelState.AddModelError(string.Empty, "Vui lòng kiểm tra họ tên, SĐT, email và địa chỉ.");
+            ModelState.AddModelError(string.Empty, "Vui lòng kiểm tra họ tên, SĐT, email, CCCD và địa chỉ.");
             return View(model);
         }
 

@@ -26,6 +26,20 @@
 {
     <section class="confirm-block" style="margin-top:2rem">
         <h2>@order.OrderNumber</h2>
+        @{
+            var histories = ViewBag.Histories as IReadOnlyList<NewHarian.Application.Admin.StatusHistoryItemDto>
+                            ?? Array.Empty<NewHarian.Application.Admin.StatusHistoryItemDto>();
+            if (histories.Count == 0)
+            {
+                histories =
+                [
+                    new NewHarian.Application.Admin.StatusHistoryItemDto(
+                        0, order.CreatedAt, NewHarian.Application.Admin.StatusHistoryEventTypes.Created,
+                        "Guest", null, "", null, null)
+                ];
+            }
+        }
+        <partial name="_OrderTimeline" model="histories" />
         <p>@Localizer["Orders.Status"]: <strong>@order.Status</strong></p>
         <p>@Localizer["Checkout.Payment"]: @order.PaymentMethod</p>
         @if (!string.IsNullOrWhiteSpace(order.CitizenId))

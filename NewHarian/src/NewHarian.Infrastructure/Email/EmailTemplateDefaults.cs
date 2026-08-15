@@ -107,11 +107,12 @@ public static class EmailTemplateDefaults
             """),
 
         T(EmailTemplateCodes.DealerStaff, "Đại lý - notify staff",
-            "DealerId, CustomerName, CustomerEmail, CustomerPhone, Address, Message",
+            "DealerId, CustomerName, CustomerEmail, CustomerPhone, CitizenId, Address, Message",
             "[Harian] Hồ sơ đại lý mới #{{DealerId}}",
             """
             <p><strong>{{CustomerName}}</strong> ({{CustomerEmail}})</p>
             <p>{{CustomerPhone}}</p>
+            <p>CCCD: {{CitizenId}}</p>
             <p>{{Address}}</p>
             <p>{{Message}}</p>
             """)

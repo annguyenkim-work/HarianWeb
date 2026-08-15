@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using NewHarian.Application.Admin;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
 using NewHarian.Application.Validation;
@@ -6,7 +7,7 @@ using NewHarian.Domain.Enums;
 
 namespace NewHarian.Web.Controllers;
 
-public class OrdersController(IOrderService orders, IBankTransferDisplayService bankTransfer) : Controller
+public class OrdersController(IOrderService orders, IBankTransferDisplayService bankTransfer, IStatusHistoryService history) : Controller
 {
     [HttpGet("/orders/track")]
     public IActionResult Track() => View(new TrackForm());
@@ -34,6 +35,7 @@ public class OrdersController(IOrderService orders, IBankTransferDisplayService 
         }
 
         ViewBag.Order = order;
+        ViewBag.Histories = await history.ListForOrderAsync(order.Id, ct);
         if (order.Status == OrderStatus.PendingPayment && order.PaymentMethod == PaymentMethod.BankTransfer)
         {
             var bank = await bankTransfer.BuildAsync(order.Total, order.OrderNumber, ct);

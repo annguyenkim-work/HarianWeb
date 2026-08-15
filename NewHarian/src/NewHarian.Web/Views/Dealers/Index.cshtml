@@ -22,6 +22,10 @@
     <label>@Localizer["Contact.Name"] * <input asp-for="FullName" class="form-control" required maxlength="200" /></label>
     <label>@Localizer["Contact.Phone"] * <input asp-for="Phone" class="form-control" required maxlength="20" /></label>
     <label>@Localizer["Contact.Email"] * <input asp-for="Email" type="email" class="form-control" required maxlength="200" /></label>
+    <label>@Localizer["Checkout.CitizenId"] *
+        <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" autocomplete="off" />
+        <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
+    </label>
     <label>@Localizer["Contact.Address"] * <input asp-for="Address" class="form-control" required maxlength="500" /></label>
     <label>@Localizer["Contact.Message"] <textarea asp-for="Message" class="form-control" rows="5" maxlength="2000"></textarea></label>
     <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>

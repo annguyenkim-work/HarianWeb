@@ -1,0 +1,53 @@
+@model IReadOnlyList<NewHarian.Application.Admin.StatusHistoryItemDto>
+@using NewHarian.Application.Admin
+@using NewHarian.Domain.Enums
+@{
+    var items = Model ?? Array.Empty<StatusHistoryItemDto>();
+    string Label(StatusHistoryItemDto h)
+    {
+        if (h.EventType == StatusHistoryEventTypes.Created)
+            return Localizer["Orders.Step.Created"].Value;
+        if (h.EventType == StatusHistoryEventTypes.ManualCreated && !h.ToStatus.HasValue)
+            return Localizer["Orders.Step.Created"].Value;
+        if (h.EventType == StatusHistoryEventTypes.CancelledByGuest)
+            return Localizer["Orders.Step.Cancelled"].Value;
+
+        var st = h.ToStatus.HasValue ? (OrderStatus)h.ToStatus.Value : (OrderStatus?)null;
+        return st switch
+        {
+            OrderStatus.AwaitingConfirmation => Localizer["Orders.Step.Awaiting"].Value,
+            OrderStatus.PendingPayment => Localizer["Orders.Step.PendingPayment"].Value,
+            OrderStatus.Confirmed => Localizer["Orders.Step.Confirmed"].Value,
+            OrderStatus.Processing => Localizer["Orders.Step.Processing"].Value,
+            OrderStatus.Shipped => Localizer["Orders.Step.Shipped"].Value,
+            OrderStatus.Delivered => Localizer["Orders.Step.Delivered"].Value,
+            OrderStatus.Cancelled or OrderStatus.Refunded => Localizer["Orders.Step.Cancelled"].Value,
+            _ => string.IsNullOrWhiteSpace(h.MessageVi) ? Localizer["Orders.Step.Updated"].Value : h.MessageVi
+        };
+    }
+    bool IsCancel(StatusHistoryItemDto h)
+        => h.EventType == StatusHistoryEventTypes.CancelledByGuest
+           || h.ToStatus == (int)OrderStatus.Cancelled
+           || h.ToStatus == (int)OrderStatus.Refunded;
+}
+
+@if (items.Count == 0)
+{
+    return;
+}
+
+<ol class="order-timeline" aria-label="@Localizer["Orders.Timeline"]">
+@for (var i = 0; i < items.Count; i++)
+{
+    var h = items[i];
+    var isLast = i == items.Count - 1;
+    var cls = "order-timeline__step"
+        + (isLast ? " is-current" : " is-done")
+        + (IsCancel(h) ? " is-cancelled" : "");
+    <li class="@cls">
+        <span class="order-timeline__dot" aria-hidden="true"></span>
+        <span class="order-timeline__label">@Label(h)</span>
+        <time class="order-timeline__time" datetime="@h.CreatedAt.ToString("o")">@h.CreatedAt.ToLocalTime().ToString("g")</time>
+    </li>
+}
+</ol>

@@ -69,6 +69,16 @@
   <data name="Orders.Lookup" xml:space="preserve"><value>照会</value></data>
   <data name="Orders.NotFound" xml:space="preserve"><value>注文が見つかりません。番号とメールをご確認ください。</value></data>
   <data name="Orders.Status" xml:space="preserve"><value>ステータス</value></data>
+  <data name="Orders.Timeline" xml:space="preserve"><value>注文の進行状況</value></data>
+  <data name="Orders.Step.Created" xml:space="preserve"><value>注文済み</value></data>
+  <data name="Orders.Step.Awaiting" xml:space="preserve"><value>確認待ち</value></data>
+  <data name="Orders.Step.PendingPayment" xml:space="preserve"><value>入金待ち</value></data>
+  <data name="Orders.Step.Confirmed" xml:space="preserve"><value>確認済み</value></data>
+  <data name="Orders.Step.Processing" xml:space="preserve"><value>準備中</value></data>
+  <data name="Orders.Step.Shipped" xml:space="preserve"><value>配送中</value></data>
+  <data name="Orders.Step.Delivered" xml:space="preserve"><value>配達完了</value></data>
+  <data name="Orders.Step.Cancelled" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="Orders.Step.Updated" xml:space="preserve"><value>更新</value></data>
   <data name="Orders.Cancel" xml:space="preserve"><value>注文をキャンセル</value></data>
   <data name="Orders.CancelConfirm" xml:space="preserve"><value>未払い注文をキャンセルしますか？</value></data>
   <data name="Checkout.Title" xml:space="preserve"><value>チェックアウト</value></data>

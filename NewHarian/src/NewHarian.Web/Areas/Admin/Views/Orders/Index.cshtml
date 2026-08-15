@@ -282,6 +282,7 @@
     const phone = form.querySelector('[name="CustomerPhone"]');
     const email = form.querySelector('[name="CustomerEmail"]');
     const address = form.querySelector('[name="ShippingAddress"]');
+    const citizenId = form.querySelector('[name="CitizenId"]');
 
     function applyKind() {
       const kind = form.querySelector('input[name="customerKind"]:checked')?.value;
@@ -300,6 +301,7 @@
       if (phone) phone.value = opt.dataset.phone || '';
       if (email) email.value = opt.dataset.email || '';
       if (address) address.value = opt.dataset.address || '';
+      if (citizenId) citizenId.value = opt.dataset.citizenid || '';
       if (pct) pct.value = opt.dataset.percent || '';
     });
     applyKind();

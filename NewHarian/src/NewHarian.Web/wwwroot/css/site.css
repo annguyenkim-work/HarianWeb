@@ -873,6 +873,80 @@ body:has(.hero-slider) .site-header .lang-btn.is-active {
 .summary-lines { padding-left: 1.1rem; margin: 0.5rem 0 1rem; }
 .radio-row { display: flex; gap: 0.5rem; align-items: center; margin: 0.35rem 0; }
 .confirm-block { margin: 1rem 0 1.5rem; }
+
+.order-timeline {
+  display: flex;
+  list-style: none;
+  margin: 1.25rem 0 1.75rem;
+  padding: 0.35rem 0 0.25rem;
+  overflow-x: auto;
+  gap: 0;
+}
+.order-timeline__step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 7.25rem;
+  text-align: center;
+  padding: 1.7rem 0.4rem 0;
+}
+.order-timeline__step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0.45rem;
+  left: calc(50% + 0.55rem);
+  width: calc(100% - 1.1rem);
+  height: 2px;
+  background: #d7e0d9;
+}
+.order-timeline__step.is-done:not(:last-child)::after {
+  background: var(--color-primary-green);
+}
+.order-timeline__step.is-cancelled:not(:last-child)::after,
+.order-timeline__step.is-cancelled.is-done:not(:last-child)::after {
+  background: #c45c5c;
+}
+.order-timeline__dot {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-left: -0.45rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #c5d0c8;
+  box-sizing: border-box;
+}
+.order-timeline__step.is-done .order-timeline__dot {
+  background: var(--color-primary-green);
+  border-color: var(--color-primary-green);
+}
+.order-timeline__step.is-current .order-timeline__dot {
+  background: var(--color-brand-gold, #f0d27a);
+  border-color: var(--color-primary-green);
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.18);
+}
+.order-timeline__step.is-cancelled .order-timeline__dot {
+  background: #c45c5c;
+  border-color: #a33f3f;
+  box-shadow: none;
+}
+.order-timeline__label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+.order-timeline__time {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #667;
+}
+.order-timeline__step.is-cancelled .order-timeline__label {
+  color: #a33f3f;
+}
 .bank-box {
   background: #f7faf8;
   border: 1px solid #d7e8dc;
