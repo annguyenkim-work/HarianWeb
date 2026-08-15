@@ -8,6 +8,10 @@
 <section class="page-hero">
     <h1>@Localizer["Checkout.Success"]</h1>
     <p>@Localizer["Checkout.OrderNo"]: <strong id="order-no">@Model.OrderNumber</strong></p>
+    @if (!string.IsNullOrWhiteSpace(Model.CitizenId))
+    {
+        <p>@Localizer["Checkout.CitizenId"]: <strong>@Model.CitizenId</strong></p>
+    }
 </section>
 
 @if (isCod)

@@ -5,7 +5,7 @@ namespace NewHarian.Application.Validation;
 
 /// <summary>
 /// Shared validation primitives for guest-facing forms
-/// (Contact, Careers, Checkout, Booking, Track) — see docs/validation-matrix.md.
+/// (Contact, Careers, Checkout, Booking, Track, Dealers) — see docs/validation-matrix.md.
 /// </summary>
 public static partial class GuestValidation
 {
@@ -37,6 +37,16 @@ public static partial class GuestValidation
     {
         var v = value?.Trim();
         return string.IsNullOrEmpty(v) || PhoneRegex().IsMatch(v);
+    }
+
+    /// <summary>Digits only after strip; CMND 9 or CCCD 12.</summary>
+    public static string NormalizeCitizenId(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "" : new string(value.Where(char.IsDigit).ToArray());
+
+    public static bool IsCitizenId(string? value)
+    {
+        var d = NormalizeCitizenId(value);
+        return d.Length is 9 or 12;
     }
 
     /// <summary>Required string with trimmed length in [min, max].</summary>

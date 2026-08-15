@@ -7,6 +7,7 @@ public class CheckoutDraft
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
+    public string CitizenId { get; set; } = string.Empty;
     public string ShippingAddress { get; set; } = string.Empty;
     public int ShippingProvinceId { get; set; }
     public string? ShippingDistrict { get; set; }
@@ -24,6 +25,7 @@ public record OrderSummaryDto(
     string CustomerName,
     string CustomerEmail,
     string? CustomerPhone,
+    string? CitizenId,
     string ShippingAddress,
     string? ProvinceName,
     string? ShippingDistrict,
@@ -35,7 +37,11 @@ public record OrderSummaryDto(
     string? ExternalRef,
     decimal SubTotal,
     decimal ShippingFee,
+    decimal DiscountAmount,
     decimal Total,
+    int? DealerId,
+    string? DealerName,
+    decimal? DealerDiscountPercent,
     DateTime CreatedAt,
     IReadOnlyList<OrderLineDto> Items);
 
@@ -67,6 +73,9 @@ public class ManualOrderCreateRequest
     public string CustomerName { get; set; } = string.Empty;
     public string? CustomerPhone { get; set; }
     public string? CustomerEmail { get; set; }
+    public string CitizenId { get; set; } = string.Empty;
+    public int? DealerId { get; set; }
+    public decimal? DealerDiscountPercent { get; set; }
     public string? ShippingAddress { get; set; }
     public string? Notes { get; set; }
     public string? InternalNotes { get; set; }

@@ -9,7 +9,7 @@ public partial class OrderService
 {
     private static readonly string[] ImportHeaders =
     [
-        "OrderGroup", "Source", "ExternalRef", "CustomerName", "CustomerPhone",
+        "OrderGroup", "Source", "ExternalRef", "CustomerName", "CitizenId", "CustomerPhone",
         "CustomerEmail", "ShippingAddress", "Notes", "Sku", "Quantity", "UnitPrice"
     ];
 
@@ -23,19 +23,21 @@ public partial class OrderService
         ws.Cell(2, 2).Value = "Store";
         ws.Cell(2, 3).Value = "";
         ws.Cell(2, 4).Value = "Nguyen Van A";
-        ws.Cell(2, 5).Value = "0900000000";
-        ws.Cell(2, 6).Value = "";
-        ws.Cell(2, 7).Value = "Tai cua hang";
-        ws.Cell(2, 8).Value = "";
-        ws.Cell(2, 9).Value = "SKU-MAU";
-        ws.Cell(2, 10).Value = 1;
-        ws.Cell(2, 11).Value = "";
+        ws.Cell(2, 5).Value = "001234567890";
+        ws.Cell(2, 6).Value = "0900000000";
+        ws.Cell(2, 7).Value = "";
+        ws.Cell(2, 8).Value = "Tai cua hang";
+        ws.Cell(2, 9).Value = "";
+        ws.Cell(2, 10).Value = "SKU-MAU";
+        ws.Cell(2, 11).Value = 1;
+        ws.Cell(2, 12).Value = "";
         ws.Cell(3, 1).Value = "G1";
         ws.Cell(3, 2).Value = "Store";
         ws.Cell(3, 4).Value = "Nguyen Van A";
-        ws.Cell(3, 5).Value = "0900000000";
-        ws.Cell(3, 9).Value = "SKU-MAU-2";
-        ws.Cell(3, 10).Value = 2;
+        ws.Cell(3, 5).Value = "001234567890";
+        ws.Cell(3, 6).Value = "0900000000";
+        ws.Cell(3, 10).Value = "SKU-MAU-2";
+        ws.Cell(3, 11).Value = 2;
         ws.Row(1).Style.Font.Bold = true;
         ws.Columns().AdjustToContents();
         using var ms = new MemoryStream();
@@ -62,7 +64,7 @@ public partial class OrderService
                     map[name] = cell.Address.ColumnNumber;
             }
 
-            foreach (var required in new[] { "OrderGroup", "Source", "CustomerName", "Sku", "Quantity" })
+            foreach (var required in new[] { "OrderGroup", "Source", "CustomerName", "CitizenId", "Sku", "Quantity" })
             {
                 if (!map.ContainsKey(required))
                 {
@@ -91,6 +93,7 @@ public partial class OrderService
                     Cell("Source"),
                     NullIfEmpty(Cell("ExternalRef")),
                     Cell("CustomerName"),
+                    Cell("CitizenId"),
                     NullIfEmpty(Cell("CustomerPhone")),
                     NullIfEmpty(Cell("CustomerEmail")),
                     NullIfEmpty(Cell("ShippingAddress")),
@@ -131,6 +134,8 @@ public partial class OrderService
                         groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "Source khác dòng đầu nhóm."));
                     if (!string.Equals(Norm(row.CustomerName), Norm(head.CustomerName), StringComparison.OrdinalIgnoreCase))
                         groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "CustomerName khác dòng đầu nhóm."));
+                    if (!string.Equals(Norm(row.CitizenId), Norm(head.CitizenId), StringComparison.OrdinalIgnoreCase))
+                        groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "CitizenId khác dòng đầu nhóm."));
                     if (!string.Equals(Norm(row.CustomerPhone), Norm(head.CustomerPhone), StringComparison.OrdinalIgnoreCase))
                         groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "CustomerPhone khác dòng đầu nhóm."));
                     if (!string.Equals(Norm(row.CustomerEmail), Norm(head.CustomerEmail), StringComparison.OrdinalIgnoreCase))
@@ -186,6 +191,7 @@ public partial class OrderService
                     Status = OrderStatus.Delivered,
                     ExternalRef = head.ExternalRef,
                     CustomerName = head.CustomerName,
+                    CitizenId = head.CitizenId,
                     CustomerPhone = head.CustomerPhone,
                     CustomerEmail = head.CustomerEmail,
                     ShippingAddress = head.ShippingAddress,
@@ -255,6 +261,7 @@ public partial class OrderService
         string Source,
         string? ExternalRef,
         string CustomerName,
+        string CitizenId,
         string? CustomerPhone,
         string? CustomerEmail,
         string? ShippingAddress,

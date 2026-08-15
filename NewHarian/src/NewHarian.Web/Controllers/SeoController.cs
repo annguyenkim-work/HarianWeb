@@ -53,6 +53,7 @@ public class SeoController(AppDbContext db, IMemoryCache cache) : Controller
             ("/company", null),
             ("/contact", null),
             ("/careers", null),
+            ("/dealers/register", null),
             ("/news", null),
             ("/legal/privacy", null),
             ("/legal/terms", null)

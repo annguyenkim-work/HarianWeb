@@ -7,6 +7,7 @@ using NewHarian.Application.Email;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
 using NewHarian.Application.Shipping;
+using NewHarian.Application.Validation;
 using NewHarian.Domain.Entities;
 using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Email;
@@ -36,8 +37,9 @@ public partial class OrderService(
                 return RejectPlaceOrder("Giỏ hàng trống.");
 
             if (string.IsNullOrWhiteSpace(draft.CustomerName) || string.IsNullOrWhiteSpace(draft.CustomerEmail)
-                || string.IsNullOrWhiteSpace(draft.CustomerPhone) || string.IsNullOrWhiteSpace(draft.ShippingAddress))
-                return RejectPlaceOrder("Vui lòng điền đầy đủ thông tin bắt buộc.");
+                || string.IsNullOrWhiteSpace(draft.CustomerPhone) || string.IsNullOrWhiteSpace(draft.ShippingAddress)
+                || !GuestValidation.IsCitizenId(draft.CitizenId))
+                return RejectPlaceOrder("Vui lòng điền đầy đủ thông tin bắt buộc (gồm CCCD).");
 
             var province = await db.ShippingProvinces.AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == draft.ShippingProvinceId && p.IsActive, ct);
@@ -62,6 +64,7 @@ public partial class OrderService(
                 CustomerName = draft.CustomerName.Trim(),
                 CustomerEmail = draft.CustomerEmail.Trim(),
                 CustomerPhone = draft.CustomerPhone.Trim(),
+                CitizenId = GuestValidation.NormalizeCitizenId(draft.CitizenId),
                 ShippingAddress = draft.ShippingAddress.Trim(),
                 ShippingProvinceId = draft.ShippingProvinceId,
                 ShippingCity = province.NameVi,
@@ -326,6 +329,9 @@ public partial class OrderService(
             if (string.IsNullOrWhiteSpace(request.CustomerPhone))
                 return RejectManual("Vui lòng nhập số điện thoại.");
 
+            if (!GuestValidation.IsCitizenId(request.CitizenId))
+                return RejectManual("CCCD phải gồm 9 hoặc 12 chữ số.");
+
             var lines = (request.Lines ?? [])
                 .Where(l => !string.IsNullOrWhiteSpace(l.Sku))
                 .ToList();
@@ -385,18 +391,45 @@ public partial class OrderService(
             var now = DateTime.UtcNow;
             var status = request.Status;
             var orderNumber = await NextOrderNumberAsync(ct);
+
+            decimal discountPercent = 0;
+            int? dealerId = null;
+            string? dealerName = null;
+            if (request.DealerId is int did && did > 0)
+            {
+                var dealer = await db.Dealers.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == did && x.Status == DealerStatus.Approved, ct);
+                if (dealer is null)
+                    return RejectManual("Đại lý không hợp lệ hoặc chưa được duyệt.");
+                dealerId = dealer.Id;
+                dealerName = dealer.FullName;
+                discountPercent = request.DealerDiscountPercent ?? dealer.DiscountPercent ?? 0;
+                if (discountPercent is < 0 or > 100)
+                    return RejectManual("Chiết khấu phải từ 0 đến 100.");
+            }
+
+            const decimal shippingFee = 0m;
+            var discountAmount = dealerId is null
+                ? 0
+                : Math.Round(subTotal * discountPercent / 100m, 0, MidpointRounding.AwayFromZero);
+            var total = subTotal - discountAmount + shippingFee;
+
             var order = new Order
             {
                 OrderNumber = orderNumber,
                 CustomerName = request.CustomerName.Trim(),
                 CustomerEmail = request.CustomerEmail?.Trim() ?? string.Empty,
                 CustomerPhone = request.CustomerPhone.Trim(),
+                CitizenId = GuestValidation.NormalizeCitizenId(request.CitizenId),
+                DealerId = dealerId,
+                DealerDiscountPercent = dealerId is null ? null : discountPercent,
+                DiscountAmount = discountAmount,
                 ShippingAddress = request.ShippingAddress?.Trim() ?? string.Empty,
                 Notes = request.Notes?.Trim(),
                 InternalNotes = request.InternalNotes?.Trim(),
                 SubTotal = subTotal,
-                ShippingFee = 0,
-                Total = subTotal,
+                ShippingFee = shippingFee,
+                Total = total,
                 Status = status,
                 PaymentMethod = PaymentMethod.Offline,
                 Source = request.Source,
@@ -410,7 +443,7 @@ public partial class OrderService(
                 {
                     Method = PaymentMethod.Offline,
                     Status = PaymentStatus.Paid,
-                    Amount = subTotal,
+                    Amount = total,
                     CreatedAt = now,
                     PaidAt = now
                 }
@@ -427,7 +460,9 @@ public partial class OrderService(
                 StatusHistoryEventTypes.ManualCreated,
                 null,
                 status,
-                messageVi: $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) — {statusLabel}",
+                messageVi: dealerId is null
+                    ? $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) — {statusLabel}"
+                    : $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) — đại lý {dealerName} (−{discountPercent:0.##}%) — {statusLabel}",
                 ct: ct);
 
             await audit.WriteAsync(
@@ -442,6 +477,8 @@ public partial class OrderService(
                     Status = status.ToString(),
                     order.ExternalRef,
                     order.Total,
+                    DealerId = dealerId,
+                    DiscountPercent = discountPercent,
                     Lines = orderItems.Count
                 },
                 ct);
@@ -657,6 +694,7 @@ public partial class OrderService(
         db.Orders.AsNoTracking()
             .Include(o => o.Items)
             .Include(o => o.ShippingProvince)
+            .Include(o => o.Dealer)
             .Include(o => o.Payment);
 
     private static OrderSummaryDto ToSummary(Order o) => new(
@@ -665,6 +703,7 @@ public partial class OrderService(
         o.CustomerName,
         o.CustomerEmail,
         o.CustomerPhone,
+        o.CitizenId,
         o.ShippingAddress,
         o.ShippingCity ?? o.ShippingProvince?.NameVi,
         o.ShippingDistrict,
@@ -676,7 +715,11 @@ public partial class OrderService(
         o.ExternalRef,
         o.SubTotal,
         o.ShippingFee,
+        o.DiscountAmount,
         o.Total,
+        o.DealerId,
+        o.Dealer?.FullName,
+        o.DealerDiscountPercent,
         o.CreatedAt,
         o.Items.Select(i => new OrderLineDto(i.ProductName, i.VariantLabel, i.Sku, i.UnitPrice, i.Quantity, i.LineTotal)).ToList());
 
@@ -733,6 +776,7 @@ public partial class OrderService(
             ["CustomerName"] = EmailTemplateService.Enc(order.CustomerName),
             ["CustomerEmail"] = EmailTemplateService.Enc(order.CustomerEmail),
             ["CustomerPhone"] = EmailTemplateService.Enc(order.CustomerPhone),
+            ["CitizenId"] = EmailTemplateService.Enc(order.CitizenId),
             ["ShippingAddress"] = EmailTemplateService.Enc(order.ShippingAddress),
             ["ProvinceName"] = EmailTemplateService.Enc(provinceName),
             ["PaymentMethod"] = EmailTemplateService.Enc(order.PaymentMethod.ToString()),

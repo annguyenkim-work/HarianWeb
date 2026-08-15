@@ -99,3 +99,10 @@ public enum PostKind
     News = 0,
     Job = 1
 }
+
+public enum DealerStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2
+}

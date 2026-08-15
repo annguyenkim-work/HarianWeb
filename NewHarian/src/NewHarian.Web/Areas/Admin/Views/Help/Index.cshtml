@@ -15,6 +15,7 @@
         <li><a href="#don-hang">Đơn hàng</a></li>
         <li><a href="#dat-lich">Đặt lịch dịch vụ</a></li>
         <li><a href="#lien-he">Liên hệ (Inquiries)</a></li>
+        <li><a href="#dai-ly">Đại lý</a></li>
         <li><a href="#ho-so">Hồ sơ ứng tuyển</a></li>
         @if (isAdmin)
         {
@@ -47,7 +48,7 @@
     <div class="help-callout">
         <strong>Phân quyền</strong>
         <ul>
-            <li><strong>Staff:</strong> Đơn hàng, Đặt lịch, Liên hệ, Hồ sơ ứng tuyển.</li>
+            <li><strong>Staff:</strong> Đơn hàng, Đặt lịch, Liên hệ, Đại lý, Hồ sơ ứng tuyển.</li>
             <li><strong>Admin:</strong> toàn bộ Staff + catalog, CMS, cấu hình hệ thống.</li>
         </ul>
     </div>
@@ -92,6 +93,7 @@
     </figure>
 
     <p><strong>Hủy đơn:</strong> khả dụng khi đơn còn ở AwaitingConfirmation / PendingPayment / Confirmed / Processing.</p>
+    <p class="muted">Đơn mới (web, tạo tay, import) bắt buộc <strong>CCCD</strong> (9 hoặc 12 chữ số) để xuất hóa đơn. Đơn <strong>đại lý</strong> chỉ tạo tay: chọn loại khách Đại lý, prefill hồ sơ, chiết khấu % có thể sửa trên đơn (giảm tổng tiền).</p>
     <p class="muted">Gợi ý: luôn cập nhật <em>Ghi chú nội bộ</em> (đã gọi lúc nào, khách xác nhận gì) trước khi đổi trạng thái.</p>
 </section>
 
@@ -128,6 +130,12 @@
         <img src="~/help/admin/annotated/08-inquiries-detail.png" alt="Modal chi tiết inquiry với Status và Lưu" width="1024" height="639" loading="lazy" />
         <figcaption>① Nội dung tin nhắn · ② Đổi Status · ③ Ghi chú · ④ Lưu</figcaption>
     </figure>
+</section>
+
+<section id="dai-ly" class="help-section admin-help-section">
+    <h2>Đại lý</h2>
+    <p>Menu <strong>Đại lý</strong> → <code>/admin/Dealers</code>. Khách đăng ký trên web ở trạng thái <code>Pending</code>. Staff/Admin mở chi tiết: nhập <strong>% chiết khấu</strong> → <strong>Duyệt</strong>, hoặc <strong>Từ chối</strong>. Đại lý đã duyệt: sửa % / ghi chú nội bộ. Nút <strong>Thêm</strong> tạo thẳng đại lý <code>Approved</code> (không qua form web).</p>
+    <p>Đơn xuất đại lý: <strong>Đơn hàng → Thêm đơn</strong> → loại khách <em>Đại lý</em> → chọn hồ sơ đã duyệt (prefill tên/SĐT/email/địa chỉ) → nhập CCCD → có thể đổi % trên đơn. Website không cho đại lý tự đặt hàng.</p>
 </section>
 
 <section id="ho-so" class="help-section admin-help-section">

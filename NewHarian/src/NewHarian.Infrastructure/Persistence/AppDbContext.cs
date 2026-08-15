@@ -22,6 +22,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ProductTag> ProductTags => Set<ProductTag>();
     public DbSet<ServiceBooking> ServiceBookings => Set<ServiceBooking>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<Dealer> Dealers => Set<Dealer>();
     public DbSet<OrderHistory> OrderHistories => Set<OrderHistory>();
     public DbSet<ServiceBookingHistory> ServiceBookingHistories => Set<ServiceBookingHistory>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
@@ -181,11 +182,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasIndex(x => new { x.Source, x.CreatedAt });
             e.Property(x => x.OrderNumber).HasMaxLength(32);
             e.Property(x => x.ExternalRef).HasMaxLength(100);
+            e.Property(x => x.CitizenId).HasMaxLength(20);
             e.Property(x => x.SubTotal).HasPrecision(18, 2);
             e.Property(x => x.ShippingFee).HasPrecision(18, 2);
+            e.Property(x => x.DiscountAmount).HasPrecision(18, 2);
+            e.Property(x => x.DealerDiscountPercent).HasPrecision(5, 2);
             e.Property(x => x.Total).HasPrecision(18, 2);
             e.Property(x => x.LanguageCode).HasMaxLength(5);
             e.HasOne(x => x.ShippingProvince).WithMany().HasForeignKey(x => x.ShippingProvinceId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Dealer).WithMany(d => d.Orders).HasForeignKey(x => x.DealerId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<Dealer>(e =>
+        {
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.Email);
+            e.Property(x => x.FullName).HasMaxLength(200);
+            e.Property(x => x.Phone).HasMaxLength(20);
+            e.Property(x => x.Email).HasMaxLength(200);
+            e.Property(x => x.Address).HasMaxLength(500);
+            e.Property(x => x.Message).HasMaxLength(2000);
+            e.Property(x => x.DiscountPercent).HasPrecision(5, 2);
+            e.Property(x => x.LanguageCode).HasMaxLength(5);
         });
 
         builder.Entity<OrderItem>(e =>

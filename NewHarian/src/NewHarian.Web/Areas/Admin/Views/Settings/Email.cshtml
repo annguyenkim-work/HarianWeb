@@ -39,7 +39,7 @@
 
 <section class="admin-card" style="margin-bottom:1.5rem">
     <h2>Email nhận thông báo (staff)</h2>
-    <p class="muted">Khi khách đặt hàng / liên hệ / ứng tuyển / đặt lịch, hệ thống gửi mail tới các địa chỉ dưới đây.</p>
+    <p class="muted">Khi khách đặt hàng / liên hệ / ứng tuyển / đặt lịch / đăng ký đại lý, hệ thống gửi mail tới các địa chỉ dưới đây.</p>
     <form asp-action="Email" method="post" class="form-grid">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="All" class="text-danger full"></div>
@@ -54,6 +54,9 @@
         </label>
         <label>Đặt lịch dịch vụ (booking)
             <input asp-for="ServiceBookingEmail" class="form-control" type="email" required />
+        </label>
+        <label>Đại lý (dealer)
+            <input asp-for="DealerEmail" class="form-control" type="email" required />
         </label>
         <div class="full modal__actions" style="justify-content:flex-start">
             <button type="submit" class="btn-primary">Lưu</button>

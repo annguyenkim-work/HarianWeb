@@ -9,12 +9,13 @@ public static class EmailTemplateDefaults
     public static IReadOnlyList<EmailTemplate> All() =>
     [
         T(EmailTemplateCodes.OrderCustomer, "Đơn hàng - xác nhận khách",
-            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, Total, BankBlockHtml",
+            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, CitizenId, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, Total, BankBlockHtml",
             "Xác nhận đơn {{OrderNumber}} - Harian",
             """
             <p>Cảm ơn bạn đã đặt hàng.</p>
             <p>Đơn <strong>{{OrderNumber}}</strong></p>
             <p>{{CustomerName}} / {{CustomerEmail}} / {{CustomerPhone}}</p>
+            <p>CCCD: {{CitizenId}}</p>
             <p>{{ShippingAddress}}, {{ProvinceName}}</p>
             <p>PT thanh toán: {{PaymentMethod}}</p>
             <p>{{OrderLinesHtml}}</p>
@@ -23,11 +24,12 @@ public static class EmailTemplateDefaults
             """),
 
         T(EmailTemplateCodes.OrderStaff, "Đơn hàng - notify staff",
-            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, Total, AdminUrl",
+            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, CitizenId, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, Total, AdminUrl",
             "[Harian] Đơn mới {{OrderNumber}}",
             """
             <p>Đơn <strong>{{OrderNumber}}</strong></p>
             <p>{{CustomerName}} / {{CustomerEmail}} / {{CustomerPhone}}</p>
+            <p>CCCD: {{CitizenId}}</p>
             <p>{{ShippingAddress}}, {{ProvinceName}}</p>
             <p>PT: {{PaymentMethod}}</p>
             <p>{{OrderLinesHtml}}</p>
@@ -94,6 +96,24 @@ public static class EmailTemplateDefaults
             <p>{{PreferredDate}} {{PreferredTime}}</p>
             <p>{{ServiceAddress}}</p>
             <p>{{Notes}}</p>
+            """),
+
+        T(EmailTemplateCodes.DealerCustomer, "Đại lý - cảm ơn đăng ký",
+            "CustomerName",
+            "Cảm ơn bạn đã đăng ký đại lý - Harian",
+            """
+            <p>Xin chào {{CustomerName}},</p>
+            <p>Chúng tôi đã nhận hồ sơ đăng ký đại lý và sẽ liên hệ sau khi xét duyệt.</p>
+            """),
+
+        T(EmailTemplateCodes.DealerStaff, "Đại lý - notify staff",
+            "DealerId, CustomerName, CustomerEmail, CustomerPhone, Address, Message",
+            "[Harian] Hồ sơ đại lý mới #{{DealerId}}",
+            """
+            <p><strong>{{CustomerName}}</strong> ({{CustomerEmail}})</p>
+            <p>{{CustomerPhone}}</p>
+            <p>{{Address}}</p>
+            <p>{{Message}}</p>
             """)
     ];
 

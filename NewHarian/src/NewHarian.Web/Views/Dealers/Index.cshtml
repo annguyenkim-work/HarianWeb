@@ -1,0 +1,30 @@
+@model NewHarian.Application.Dealers.DealerFormModel
+@{
+    ViewData["Title"] = Localizer["Dealers.PageTitle"];
+}
+
+<section class="page-hero">
+    <h1>@Localizer["Dealers.PageTitle"]</h1>
+</section>
+<nav class="breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    <span>@Localizer["Dealers.PageTitle"]</span>
+</nav>
+
+<main class="content-main content-main--full">
+@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<p class="muted">@Localizer["Dealers.Intro"]</p>
+<form method="post" class="form-stack form-table" style="max-width:640px">
+    @Html.AntiForgeryToken()
+    <label class="hp" aria-hidden="true"><input asp-for="Website" tabindex="-1" autocomplete="off" /></label>
+    <label>@Localizer["Contact.Name"] * <input asp-for="FullName" class="form-control" required maxlength="200" /></label>
+    <label>@Localizer["Contact.Phone"] * <input asp-for="Phone" class="form-control" required maxlength="20" /></label>
+    <label>@Localizer["Contact.Email"] * <input asp-for="Email" type="email" class="form-control" required maxlength="200" /></label>
+    <label>@Localizer["Contact.Address"] * <input asp-for="Address" class="form-control" required maxlength="500" /></label>
+    <label>@Localizer["Contact.Message"] <textarea asp-for="Message" class="form-control" rows="5" maxlength="2000"></textarea></label>
+    <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>
+</form>
+</main>
+<style>.hp{position:absolute;left:-9999px;height:0;overflow:hidden}</style>

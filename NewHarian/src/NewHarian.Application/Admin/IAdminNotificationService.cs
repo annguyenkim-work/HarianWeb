@@ -7,6 +7,7 @@ public static class AdminNotificationTypes
     public const string ServiceBookingCreated = "ServiceBooking.Created";
     public const string InquiryCreated = "Inquiry.Created";
     public const string ApplicationCreated = "Application.Created";
+    public const string DealerCreated = "Dealer.Created";
 }
 
 public record AdminNotificationDto(

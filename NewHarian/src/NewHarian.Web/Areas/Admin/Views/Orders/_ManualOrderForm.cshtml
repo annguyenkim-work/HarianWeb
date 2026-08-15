@@ -16,6 +16,7 @@
     if (Model.Status is not (OrderStatus.Confirmed or OrderStatus.Processing
         or OrderStatus.Shipped or OrderStatus.Delivered))
         Model.Status = OrderStatus.Delivered;
+    var isDealer = Model.DealerId is > 0;
 }
 
 <form asp-area="Admin" asp-controller="Orders" asp-action="Create" method="post" class="manual-order-form"
@@ -71,8 +72,36 @@
             <input asp-for="CustomerPhone" class="form-control" required maxlength="30" />
         </label>
         <label class="detail-field">
+            <span class="detail-field__label">CCCD *</span>
+            <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" />
+        </label>
+        <label class="detail-field">
             <span class="detail-field__label">Email</span>
             <input asp-for="CustomerEmail" type="email" class="form-control" maxlength="200" />
+        </label>
+        <fieldset class="detail-field detail-field--wide">
+            <legend class="detail-field__label">Loại khách</legend>
+            <label class="radio-row"><input type="radio" name="customerKind" value="retail" @(isDealer ? null : "checked") /> Khách lẻ</label>
+            <label class="radio-row"><input type="radio" name="customerKind" value="dealer" @(isDealer ? "checked" : null) /> Đại lý</label>
+        </fieldset>
+        <label class="detail-field" id="dealer-select-wrap" hidden>
+            <span class="detail-field__label">Đại lý</span>
+            <select asp-for="DealerId" class="form-control" id="dealer-select">
+                <option value="">— Chọn đại lý —</option>
+                @foreach (var d in (ViewBag.Dealers as IReadOnlyList<NewHarian.Application.Dealers.DealerOptionDto>) ?? [])
+                {
+                    <option value="@d.Id"
+                            data-name="@d.FullName"
+                            data-phone="@d.Phone"
+                            data-email="@d.Email"
+                            data-address="@d.Address"
+                            data-percent="@d.DiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)">@d.FullName — @d.Phone</option>
+                }
+            </select>
+        </label>
+        <label class="detail-field" id="dealer-percent-wrap" hidden>
+            <span class="detail-field__label">Chiết khấu %</span>
+            <input asp-for="DealerDiscountPercent" type="number" min="0" max="100" step="0.01" class="form-control" />
         </label>
         <label class="detail-field detail-field--wide">
             <span class="detail-field__label">Địa chỉ</span>

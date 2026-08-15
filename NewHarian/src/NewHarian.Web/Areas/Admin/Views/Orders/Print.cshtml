@@ -74,6 +74,22 @@
             <div class="value">@(Model.CustomerPhone ?? "-")</div>
         </div>
         <div>
+            <div class="label">CCCD</div>
+            <div class="value">@(string.IsNullOrWhiteSpace(Model.CitizenId) ? "-" : Model.CitizenId)</div>
+        </div>
+        @if (Model.DealerId is not null)
+        {
+            <div>
+                <div class="label">Đại lý</div>
+                <div class="value">@(Model.DealerName ?? $"#{Model.DealerId}")
+                    @if (Model.DealerDiscountPercent is not null)
+                    {
+                        <text> (−@(Model.DealerDiscountPercent.Value.ToString("0.##"))%)</text>
+                    }
+                </div>
+            </div>
+        }
+        <div>
             <div class="label">Email</div>
             <div class="value">@(string.IsNullOrWhiteSpace(Model.CustomerEmail) ? "-" : Model.CustomerEmail)</div>
         </div>
@@ -121,7 +137,12 @@
     </table>
 
     <div class="totals">
-        <div>SP: @Model.SubTotal.ToString("N0")đ + ship @Model.ShippingFee.ToString("N0")đ</div>
+        <div>SP: @Model.SubTotal.ToString("N0")đ
+            @if (Model.DiscountAmount > 0)
+            {
+                <text> − chiết khấu @Model.DiscountAmount.ToString("N0")đ</text>
+            }
+            + ship @Model.ShippingFee.ToString("N0")đ</div>
         <div><strong>Tổng: @Model.Total.ToString("N0")đ</strong></div>
     </div>
 

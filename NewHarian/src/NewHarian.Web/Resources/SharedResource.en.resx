@@ -157,4 +157,12 @@
   <data name="Error.GenericBody" xml:space="preserve"><value>We could not process this request. Please return home or contact us.</value></data>
   <data name="Error.RequestId" xml:space="preserve"><value>Request ID</value></data>
   <data name="Error.BackHome" xml:space="preserve"><value>Back to home</value></data>
+  <data name="Checkout.CitizenId" xml:space="preserve"><value>ID card (CCCD / CMND)</value></data>
+  <data name="Checkout.CitizenIdHint" xml:space="preserve"><value>Required for invoicing (9 or 12 digits).</value></data>
+  <data name="Dealers.PageTitle" xml:space="preserve"><value>Dealer registration</value></data>
+  <data name="Dealers.Intro" xml:space="preserve"><value>Leave your contact details. We will review and get back to you. Dealer orders are created by our staff after approval.</value></data>
+  <data name="Dealers.Confirm" xml:space="preserve"><value>Confirm dealer registration</value></data>
+  <data name="Dealers.Thanks" xml:space="preserve"><value>Application received</value></data>
+  <data name="Dealers.ThanksBody" xml:space="preserve"><value>Thank you for registering. We will contact you after review.</value></data>
+  <data name="Nav.Dealers" xml:space="preserve"><value>Dealers</value></data>
 </root>

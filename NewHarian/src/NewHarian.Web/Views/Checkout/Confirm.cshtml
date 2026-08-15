@@ -22,7 +22,7 @@
 
 <section class="confirm-block">
     <h2>@Localizer["Checkout.Customer"]</h2>
-    <p>@Model.CustomerName<br />@Model.CustomerEmail<br />@Model.CustomerPhone</p>
+    <p>@Model.CustomerName<br />@Model.CustomerEmail<br />@Model.CustomerPhone<br />@Localizer["Checkout.CitizenId"]: @Model.CitizenId</p>
     <h2>@Localizer["Checkout.ShipTo"]</h2>
     <p>@Model.ShippingAddress<br />@Model.ShippingDistrict @provinceName</p>
     @if (!string.IsNullOrEmpty(Model.Notes))

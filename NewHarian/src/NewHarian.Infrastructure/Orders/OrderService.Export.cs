@@ -37,17 +37,17 @@ public partial class OrderService
                     return $"{x.Sku} x{x.Quantity} ({name})";
                 })));
 
-        var refs = await db.Orders.AsNoTracking()
+        var extra = await db.Orders.AsNoTracking()
             .Where(o => ids.Contains(o.Id))
-            .Select(o => new { o.Id, o.ExternalRef })
-            .ToDictionaryAsync(o => o.Id, o => o.ExternalRef, ct);
+            .Select(o => new { o.Id, o.ExternalRef, o.CitizenId, o.DiscountAmount })
+            .ToDictionaryAsync(o => o.Id, ct);
 
         using var wb = new XLWorkbook();
         var ws = wb.AddWorksheet("Orders");
         var headers = new[]
         {
-            "OrderNumber", "Source", "ExternalRef", "CustomerName", "Phone", "Email",
-            "Status", "PaymentMethod", "Total", "CreatedAt", "Items"
+            "OrderNumber", "Source", "ExternalRef", "CustomerName", "CitizenId", "Phone", "Email",
+            "Status", "PaymentMethod", "DiscountAmount", "Total", "CreatedAt", "Items"
         };
         for (var c = 0; c < headers.Length; c++)
             ws.Cell(1, c + 1).Value = headers[c];
@@ -56,21 +56,24 @@ public partial class OrderService
         var row = 2;
         foreach (var o in list)
         {
-            refs.TryGetValue(o.Id, out var ext);
+            extra.TryGetValue(o.Id, out var meta);
             itemsMap.TryGetValue(o.Id, out var items);
             ws.Cell(row, 1).Value = o.OrderNumber;
             ws.Cell(row, 2).Value = OrderSourceLabels.Vi(o.Source);
-            ws.Cell(row, 3).Value = ext ?? string.Empty;
+            ws.Cell(row, 3).Value = meta?.ExternalRef ?? string.Empty;
             ws.Cell(row, 4).Value = o.CustomerName;
-            ws.Cell(row, 5).Value = o.CustomerPhone ?? string.Empty;
-            ws.Cell(row, 6).Value = o.CustomerEmail;
-            ws.Cell(row, 7).Value = o.Status.ToString();
-            ws.Cell(row, 8).Value = o.PaymentMethod.ToString();
-            ws.Cell(row, 9).Value = o.Total;
-            ws.Cell(row, 9).Style.NumberFormat.Format = "#,##0";
-            ws.Cell(row, 10).Value = o.CreatedAt.ToLocalTime();
-            ws.Cell(row, 10).Style.DateFormat.Format = "yyyy-mm-dd hh:mm";
-            ws.Cell(row, 11).Value = items ?? string.Empty;
+            ws.Cell(row, 5).Value = meta?.CitizenId ?? string.Empty;
+            ws.Cell(row, 6).Value = o.CustomerPhone ?? string.Empty;
+            ws.Cell(row, 7).Value = o.CustomerEmail;
+            ws.Cell(row, 8).Value = o.Status.ToString();
+            ws.Cell(row, 9).Value = o.PaymentMethod.ToString();
+            ws.Cell(row, 10).Value = meta?.DiscountAmount ?? 0;
+            ws.Cell(row, 10).Style.NumberFormat.Format = "#,##0";
+            ws.Cell(row, 11).Value = o.Total;
+            ws.Cell(row, 11).Style.NumberFormat.Format = "#,##0";
+            ws.Cell(row, 12).Value = o.CreatedAt.ToLocalTime();
+            ws.Cell(row, 12).Style.DateFormat.Format = "yyyy-mm-dd hh:mm";
+            ws.Cell(row, 13).Value = items ?? string.Empty;
             row++;
         }
 

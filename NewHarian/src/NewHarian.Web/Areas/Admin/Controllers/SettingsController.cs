@@ -180,6 +180,7 @@ public class SettingsController(
             await UpsertAsync("notifications.inquiry_email", model.InquiryEmail.Trim(), "notifications", ct);
             await UpsertAsync("notifications.application_email", model.ApplicationEmail.Trim(), "notifications", ct);
             await UpsertAsync("notifications.service_booking_email", model.ServiceBookingEmail.Trim(), "notifications", ct);
+            await UpsertAsync("notifications.dealer_email", model.DealerEmail.Trim(), "notifications", ct);
 
             logger.LogInformation("SaveEmailSettings Done");
             TempData["Success"] = "Đã lưu email nhận thông báo.";
@@ -241,6 +242,7 @@ public class SettingsController(
             InquiryEmail = map.GetValueOrDefault("notifications.inquiry_email") ?? companyEmail,
             ApplicationEmail = map.GetValueOrDefault("notifications.application_email") ?? companyEmail,
             ServiceBookingEmail = map.GetValueOrDefault("notifications.service_booking_email") ?? companyEmail,
+            DealerEmail = map.GetValueOrDefault("notifications.dealer_email") ?? companyEmail,
             CompanyEmail = companyEmail,
             TestTo = companyEmail
         };
@@ -279,6 +281,11 @@ public class SettingsController(
         if (!GuestValidation.IsEmail(model.ServiceBookingEmail))
         {
             ModelState.AddModelError(nameof(model.ServiceBookingEmail), "Email đặt lịch không hợp lệ.");
+            ok = false;
+        }
+        if (!GuestValidation.IsEmail(model.DealerEmail))
+        {
+            ModelState.AddModelError(nameof(model.DealerEmail), "Email đại lý không hợp lệ.");
             ok = false;
         }
         return ok;
@@ -344,6 +351,7 @@ public class SettingsController(
         public string InquiryEmail { get; set; } = "";
         public string ApplicationEmail { get; set; } = "";
         public string ServiceBookingEmail { get; set; } = "";
+        public string DealerEmail { get; set; } = "";
         public string CompanyEmail { get; set; } = "";
         public string TestTo { get; set; } = "";
 

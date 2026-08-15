@@ -10,6 +10,10 @@ public class Order
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
     public string? CustomerPhone { get; set; }
+    public string? CitizenId { get; set; }
+    public int? DealerId { get; set; }
+    public decimal? DealerDiscountPercent { get; set; }
+    public decimal DiscountAmount { get; set; }
     public string ShippingAddress { get; set; } = string.Empty;
     public int? ShippingProvinceId { get; set; }
     public string? ShippingCity { get; set; }
@@ -31,6 +35,7 @@ public class Order
     public DateTime? DeliveredAt { get; set; }
 
     public ShippingProvince? ShippingProvince { get; set; }
+    public Dealer? Dealer { get; set; }
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     public Payment? Payment { get; set; }
     public ICollection<OrderHistory> Histories { get; set; } = new List<OrderHistory>();
@@ -89,4 +94,23 @@ public class ShippingRate
     public DateTime? UpdatedAt { get; set; }
 
     public ShippingProvince Province { get; set; } = null!;
+}
+
+public class Dealer
+{
+    public int Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string? Message { get; set; }
+    public DealerStatus Status { get; set; } = DealerStatus.Pending;
+    public decimal? DiscountPercent { get; set; }
+    public string? InternalNotes { get; set; }
+    public string? ReviewedByUserId { get; set; }
+    public string LanguageCode { get; set; } = "vi";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? ReviewedAt { get; set; }
+
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
 }
