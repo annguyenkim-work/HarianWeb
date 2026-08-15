@@ -106,6 +106,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IMediaStorage, LocalMediaStorage>();
         services.AddScoped<IShippingService, ShippingService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<ISiteChromeCache, SiteChromeCache>();
         services.AddScoped<ICmsPageService, CmsPageService>();
         services.AddScoped<IAdminCmsService, AdminCmsService>();
         services.AddScoped<IInquiryService, InquiryService>();

@@ -158,19 +158,18 @@ public class ServiceBookingService(
         return PublicReferenceCodes.Format(prefix, PublicReferenceCodes.NextSequence(existing, prefix));
     }
 
-    public async Task<IReadOnlyList<ServiceBookingListItemDto>> ListAsync(
+    public async Task<(IReadOnlyList<ServiceBookingListItemDto> Items, int Total)> ListAsync(
         ServiceBookingStatus? status,
         string? q = null,
         string? sort = null,
         string? dir = null,
         DateOnly? from = null,
         DateOnly? to = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = db.ServiceBookings.AsNoTracking()
-            .Include(b => b.Service).ThenInclude(s => s.Translations)
-            .Include(b => b.ServiceVariant)
-            .AsQueryable();
+        var query = db.ServiceBookings.AsNoTracking().AsQueryable();
         if (status.HasValue) query = query.Where(b => b.Status == status);
         if (!string.IsNullOrWhiteSpace(q))
         {
@@ -214,19 +213,25 @@ public class ServiceBookingService(
             _ => query.OrderByDescending(b => b.CreatedAt).ThenByDescending(b => b.Id),
         };
 
-        var list = await query.ToListAsync(ct);
-        return list.Select(b => new ServiceBookingListItemDto(
-            b.Id,
-            b.BookingNumber,
-            b.CustomerName,
-            b.CustomerEmail,
-            b.CustomerPhone,
-            b.Service.Translations.FirstOrDefault(t => t.LanguageCode == "vi")?.Name ?? b.Service.Slug,
-            b.ServiceVariant.VariantLabel,
-            b.PreferredDate,
-            b.PreferredTime,
-            b.Status,
-            b.CreatedAt)).ToList();
+        var total = await query.CountAsync(ct);
+        var (_, take, skip) = AdminListQuery.PageBounds(page, pageSize, total);
+        var list = await query
+            .Skip(skip)
+            .Take(take)
+            .Select(b => new ServiceBookingListItemDto(
+                b.Id,
+                b.BookingNumber,
+                b.CustomerName,
+                b.CustomerEmail,
+                b.CustomerPhone,
+                b.Service.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.Name).FirstOrDefault() ?? b.Service.Slug,
+                b.ServiceVariant.VariantLabel,
+                b.PreferredDate,
+                b.PreferredTime,
+                b.Status,
+                b.CreatedAt))
+            .ToListAsync(ct);
+        return (list, total);
     }
 
     private static readonly HashSet<string> BookingSortKeys = new(StringComparer.OrdinalIgnoreCase)

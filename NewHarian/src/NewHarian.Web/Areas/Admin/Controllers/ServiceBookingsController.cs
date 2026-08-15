@@ -37,9 +37,8 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
         ViewBag.From = from;
         ViewBag.To = to;
 
-        var (items, pager) = AdminPaging.Apply(
-            await bookings.ListAsync(status, q, sort, dir, from, to, ct), page);
-        ViewBag.Pager = pager;
+        var (items, total) = await bookings.ListAsync(status, q, sort, dir, from, to, page, AdminPagerModel.DefaultPageSize, ct);
+        ViewBag.Pager = AdminPaging.Create(total, page);
         return View(items);
     }
 

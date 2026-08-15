@@ -25,6 +25,8 @@ public record CartDto(IReadOnlyList<CartItemDto> Items)
 public interface ICartService
 {
     CartDto GetCart();
+    /// <summary>Distinct line count from session only — no catalog hydrate.</summary>
+    int GetDistinctCount();
     (bool Ok, string? Error) Add(int productVariantId, int quantity);
     (bool Ok, string? Error) Update(int productVariantId, int quantity);
     void Remove(int productVariantId);

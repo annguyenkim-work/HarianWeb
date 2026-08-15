@@ -19,7 +19,11 @@ public partial class OrderService
         OrderSource? source = null,
         CancellationToken ct = default)
     {
-        var list = await AdminListAsync(status, payment, q, sort, dir, from, to, source, ct);
+        var list = await BuildAdminOrderQuery(status, payment, q, sort, dir, from, to, source)
+            .Select(o => new AdminOrderListItemDto(
+                o.Id, o.OrderNumber, o.CustomerName, o.CustomerEmail, o.CustomerPhone,
+                o.Total, o.PaymentMethod, o.Status, o.Source, o.CreatedAt))
+            .ToListAsync(ct);
         var ids = list.Select(o => o.Id).ToList();
         var itemsByOrder = await db.OrderItems.AsNoTracking()
             .Where(i => ids.Contains(i.OrderId))

@@ -102,7 +102,7 @@ public interface IOrderService
     Task<OrderSummaryDto?> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default);
     Task<OrderSummaryDto?> TrackAsync(string orderNumber, string customerEmail, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> CancelGuestAsync(string orderNumber, string customerEmail, CancellationToken ct = default);
-    Task<IReadOnlyList<AdminOrderListItemDto>> AdminListAsync(
+    Task<(IReadOnlyList<AdminOrderListItemDto> Items, int Total)> AdminListAsync(
         OrderStatus? status,
         PaymentMethod? payment,
         string? q,
@@ -111,6 +111,8 @@ public interface IOrderService
         DateOnly? from = null,
         DateOnly? to = null,
         OrderSource? source = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken ct = default);
     Task<OrderSummaryDto?> AdminGetAsync(int id, CancellationToken ct = default);
     Task<(bool Ok, string? Error, string? OrderNumber)> CreateManualOrderAsync(ManualOrderCreateRequest request, CancellationToken ct = default);

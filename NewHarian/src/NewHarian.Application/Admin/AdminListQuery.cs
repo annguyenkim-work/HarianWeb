@@ -36,4 +36,15 @@ public static class AdminListQuery
 
     public static bool IsAsc(string dir) =>
         string.Equals(dir, Asc, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Clamp page/pageSize and return Skip for SQL paging. pageSize max 100.</summary>
+    public static (int Page, int PageSize, int Skip) PageBounds(int page, int pageSize, int totalCount, int defaultSize = 10)
+    {
+        if (pageSize < 1) pageSize = defaultSize;
+        if (pageSize > 100) pageSize = 100;
+        if (page < 1) page = 1;
+        var pages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+        if (page > pages) page = pages;
+        return (page, pageSize, (page - 1) * pageSize);
+    }
 }

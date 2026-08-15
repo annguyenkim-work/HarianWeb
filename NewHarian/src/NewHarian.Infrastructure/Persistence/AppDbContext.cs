@@ -59,6 +59,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<Category>(e =>
         {
             e.HasIndex(x => x.Slug).IsUnique();
+            e.HasIndex(x => new { x.IsActive, x.ShowOnHome, x.SortOrder });
             e.Property(x => x.Slug).HasMaxLength(100);
         });
 
@@ -73,6 +74,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<Product>(e =>
         {
             e.HasIndex(x => new { x.CategoryId, x.Slug }).IsUnique();
+            e.HasIndex(x => new { x.Status, x.CategoryId, x.SortOrder });
+            e.HasIndex(x => new { x.Status, x.IsFeatured });
             e.Property(x => x.Slug).HasMaxLength(200);
             e.HasOne(x => x.Category).WithMany(x => x.Products).HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.MainImage).WithMany().HasForeignKey(x => x.MainImageMediaFileId).OnDelete(DeleteBehavior.SetNull);
@@ -103,6 +106,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.ToTable("Services");
             e.HasIndex(x => new { x.CategoryId, x.Slug }).IsUnique();
+            e.HasIndex(x => new { x.Status, x.CategoryId, x.SortOrder });
+            e.HasIndex(x => new { x.Status, x.IsFeatured });
             e.Property(x => x.Slug).HasMaxLength(200);
             e.HasOne(x => x.Category).WithMany(x => x.Services).HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.MainImage).WithMany().HasForeignKey(x => x.MainImageMediaFileId).OnDelete(DeleteBehavior.SetNull);
@@ -167,6 +172,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasIndex(x => x.BookingNumber).IsUnique();
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.PreferredDate);
+            e.HasIndex(x => x.CreatedAt);
             e.Property(x => x.BookingNumber).HasMaxLength(32);
             e.Property(x => x.LanguageCode).HasMaxLength(5);
             e.HasOne(x => x.Service).WithMany(x => x.ServiceBookings).HasForeignKey(x => x.ServiceId).OnDelete(DeleteBehavior.Restrict);
@@ -287,6 +293,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<HomeSlide>(e =>
         {
             e.HasOne(x => x.MediaFile).WithMany().HasForeignKey(x => x.MediaFileId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => new { x.IsActive, x.SortOrder });
         });
 
         builder.Entity<HomeSlideTranslation>(e =>
@@ -315,6 +322,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.FileName).HasMaxLength(255);
             e.Property(x => x.StoredPath).HasMaxLength(500);
             e.Property(x => x.ContentType).HasMaxLength(100);
+            e.HasIndex(x => new { x.IsPrivate, x.CreatedAt });
         });
 
         builder.Entity<Inquiry>(e =>
@@ -330,6 +338,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasOne(x => x.Attachment).WithMany().HasForeignKey(x => x.AttachmentMediaFileId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne(x => x.SitePost).WithMany(x => x.Applications).HasForeignKey(x => x.SitePostId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => x.SitePostId);
+            e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => x.Status);
         });
 
         builder.Entity<SitePost>(e =>

@@ -233,7 +233,7 @@ public partial class OrderService(
         }
     }
 
-    public async Task<IReadOnlyList<AdminOrderListItemDto>> AdminListAsync(
+    public async Task<(IReadOnlyList<AdminOrderListItemDto> Items, int Total)> AdminListAsync(
         OrderStatus? status,
         PaymentMethod? payment,
         string? q,
@@ -242,7 +242,32 @@ public partial class OrderService(
         DateOnly? from = null,
         DateOnly? to = null,
         OrderSource? source = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken ct = default)
+    {
+        var query = BuildAdminOrderQuery(status, payment, q, sort, dir, from, to, source);
+        var total = await query.CountAsync(ct);
+        var (_, take, skip) = AdminListQuery.PageBounds(page, pageSize, total);
+        var list = await query
+            .Skip(skip)
+            .Take(take)
+            .Select(o => new AdminOrderListItemDto(
+                o.Id, o.OrderNumber, o.CustomerName, o.CustomerEmail, o.CustomerPhone,
+                o.Total, o.PaymentMethod, o.Status, o.Source, o.CreatedAt))
+            .ToListAsync(ct);
+        return (list, total);
+    }
+
+    internal IQueryable<Order> BuildAdminOrderQuery(
+        OrderStatus? status,
+        PaymentMethod? payment,
+        string? q,
+        string? sort,
+        string? dir,
+        DateOnly? from,
+        DateOnly? to,
+        OrderSource? source)
     {
         var query = db.Orders.AsNoTracking().AsQueryable();
         if (status.HasValue) query = query.Where(o => o.Status == status);
@@ -274,7 +299,7 @@ public partial class OrderService(
         var sortDir = AdminListQuery.NormalizeDir(dir, AdminListQuery.DefaultDirForColumn(sortKey));
         var asc = AdminListQuery.IsAsc(sortDir);
 
-        query = (sortKey, asc) switch
+        return (sortKey, asc) switch
         {
             ("orderNumber", true) => query.OrderBy(o => o.OrderNumber).ThenByDescending(o => o.Id),
             ("orderNumber", false) => query.OrderByDescending(o => o.OrderNumber).ThenByDescending(o => o.Id),
@@ -291,11 +316,6 @@ public partial class OrderService(
             ("createdAt", true) => query.OrderBy(o => o.CreatedAt).ThenByDescending(o => o.Id),
             _ => query.OrderByDescending(o => o.CreatedAt).ThenByDescending(o => o.Id),
         };
-
-        var list = await query.ToListAsync(ct);
-        return list.Select(o => new AdminOrderListItemDto(
-            o.Id, o.OrderNumber, o.CustomerName, o.CustomerEmail, o.CustomerPhone,
-            o.Total, o.PaymentMethod, o.Status, o.Source, o.CreatedAt)).ToList();
     }
 
     private static readonly HashSet<string> OrderSortKeys = new(StringComparer.OrdinalIgnoreCase)

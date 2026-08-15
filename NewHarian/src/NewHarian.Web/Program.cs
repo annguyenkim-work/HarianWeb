@@ -1,9 +1,11 @@
 using System.Globalization;
+using System.IO.Compression;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NewHarian.Infrastructure.DependencyInjection;
 using NewHarian.Infrastructure.Persistence;
@@ -35,6 +37,14 @@ builder.Services.AddSession(options =>
 });
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 builder.Services.AddMemoryCache();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.AddScoped<NewHarian.Web.Areas.Admin.Services.IProductPreviewStore, NewHarian.Web.Areas.Admin.Services.ProductPreviewStore>();
 builder.Services.AddControllersWithViews()
     .AddViewLocalization()
@@ -121,7 +131,19 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/Home/StatusCodePage", "?code={0}");
 app.UseSecurityHeaders();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseResponseCompression();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.Context.Request.Path.Value ?? "";
+        if (path.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)
+            || ctx.Context.Request.Query.ContainsKey("v"))
+            ctx.Context.Response.Headers.CacheControl = "public,max-age=31536000,immutable";
+        else
+            ctx.Context.Response.Headers.CacheControl = "public,max-age=86400";
+    }
+});
 app.UseRequestLocalization();
 app.UseRouting();
 app.UseRateLimiter();

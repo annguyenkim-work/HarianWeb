@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Cms;
 using NewHarian.Application.Payments;
 using NewHarian.Application.Validation;
 using NewHarian.Domain.Entities;
@@ -19,6 +20,7 @@ public class SettingsController(
     ConfigurableEmailSender email,
     IConfiguration config,
     IVietQrService vietQr,
+    ISiteChromeCache chrome,
     ILogger<SettingsController> logger) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -309,6 +311,7 @@ public class SettingsController(
             row.Group = group;
         }
         await db.SaveChangesAsync(ct);
+        chrome.InvalidateSettings();
     }
 
     private async Task RemoveSettingAsync(string key, CancellationToken ct)
@@ -317,6 +320,7 @@ public class SettingsController(
         if (row is null) return;
         db.SiteSettings.Remove(row);
         await db.SaveChangesAsync(ct);
+        chrome.InvalidateSettings();
     }
 
     public class BankSettingsVm

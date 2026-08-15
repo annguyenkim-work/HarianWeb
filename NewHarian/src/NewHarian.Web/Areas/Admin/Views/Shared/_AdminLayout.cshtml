@@ -1,11 +1,7 @@
-@using Microsoft.EntityFrameworkCore
-@using NewHarian.Infrastructure.Persistence
-@inject AppDbContext Db
+@using NewHarian.Application.Cms
+@inject ISiteChromeCache Chrome
 @{
-    var brandKeys = new[] { "company.brand", "company.logo", "company.name" };
-    var brandMap = await Db.SiteSettings.AsNoTracking()
-        .Where(s => brandKeys.Contains(s.Key))
-        .ToDictionaryAsync(s => s.Key, s => s.Value);
+    var brandMap = await Chrome.GetSettingsAsync();
     var brandName = brandMap.GetValueOrDefault("company.brand");
     if (string.IsNullOrWhiteSpace(brandName)) brandName = "Harian";
     var companyName = brandMap.GetValueOrDefault("company.name");

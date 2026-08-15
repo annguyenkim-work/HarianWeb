@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Cms;
 using NewHarian.Domain.Entities;
 using NewHarian.Infrastructure.Identity;
 using NewHarian.Infrastructure.Persistence;
@@ -71,11 +72,12 @@ public class MediaController(AppDbContext db, IMediaStorage media) : Controller
 {
     public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
     {
-        var files = await db.MediaFiles.AsNoTracking()
+        var query = db.MediaFiles.AsNoTracking()
             .Where(m => !m.IsPrivate)
-            .OrderByDescending(m => m.CreatedAt)
-            .ToListAsync(ct);
-        var (items, pager) = AdminPaging.Apply(files, page);
+            .OrderByDescending(m => m.CreatedAt);
+        var total = await query.CountAsync(ct);
+        var pager = AdminPaging.Create(total, page);
+        var items = await query.Skip(pager.Offset).Take(pager.PageSize).ToListAsync(ct);
         ViewBag.Pager = pager;
         return View(items);
     }
@@ -179,7 +181,7 @@ public class UsersController(
 
 [Area("Admin")]
 [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
-public class MenusController(AppDbContext db, ILogger<MenusController> logger) : Controller
+public class MenusController(AppDbContext db, ISiteChromeCache chrome, ILogger<MenusController> logger) : Controller
 {
     public const string HeaderMenuCode = "header-main";
 
@@ -211,6 +213,7 @@ public class MenusController(AppDbContext db, ILogger<MenusController> logger) :
 
             item.IsActive = isActive;
             await db.SaveChangesAsync(ct);
+            chrome.InvalidateMenus();
             logger.LogInformation("SetMenuItemActive Done Id={Id} Active={Active}", itemId, isActive);
             TempData["Success"] = isActive ? "Đã hiện mục menu." : "Đã ẩn mục menu.";
             return AdminListRedirect.ToRefererOrIndex(this);
@@ -249,6 +252,7 @@ public class MenusController(AppDbContext db, ILogger<MenusController> logger) :
             {
                 (siblings[idx].SortOrder, siblings[swapIdx].SortOrder) = (siblings[swapIdx].SortOrder, siblings[idx].SortOrder);
                 await db.SaveChangesAsync(ct);
+                chrome.InvalidateMenus();
             }
             logger.LogInformation("MoveMenuItem Done Id={Id}", itemId);
             TempData["Success"] = "Đã đổi thứ tự menu.";

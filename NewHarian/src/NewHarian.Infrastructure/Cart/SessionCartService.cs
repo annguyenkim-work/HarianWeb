@@ -12,6 +12,8 @@ public class SessionCartService(IHttpContextAccessor http, AppDbContext db, ILog
 {
     private const string SessionKey = "Cart";
 
+    public int GetDistinctCount() => Load().Count;
+
     public CartDto GetCart()
     {
         var sessionItems = Load();
