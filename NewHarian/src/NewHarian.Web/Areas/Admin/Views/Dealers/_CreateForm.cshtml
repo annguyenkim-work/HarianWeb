@@ -1,0 +1,22 @@
+@model NewHarian.Application.Dealers.DealerCreateRequest
+@{
+    Layout = null;
+}
+<form id="dealer-create-form" asp-area="Admin" asp-controller="Dealers" asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+    <h2>Thêm đại lý</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-stack">
+        <label>Họ tên * <input asp-for="FullName" class="form-control" required maxlength="200" /></label>
+        <label>SĐT * <input asp-for="Phone" class="form-control" required maxlength="20" /></label>
+        <label>Email * <input asp-for="Email" type="email" class="form-control" required maxlength="200" /></label>
+        <label>Địa chỉ * <input asp-for="Address" class="form-control" required maxlength="500" /></label>
+        <label>Ghi chú <textarea asp-for="Message" class="form-control" rows="2"></textarea></label>
+        <label>Chiết khấu % * <input asp-for="DiscountPercent" type="number" min="0" max="100" step="0.01" class="form-control" required /></label>
+        <label>Ghi chú nội bộ <textarea asp-for="InternalNotes" class="form-control" rows="2"></textarea></label>
+    </div>
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close>Hủy</button>
+        <button type="submit" class="btn-primary">Tạo</button>
+    </div>
+</form>

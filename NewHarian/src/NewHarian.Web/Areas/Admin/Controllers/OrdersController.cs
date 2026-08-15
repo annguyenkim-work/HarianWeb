@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
+using NewHarian.Application.Dealers;
 using NewHarian.Application.Orders;
 using NewHarian.Domain.Enums;
 
@@ -9,7 +10,7 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
-public class OrdersController(IOrderService orders, IStatusHistoryService history) : Controller
+public class OrdersController(IOrderService orders, IStatusHistoryService history, IDealerService dealers) : Controller
 {
     private static readonly HashSet<string> SortKeys = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -88,8 +89,9 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
     }
 
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken ct)
     {
+        ViewBag.Dealers = await dealers.ListApprovedOptionsAsync(ct);
         return PartialView("_ManualOrderForm", new ManualOrderCreateRequest());
     }
 
@@ -108,6 +110,7 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Không tạo được đơn.");
+            ViewBag.Dealers = await dealers.ListApprovedOptionsAsync(ct);
             return PartialView("_ManualOrderForm", model);
         }
 

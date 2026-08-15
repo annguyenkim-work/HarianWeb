@@ -28,6 +28,10 @@
         <h2>@order.OrderNumber</h2>
         <p>@Localizer["Orders.Status"]: <strong>@order.Status</strong></p>
         <p>@Localizer["Checkout.Payment"]: @order.PaymentMethod</p>
+        @if (!string.IsNullOrWhiteSpace(order.CitizenId))
+        {
+            <p>@Localizer["Checkout.CitizenId"]: @order.CitizenId</p>
+        }
         <p>@order.CreatedAt.ToLocalTime().ToString("g")</p>
         <ul>
             @foreach (var i in order.Items)

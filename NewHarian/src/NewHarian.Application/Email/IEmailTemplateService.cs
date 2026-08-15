@@ -11,6 +11,8 @@ public static class EmailTemplateCodes
     public const string ApplicationStaff = "application.staff";
     public const string BookingCustomer = "booking.customer";
     public const string BookingStaff = "booking.staff";
+    public const string DealerCustomer = "dealer.customer";
+    public const string DealerStaff = "dealer.staff";
 }
 
 public record EmailTemplateListItemDto(int Id, string Code, string Name, DateTime? UpdatedAt);

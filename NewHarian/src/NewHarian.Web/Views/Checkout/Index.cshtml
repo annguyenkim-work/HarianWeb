@@ -20,6 +20,10 @@
         <label>@Localizer["Book.Name"] <input asp-for="CustomerName" class="form-control" required /></label>
         <label>@Localizer["Book.Email"] <input asp-for="CustomerEmail" type="email" class="form-control" required /></label>
         <label>@Localizer["Book.Phone"] <input asp-for="CustomerPhone" class="form-control" required /></label>
+        <label>@Localizer["Checkout.CitizenId"]
+            <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" autocomplete="off" />
+            <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
+        </label>
         <label>@Localizer["Checkout.Address"] <input asp-for="ShippingAddress" class="form-control" required /></label>
         <label>@Localizer["Checkout.Province"]
             <select asp-for="ShippingProvinceId" class="form-control" id="province-select" required>

@@ -273,10 +273,43 @@
     return escapeHtml(s).replace(/`/g, '');
   }
 
+  function wireDealerPicker(form) {
+    const sel = form.querySelector('#dealer-select');
+    const wrapSel = form.querySelector('#dealer-select-wrap');
+    const wrapPct = form.querySelector('#dealer-percent-wrap');
+    const pct = form.querySelector('[name="DealerDiscountPercent"]');
+    const name = form.querySelector('[name="CustomerName"]');
+    const phone = form.querySelector('[name="CustomerPhone"]');
+    const email = form.querySelector('[name="CustomerEmail"]');
+    const address = form.querySelector('[name="ShippingAddress"]');
+
+    function applyKind() {
+      const kind = form.querySelector('input[name="customerKind"]:checked')?.value;
+      const isDealer = kind === 'dealer';
+      if (wrapSel) wrapSel.hidden = !isDealer;
+      if (wrapPct) wrapPct.hidden = !isDealer;
+      if (sel) sel.required = isDealer;
+      if (!isDealer && sel) sel.value = '';
+    }
+
+    form.querySelectorAll('input[name="customerKind"]').forEach(r => r.addEventListener('change', applyKind));
+    sel?.addEventListener('change', () => {
+      const opt = sel.selectedOptions[0];
+      if (!opt || !opt.value) return;
+      if (name) name.value = opt.dataset.name || '';
+      if (phone) phone.value = opt.dataset.phone || '';
+      if (email) email.value = opt.dataset.email || '';
+      if (address) address.value = opt.dataset.address || '';
+      if (pct) pct.value = opt.dataset.percent || '';
+    });
+    applyKind();
+  }
+
   function bindCreateForm() {
     const form = createBody.querySelector('form');
     if (!form) return;
     wireSkuSuggest(form);
+    wireDealerPicker(form);
 
     createBody.querySelector('#btn-add-line')?.addEventListener('click', () => {
       const tpl = createBody.querySelector('#manual-order-line-tpl');

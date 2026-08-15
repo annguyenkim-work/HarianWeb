@@ -154,6 +154,8 @@ public class CheckoutController(
             return "Email không hợp lệ."; // CHK_EMAIL_INVALID
         if (string.IsNullOrWhiteSpace(m.CustomerPhone) || !GuestValidation.IsPhone(m.CustomerPhone))
             return "Số điện thoại không hợp lệ (8-20 ký tự, chỉ số/khoảng trắng/+/-)."; // CHK_PHONE_INVALID
+        if (!GuestValidation.IsCitizenId(m.CitizenId))
+            return "CCCD phải gồm 9 hoặc 12 chữ số."; // CHK_CITIZEN_ID_INVALID
         if (!GuestValidation.HasLength(m.ShippingAddress, 5, GuestValidation.AddressMax))
             return "Vui lòng điền địa chỉ giao hàng (5-500 ký tự)."; // CHK_REQUIRED
         if (m.ShippingProvinceId <= 0)

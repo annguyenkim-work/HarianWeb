@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Email;
 using NewHarian.Domain.Entities;
 using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Email;
@@ -96,7 +97,8 @@ public static class DbSeeder
                 new SiteSetting { Key = "notifications.inquiry_email", Value = "info@harian.local", Group = "notifications" },
                 new SiteSetting { Key = "notifications.application_email", Value = "info@harian.local", Group = "notifications" },
                 new SiteSetting { Key = "notifications.service_booking_email", Value = "info@harian.local", Group = "notifications" },
-                new SiteSetting { Key = "notifications.order_email", Value = "info@harian.local", Group = "notifications" }
+                new SiteSetting { Key = "notifications.order_email", Value = "info@harian.local", Group = "notifications" },
+                new SiteSetting { Key = "notifications.dealer_email", Value = "info@harian.local", Group = "notifications" }
             );
             await db.SaveChangesAsync();
         }
@@ -132,6 +134,8 @@ public static class DbSeeder
             await EnsureSettingAsync(db, "contactcta.visible", "true", "contactcta");
             await EnsureSettingAsync(db, "notifications.order_email", "info@harian.local", "notifications");
         }
+
+        await EnsureSettingAsync(db, "notifications.dealer_email", "info@harian.local", "notifications");
 
         // Legacy setting removed (header overlays hero; no menu background image)
         var obsoleteHeaderBg = await db.SiteSettings.Where(s => s.Key == "company.header_bg").ToListAsync();
@@ -576,6 +580,33 @@ public static class DbSeeder
         }
 
         await EnsureHeaderMainMenuAsync(db);
+        await EnsureDealerNavItemAsync(db);
+    }
+
+    private static async Task EnsureDealerNavItemAsync(AppDbContext db)
+    {
+        var menu = await db.Menus.Include(m => m.Items).ThenInclude(i => i.Translations)
+            .FirstOrDefaultAsync(m => m.Code == "header-main");
+        if (menu is null) return;
+        if (menu.Items.Any(i => i.ItemKey == "dealers" || i.Url == "/dealers/register"))
+            return;
+
+        var contact = menu.Items.FirstOrDefault(i => i.ParentId == null
+            && (i.ItemKey == "contact" || i.Url == "/contact"));
+        int order;
+        if (contact is not null)
+        {
+            order = contact.SortOrder;
+            foreach (var item in menu.Items.Where(i => i.ParentId == null && i.SortOrder >= order))
+                item.SortOrder += 1;
+        }
+        else
+        {
+            order = menu.Items.Where(i => i.ParentId == null).Select(i => i.SortOrder).DefaultIfEmpty(0).Max() + 1;
+        }
+
+        menu.Items.Add(MenuItemWith("dealers", "/dealers/register", order, "Đại lý", "Dealers", "代理店"));
+        await db.SaveChangesAsync();
     }
 
     private static async Task EnsureHeaderMainMenuAsync(AppDbContext db)
@@ -609,8 +640,9 @@ public static class DbSeeder
                 company,
                 MenuItemWith("news", "/news", 5, "Tin tức", "News", "ニュース"),
                 MenuItemWith("careers", "/careers", 6, "Tuyển dụng", "Careers", "採用"),
-                MenuItemWith("contact", "/contact", 7, "Liên hệ", "Contact", "お問い合わせ"),
-                MenuItemWith("order-track", "/Orders/Track", 8, "Tra cứu đơn", "Order lookup", "注文照会")
+                MenuItemWith("dealers", "/dealers/register", 7, "Đại lý", "Dealers", "代理店"),
+                MenuItemWith("contact", "/contact", 8, "Liên hệ", "Contact", "お問い合わせ"),
+                MenuItemWith("order-track", "/Orders/Track", 9, "Tra cứu đơn", "Order lookup", "注文照会")
             }
         });
         await db.SaveChangesAsync();
@@ -823,11 +855,35 @@ public static class DbSeeder
 
     private static async Task EnsureEmailTemplatesAsync(AppDbContext db)
     {
-        var existing = await db.EmailTemplates.Select(t => t.Code).ToListAsync();
-        var missing = EmailTemplateDefaults.All().Where(t => !existing.Contains(t.Code)).ToList();
-        if (missing.Count == 0) return;
-        db.EmailTemplates.AddRange(missing);
-        await db.SaveChangesAsync();
+        var existing = await db.EmailTemplates.ToListAsync();
+        var existingCodes = existing.Select(t => t.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var missing = EmailTemplateDefaults.All().Where(t => !existingCodes.Contains(t.Code)).ToList();
+        if (missing.Count > 0)
+        {
+            db.EmailTemplates.AddRange(missing);
+            await db.SaveChangesAsync();
+        }
+
+        foreach (var row in existing.Where(t =>
+                     t.Code is EmailTemplateCodes.OrderCustomer or EmailTemplateCodes.OrderStaff))
+        {
+            var changed = false;
+            if (!row.PlaceholdersHelp.Contains("CitizenId", StringComparison.Ordinal))
+            {
+                row.PlaceholdersHelp = string.IsNullOrWhiteSpace(row.PlaceholdersHelp)
+                    ? "CitizenId"
+                    : row.PlaceholdersHelp.TrimEnd() + ", CitizenId";
+                changed = true;
+            }
+            if (!row.BodyHtml.Contains("{{CitizenId}}", StringComparison.Ordinal))
+            {
+                row.BodyHtml = row.BodyHtml.TrimEnd() + "\n<p>CCCD: {{CitizenId}}</p>";
+                changed = true;
+            }
+            if (changed) row.UpdatedAt = DateTime.UtcNow;
+        }
+        if (db.ChangeTracker.HasChanges())
+            await db.SaveChangesAsync();
     }
 
     private static async Task SeedMissingProvincesAsync(AppDbContext db)

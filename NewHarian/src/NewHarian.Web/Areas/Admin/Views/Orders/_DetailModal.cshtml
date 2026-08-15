@@ -17,6 +17,21 @@
         <span class="detail-field__value">@(Model.CustomerPhone ?? "-")</span>
     </div>
     <div class="detail-field">
+        <span class="detail-field__label">CCCD</span>
+        <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.CitizenId) ? "-" : Model.CitizenId)</span>
+    </div>
+    @if (Model.DealerId is not null)
+    {
+        <div class="detail-field">
+            <span class="detail-field__label">Đại lý</span>
+            <span class="detail-field__value">@(Model.DealerName ?? $"#{Model.DealerId}")</span>
+        </div>
+        <div class="detail-field">
+            <span class="detail-field__label">Chiết khấu</span>
+            <span class="detail-field__value">@(Model.DealerDiscountPercent?.ToString("0.##") ?? "0")% (−@Model.DiscountAmount.ToString("N0")đ)</span>
+        </div>
+    }
+    <div class="detail-field">
         <span class="detail-field__label">Nguồn</span>
         <span class="detail-field__value">@OrderSourceLabels.Vi(Model.Source)</span>
     </div>
@@ -46,7 +61,14 @@
     </div>
     <div class="detail-field detail-field--wide">
         <span class="detail-field__label">Tổng</span>
-        <span class="detail-field__value"><strong>@Model.Total.ToString("N0")đ</strong> <span class="muted">(SP @Model.SubTotal.ToString("N0")đ + ship @Model.ShippingFee.ToString("N0")đ)</span></span>
+        <span class="detail-field__value"><strong>@Model.Total.ToString("N0")đ</strong>
+            <span class="muted">(SP @Model.SubTotal.ToString("N0")đ
+            @if (Model.DiscountAmount > 0)
+            {
+                <text> − CK @Model.DiscountAmount.ToString("N0")đ</text>
+            }
+            + ship @Model.ShippingFee.ToString("N0")đ)</span>
+        </span>
     </div>
 </div>
 

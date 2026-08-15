@@ -40,8 +40,9 @@ public class SiteHeaderViewComponent(AppDbContext db, ICmsPageService cms) : Vie
                 ]),
                 new PublicMenuItemDto("News", "/news", 5, "news"),
                 new PublicMenuItemDto("Careers", "/careers", 6, "careers"),
-                new PublicMenuItemDto("Contact", "/contact", 7, "contact"),
-                new PublicMenuItemDto("Track", "/Orders/Track", 8, "order-track")
+                new PublicMenuItemDto("Dealers", "/dealers/register", 7, "dealers"),
+                new PublicMenuItemDto("Contact", "/contact", 8, "contact"),
+                new PublicMenuItemDto("Track", "/Orders/Track", 9, "order-track")
             ];
         }
 

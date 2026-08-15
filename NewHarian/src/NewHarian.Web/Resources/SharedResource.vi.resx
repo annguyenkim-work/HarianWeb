@@ -157,4 +157,12 @@
   <data name="Error.GenericBody" xml:space="preserve"><value>Yêu cầu không thể xử lý. Vui lòng quay lại trang chủ hoặc liên hệ chúng tôi.</value></data>
   <data name="Error.RequestId" xml:space="preserve"><value>Mã yêu cầu</value></data>
   <data name="Error.BackHome" xml:space="preserve"><value>Về trang chủ</value></data>
+  <data name="Checkout.CitizenId" xml:space="preserve"><value>CCCD / CMND</value></data>
+  <data name="Checkout.CitizenIdHint" xml:space="preserve"><value>Cần CCCD để xuất hóa đơn (9 hoặc 12 chữ số).</value></data>
+  <data name="Dealers.PageTitle" xml:space="preserve"><value>Đăng ký đại lý</value></data>
+  <data name="Dealers.Intro" xml:space="preserve"><value>Điền thông tin liên hệ. Chúng tôi sẽ xét duyệt hồ sơ và liên hệ lại. Đơn hàng đại lý do nhân viên tạo sau khi được duyệt.</value></data>
+  <data name="Dealers.Confirm" xml:space="preserve"><value>Xác nhận thông tin đăng ký đại lý</value></data>
+  <data name="Dealers.Thanks" xml:space="preserve"><value>Đã nhận hồ sơ</value></data>
+  <data name="Dealers.ThanksBody" xml:space="preserve"><value>Cảm ơn bạn đã đăng ký. Chúng tôi sẽ liên hệ sau khi xét duyệt.</value></data>
+  <data name="Nav.Dealers" xml:space="preserve"><value>Đại lý</value></data>
 </root>

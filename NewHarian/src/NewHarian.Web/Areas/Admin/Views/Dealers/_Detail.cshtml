@@ -1,0 +1,62 @@
+@model NewHarian.Application.Dealers.DealerDetailDto
+@using NewHarian.Domain.Enums
+
+<h2>Đại lý #@Model.Id</h2>
+
+<div class="detail-grid">
+    <div class="detail-field">
+        <span class="detail-field__label">Họ tên</span>
+        <span class="detail-field__value">@Model.FullName</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">SĐT</span>
+        <span class="detail-field__value">@Model.Phone</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Email</span>
+        <span class="detail-field__value">@Model.Email</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Status</span>
+        <span class="detail-field__value">@Model.Status</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Địa chỉ</span>
+        <span class="detail-field__value">@Model.Address</span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Ghi chú KH</span>
+        <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.Message) ? "-" : Model.Message)</span>
+    </div>
+</div>
+
+<label>Ghi chú nội bộ
+    <textarea name="internalNotes" class="form-control" rows="2">@Model.InternalNotes</textarea>
+</label>
+
+@if (Model.Status is DealerStatus.Pending or DealerStatus.Rejected)
+{
+    <label>Chiết khấu % (khi duyệt)
+        <input name="discountPercent" type="number" min="0" max="100" step="0.01" class="form-control" value="@(Model.DiscountPercent?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")" />
+    </label>
+    <div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+        <button type="button" class="btn-primary" data-action="approve" data-id="@Model.Id">Duyệt</button>
+        @if (Model.Status == DealerStatus.Pending)
+        {
+            <button type="button" class="btn-link" data-action="reject" data-id="@Model.Id">Từ chối</button>
+        }
+    </div>
+}
+else if (Model.Status == DealerStatus.Approved)
+{
+    <label>Chiết khấu %
+        <input name="discountPercent" type="number" min="0" max="100" step="0.01" class="form-control" value="@(Model.DiscountPercent?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")" />
+    </label>
+    <div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+        <button type="button" class="btn-primary" data-action="save" data-id="@Model.Id">Lưu</button>
+    </div>
+}
+
+<div class="modal__actions">
+    <button type="button" class="btn-secondary" data-close>Đóng</button>
+</div>
