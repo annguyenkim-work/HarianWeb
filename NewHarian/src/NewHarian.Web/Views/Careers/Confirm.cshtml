@@ -1,7 +1,10 @@
 @model NewHarian.Application.Engagement.CareerFormModel
 @using NewHarian.Domain.Enums
+@inject NewHarian.Application.Address.IVietnamDivisionCatalog Catalog
 @{
     ViewData["Title"] = Localizer["Careers.Confirm"];
+    Catalog.TryResolve(Model.ProvinceCode, Model.CommuneCode, out var addr);
+    var addressText = AddressFormat.Join(Model.Address, addr.CommuneName, addr.ProvinceName);
 }
 <section class="page-hero"><h1>@Localizer["Careers.Confirm"]</h1></section>
 <main style="max-width:640px">
@@ -14,6 +17,7 @@
         <dt>@Localizer["Careers.FullName"]</dt><dd>@Model.FullName</dd>
         <dt>@Localizer["Contact.Email"]</dt><dd>@Model.Email</dd>
         <dt>@Localizer["Contact.Phone"]</dt><dd>@(Model.Phone ?? "-")</dd>
+        <dt>@Localizer["Contact.Address"]</dt><dd>@addressText</dd>
         @if (!string.IsNullOrWhiteSpace(Model.Message))
         {
             <dt>@Localizer["Careers.Message"]</dt><dd style="white-space:pre-wrap">@Model.Message</dd>
@@ -34,8 +38,8 @@
             <input type="hidden" asp-for="Gender" />
             <input type="hidden" asp-for="FullName" />
             <input type="hidden" asp-for="Age" />
-            <input type="hidden" asp-for="Prefecture" />
-            <input type="hidden" asp-for="City" />
+            <input type="hidden" asp-for="ProvinceCode" />
+            <input type="hidden" asp-for="CommuneCode" />
             <input type="hidden" asp-for="Address" />
             <input type="hidden" asp-for="Phone" />
             <input type="hidden" asp-for="Email" />

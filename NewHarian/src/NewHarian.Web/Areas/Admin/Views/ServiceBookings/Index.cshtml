@@ -38,7 +38,7 @@
         <label for="to">Đến</label>
         <input id="to" type="date" name="to" value="@(to?.ToString("yyyy-MM-dd"))" />
     </div>
-    <input type="search" name="q" value="@ViewBag.Q" placeholder="Mã / tên / email / SĐT" class="form-control filter-bar__search" />
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Mã / tên / email / SĐT / CCCD" class="form-control filter-bar__search" />
     <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
 </form>
 
@@ -104,11 +104,26 @@
     const id = btn.dataset.id;
     const notes = body.querySelector('[name="internalNotes"]')?.value ?? '';
     if (btn.dataset.action !== 'status') return;
+    const citizenId = body.querySelector('[name="citizenId"]')?.value ?? '';
+    const amount = body.querySelector('[name="amount"]')?.value ?? '';
+    if (btn.dataset.status === 'Completed') {
+      const digits = citizenId.replace(/\D/g, '');
+      if (digits.length !== 9 && digits.length !== 12) {
+        alert('Vui lòng nhập CCCD / CMND (9 hoặc 12 chữ số) khi hoàn thành dịch vụ.');
+        return;
+      }
+      if (amount === '') {
+        alert('Vui lòng nhập thành tiền khi hoàn thành dịch vụ.');
+        return;
+      }
+    }
     const fd = new FormData();
     fd.append('__RequestVerificationToken', token);
     fd.append('id', id);
     fd.append('internalNotes', notes);
     fd.append('status', btn.dataset.status);
+    fd.append('citizenId', citizenId);
+    fd.append('amount', amount);
     const res = await fetch('@Url.Action("UpdateStatus")', { method: 'POST', body: fd });
     const json = await res.json();
     if (json.ok) location.reload();

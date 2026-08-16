@@ -18,6 +18,7 @@ public class Order
     public int? ShippingProvinceId { get; set; }
     public string? ShippingCity { get; set; }
     public string? ShippingDistrict { get; set; }
+    public string? ShippingCommuneCode { get; set; }
     public string? Notes { get; set; }
     public string? InternalNotes { get; set; }
     public decimal SubTotal { get; set; }
@@ -103,6 +104,10 @@ public class Dealer
     public string Phone { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
+    public string? ProvinceCode { get; set; }
+    public string? ProvinceName { get; set; }
+    public string? CommuneCode { get; set; }
+    public string? CommuneName { get; set; }
     public string? CitizenId { get; set; }
     public string? Message { get; set; }
     public DealerStatus Status { get; set; } = DealerStatus.Pending;

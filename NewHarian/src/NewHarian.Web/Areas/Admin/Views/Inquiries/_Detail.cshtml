@@ -7,9 +7,9 @@
 <div class="modal__box modal__box--wide" onclick="event.stopPropagation()">
 <h2>Inquiry #@Model.Id</h2>
 <p><strong>@Model.Name</strong> - @Model.Email - @(Model.Phone ?? "")</p>
-@if (!string.IsNullOrWhiteSpace(Model.Address))
+@if (!string.IsNullOrWhiteSpace(AddressFormat.Join(Model.Address, Model.CommuneName, Model.ProvinceName)))
 {
-    <p>@Model.Address</p>
+    <p>@AddressFormat.Join(Model.Address, Model.CommuneName, Model.ProvinceName)</p>
 }
 <p class="modal__message">@Model.Message</p>
 <form asp-action="UpdateStatus" method="post">

@@ -28,7 +28,7 @@
         <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" autocomplete="off" />
         <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
     </label>
-    <label>@Localizer["Contact.Address"] * <input asp-for="Address" class="form-control" required maxlength="500" /></label>
+    @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "Address", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.Address })
     <label>@Localizer["Contact.Message"] <textarea asp-for="Message" class="form-control" rows="5" maxlength="2000"></textarea></label>
     <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>
 </form>

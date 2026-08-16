@@ -2,8 +2,6 @@
 @using NewHarian.Domain.Enums
 @{
     ViewData["Title"] = Localizer["Careers.FormTitle"];
-    var provinces = ViewBag.Provinces as IReadOnlyList<NewHarian.Application.Shipping.ProvinceOptionDto>
-        ?? Array.Empty<NewHarian.Application.Shipping.ProvinceOptionDto>();
 }
 
 <nav class="breadcrumb">
@@ -48,17 +46,7 @@
     </label>
     <label>@Localizer["Careers.FullName"] * <input asp-for="FullName" class="form-control" required /></label>
     <label>@Localizer["Careers.Age"] <input asp-for="Age" type="number" class="form-control" min="16" max="80" /></label>
-    <label>@Localizer["Careers.Prefecture"]
-        <select asp-for="Prefecture" class="form-control">
-            <option value=""></option>
-            @foreach (var p in provinces)
-            {
-                <option value="@p.Name">@p.Name</option>
-            }
-        </select>
-    </label>
-    <label>@Localizer["Careers.City"] <input asp-for="City" class="form-control" /></label>
-    <label>@Localizer["Careers.Address"] <input asp-for="Address" class="form-control" /></label>
+    @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "Address", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.Address })
     <label>@Localizer["Contact.Phone"] <input asp-for="Phone" class="form-control" /></label>
     <label>@Localizer["Contact.Email"] * <input asp-for="Email" type="email" class="form-control" required /></label>
     <label>@Localizer["Careers.Message"] <textarea asp-for="Message" class="form-control" rows="5"></textarea></label>

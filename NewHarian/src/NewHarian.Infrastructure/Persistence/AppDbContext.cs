@@ -174,6 +174,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasIndex(x => x.PreferredDate);
             e.HasIndex(x => x.CreatedAt);
             e.Property(x => x.BookingNumber).HasMaxLength(32);
+            e.Property(x => x.CitizenId).HasMaxLength(20);
+            e.Property(x => x.ProvinceCode).HasMaxLength(10);
+            e.Property(x => x.ProvinceName).HasMaxLength(200);
+            e.Property(x => x.CommuneCode).HasMaxLength(10);
+            e.Property(x => x.CommuneName).HasMaxLength(200);
+            e.Property(x => x.Amount).HasPrecision(18, 2);
             e.Property(x => x.LanguageCode).HasMaxLength(5);
             e.HasOne(x => x.Service).WithMany(x => x.ServiceBookings).HasForeignKey(x => x.ServiceId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.ServiceVariant).WithMany().HasForeignKey(x => x.ServiceVariantId).OnDelete(DeleteBehavior.Restrict);
@@ -189,6 +195,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.OrderNumber).HasMaxLength(32);
             e.Property(x => x.ExternalRef).HasMaxLength(100);
             e.Property(x => x.CitizenId).HasMaxLength(20);
+            e.Property(x => x.ShippingCommuneCode).HasMaxLength(10);
             e.Property(x => x.SubTotal).HasPrecision(18, 2);
             e.Property(x => x.ShippingFee).HasPrecision(18, 2);
             e.Property(x => x.DiscountAmount).HasPrecision(18, 2);
@@ -207,6 +214,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Phone).HasMaxLength(20);
             e.Property(x => x.Email).HasMaxLength(200);
             e.Property(x => x.Address).HasMaxLength(500);
+            e.Property(x => x.ProvinceCode).HasMaxLength(10);
+            e.Property(x => x.ProvinceName).HasMaxLength(200);
+            e.Property(x => x.CommuneCode).HasMaxLength(10);
+            e.Property(x => x.CommuneName).HasMaxLength(200);
             e.Property(x => x.CitizenId).HasMaxLength(20);
             e.Property(x => x.Message).HasMaxLength(2000);
             e.Property(x => x.DiscountPercent).HasPrecision(5, 2);
@@ -328,6 +339,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<Inquiry>(e =>
         {
             e.Property(x => x.LanguageCode).HasMaxLength(5);
+            e.Property(x => x.ProvinceCode).HasMaxLength(10);
+            e.Property(x => x.ProvinceName).HasMaxLength(200);
+            e.Property(x => x.CommuneCode).HasMaxLength(10);
+            e.Property(x => x.CommuneName).HasMaxLength(200);
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.CreatedAt);
         });
@@ -335,6 +350,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<JobApplication>(e =>
         {
             e.Property(x => x.LanguageCode).HasMaxLength(5);
+            e.Property(x => x.ProvinceCode).HasMaxLength(10);
+            e.Property(x => x.CommuneCode).HasMaxLength(10);
             e.HasOne(x => x.Attachment).WithMany().HasForeignKey(x => x.AttachmentMediaFileId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne(x => x.SitePost).WithMany(x => x.Applications).HasForeignKey(x => x.SitePostId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => x.SitePostId);

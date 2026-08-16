@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Address;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Email;
 using NewHarian.Application.Engagement;
@@ -18,6 +19,7 @@ public sealed class InquiryService(
     IEmailTemplateService emailTemplates,
     IAuditService audit,
     IAdminNotificationService notifications,
+    IVietnamDivisionCatalog catalog,
     ILogger<InquiryService> logger) : IInquiryService
 {
     public async Task<(bool Ok, string? Error, int? Id)> SubmitAsync(ContactFormModel model, string lang, CancellationToken ct = default)
@@ -38,12 +40,17 @@ public sealed class InquiryService(
                 return (false, err, null);
             }
 
+            catalog.TryResolve(model.ProvinceCode, model.CommuneCode, out var resolved);
             var entity = new Inquiry
             {
                 Name = model.Name.Trim(),
                 Email = model.Email.Trim(),
                 Phone = NullIfEmpty(model.Phone),
                 Address = NullIfEmpty(model.Address),
+                ProvinceCode = resolved.ProvinceCode,
+                ProvinceName = resolved.ProvinceName,
+                CommuneCode = resolved.CommuneCode,
+                CommuneName = resolved.CommuneName,
                 Subject = "Liên hệ từ website",
                 Message = model.Message.Trim(),
                 Status = InquiryStatus.New,
@@ -157,7 +164,9 @@ public sealed class InquiryService(
     {
         var i = await db.Inquiries.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
         return i is null ? null : new InquiryDetailDto(
-            i.Id, i.CreatedAt, i.Name, i.Email, i.Phone, i.Address, i.Subject, i.Message,
+            i.Id, i.CreatedAt, i.Name, i.Email, i.Phone, i.Address,
+            i.ProvinceName, i.CommuneName,
+            i.Subject, i.Message,
             i.Status, i.InternalNotes, i.HandledByUserId, i.LanguageCode, i.ResolvedAt);
     }
 
@@ -196,12 +205,13 @@ public sealed class InquiryService(
         }
     }
 
-    private static string? ValidateContact(ContactFormModel m)
+    private string? ValidateContact(ContactFormModel m)
     {
         if (!GuestValidation.HasLength(m.Name, 2, GuestValidation.NameMax)) return "Vui lòng nhập họ tên (2-200 ký tự)."; // CNT_REQUIRED
         if (!GuestValidation.IsEmail(m.Email)) return "Email không hợp lệ."; // CNT_EMAIL_INVALID
         if (!GuestValidation.IsPhone(m.Phone)) return "Số điện thoại không hợp lệ."; // CNT_PHONE_INVALID
-        if (!GuestValidation.FitsMax(m.Address, GuestValidation.AddressMax)) return "Địa chỉ tối đa 500 ký tự.";
+        var addrErr = AddressFormat.Require(catalog, m.ProvinceCode, m.CommuneCode, m.Address);
+        if (addrErr is not null) return addrErr;
         var msg = m.Message?.Trim() ?? "";
         if (msg.Length < 10) return "Nội dung tối thiểu 10 ký tự."; // CNT_MESSAGE_TOO_SHORT
         if (msg.Length > GuestValidation.MessageMax) return "Nội dung tối đa 5000 ký tự."; // CNT_MESSAGE_TOO_LONG
@@ -221,6 +231,7 @@ public sealed class JobApplicationService(
     IAuditService audit,
     IMediaStorage mediaStorage,
     IAdminNotificationService notifications,
+    IVietnamDivisionCatalog catalog,
     ILogger<JobApplicationService> logger) : IJobApplicationService
 {
     public async Task<(bool Ok, string? Error, int? Id)> SubmitAsync(CareerFormModel model, string lang, CancellationToken ct = default)
@@ -256,6 +267,7 @@ public sealed class JobApplicationService(
                 return (false, "Tin tuyển dụng không còn hiệu lực.", null);
             }
 
+            catalog.TryResolve(model.ProvinceCode, model.CommuneCode, out var resolved);
             var entity = new JobApplication
             {
                 SitePostId = post.Id,
@@ -263,8 +275,10 @@ public sealed class JobApplicationService(
                 Gender = NullIfEmpty(model.Gender),
                 FullName = model.FullName.Trim(),
                 Age = model.Age,
-                Prefecture = NullIfEmpty(model.Prefecture),
-                City = NullIfEmpty(model.City),
+                Prefecture = resolved.ProvinceName,
+                City = resolved.CommuneName,
+                ProvinceCode = resolved.ProvinceCode,
+                CommuneCode = resolved.CommuneCode,
                 Address = NullIfEmpty(model.Address),
                 Phone = NullIfEmpty(model.Phone),
                 Email = model.Email.Trim(),
@@ -461,13 +475,12 @@ public sealed class JobApplicationService(
         }
     }
 
-    private static string? Validate(CareerFormModel m)
+    private string? Validate(CareerFormModel m)
     {
         if (!GuestValidation.HasLength(m.FullName, 2, GuestValidation.NameMax)) return "Vui lòng nhập họ tên (2-200 ký tự)."; // APP_REQUIRED
         if (m.Age is int age && age is < 16 or > 99) return "Tuổi phải từ 16 đến 99."; // APP_AGE_INVALID
-        if (!GuestValidation.FitsMax(m.Prefecture, 100)) return "Tỉnh/Prefecture tối đa 100 ký tự.";
-        if (!GuestValidation.FitsMax(m.City, 100)) return "Thành phố tối đa 100 ký tự.";
-        if (!GuestValidation.FitsMax(m.Address, GuestValidation.AddressMax)) return "Địa chỉ tối đa 500 ký tự.";
+        var addrErr = AddressFormat.Require(catalog, m.ProvinceCode, m.CommuneCode, m.Address);
+        if (addrErr is not null) return addrErr;
         if (!GuestValidation.IsPhone(m.Phone)) return "Số điện thoại không hợp lệ."; // APP_PHONE_INVALID
         if (!GuestValidation.IsEmail(m.Email)) return "Email không hợp lệ."; // APP_EMAIL_INVALID
         var msg = m.Message?.Trim() ?? "";

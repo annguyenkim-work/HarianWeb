@@ -38,6 +38,18 @@ public class ShippingService(AppDbContext db) : IShippingService
         return (fee, false);
     }
 
+    public async Task<(decimal Fee, bool IsFreeShipping)> CalculateFeeAsync(decimal subTotal, string provinceCode, CancellationToken ct = default)
+    {
+        var code = provinceCode?.Trim() ?? "";
+        var id = await db.ShippingProvinces.AsNoTracking()
+            .Where(p => p.IsActive && p.Code == code)
+            .Select(p => (int?)p.Id)
+            .FirstOrDefaultAsync(ct);
+        if (id is null)
+            return (30000m, false);
+        return await CalculateFeeAsync(subTotal, id.Value, ct);
+    }
+
     public async Task<decimal> GetFreeThresholdAsync(CancellationToken ct = default)
     {
         var raw = await db.SiteSettings.AsNoTracking()

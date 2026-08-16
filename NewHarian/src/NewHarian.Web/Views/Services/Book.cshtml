@@ -33,6 +33,10 @@
     <label>@Localizer["Book.Name"] <input asp-for="CustomerName" class="form-control" required /></label>
     <label>@Localizer["Book.Email"] <input asp-for="CustomerEmail" type="email" class="form-control" required /></label>
     <label>@Localizer["Book.Phone"] <input asp-for="CustomerPhone" class="form-control" required /></label>
+    <label>@Localizer["Checkout.CitizenId"]
+        <input asp-for="CitizenId" class="form-control" maxlength="20" inputmode="numeric" autocomplete="off" />
+        <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Book.CitizenIdHint"]</span>
+    </label>
     <label>@Localizer["Book.Date"] <input asp-for="PreferredDate" type="date" class="form-control" required /></label>
     <label>
         @Localizer["Book.Time"]
@@ -41,7 +45,8 @@
             <option value="Chiều">Chiều</option>
         </select>
     </label>
-    <label>@Localizer["Book.Address"] <input asp-for="ServiceAddress" class="form-control" /></label>
+    <label>@Localizer["Book.Address"]</label>
+    @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "ServiceAddress", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.ServiceAddress })
     <label>@Localizer["Book.Notes"] <textarea asp-for="Notes" class="form-control" rows="3" maxlength="2000"></textarea></label>
 
     <button type="submit" class="btn-primary">@Localizer["Book.Submit"]</button>

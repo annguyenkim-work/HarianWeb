@@ -76,23 +76,25 @@ public static class EmailTemplateDefaults
             """),
 
         T(EmailTemplateCodes.BookingCustomer, "Đặt lịch - xác nhận khách",
-            "BookingId (mã HAR-SERVICE-XXXX), BookingNumber, ProductName, VariantLabel, CustomerName, CustomerEmail, CustomerPhone, PreferredDate, PreferredTime, ServiceAddress, Notes",
+            "BookingId (mã HAR-SERVICE-XXXX), BookingNumber, ProductName, VariantLabel, CustomerName, CustomerEmail, CustomerPhone, CitizenId, PreferredDate, PreferredTime, ServiceAddress, Notes",
             "Xác nhận đặt lịch {{BookingId}} - Harian",
             """
             <p>Cảm ơn bạn đã đặt lịch.</p>
             <p>Mã đặt lịch <strong>{{BookingId}}</strong>: {{ProductName}} - {{VariantLabel}}</p>
             <p>{{CustomerName}} / {{CustomerEmail}} / {{CustomerPhone}}</p>
+            <p>CCCD: {{CitizenId}}</p>
             <p>{{PreferredDate}} {{PreferredTime}}</p>
             <p>{{ServiceAddress}}</p>
             <p>{{Notes}}</p>
             """),
 
         T(EmailTemplateCodes.BookingStaff, "Đặt lịch - notify staff",
-            "BookingId (mã HAR-SERVICE-XXXX), BookingNumber, ProductName, VariantLabel, CustomerName, CustomerEmail, CustomerPhone, PreferredDate, PreferredTime, ServiceAddress, Notes",
+            "BookingId (mã HAR-SERVICE-XXXX), BookingNumber, ProductName, VariantLabel, CustomerName, CustomerEmail, CustomerPhone, CitizenId, PreferredDate, PreferredTime, ServiceAddress, Notes",
             "[Harian] Đặt lịch mới {{BookingId}}",
             """
             <p>Đặt lịch <strong>{{BookingId}}</strong>: {{ProductName}} - {{VariantLabel}}</p>
             <p>{{CustomerName}} / {{CustomerEmail}} / {{CustomerPhone}}</p>
+            <p>CCCD: {{CitizenId}}</p>
             <p>{{PreferredDate}} {{PreferredTime}}</p>
             <p>{{ServiceAddress}}</p>
             <p>{{Notes}}</p>

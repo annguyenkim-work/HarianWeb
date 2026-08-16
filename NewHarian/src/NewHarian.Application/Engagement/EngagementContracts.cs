@@ -8,6 +8,8 @@ public class ContactFormModel
     public string Email { get; set; } = "";
     public string? Phone { get; set; }
     public string? Address { get; set; }
+    public string ProvinceCode { get; set; } = "";
+    public string CommuneCode { get; set; } = "";
     public string Message { get; set; } = "";
     /// <summary>Honeypot — must stay empty.</summary>
     public string? Website { get; set; }
@@ -19,6 +21,7 @@ public record InquiryListItemDto(
 
 public record InquiryDetailDto(
     int Id, DateTime CreatedAt, string Name, string Email, string? Phone, string? Address,
+    string? ProvinceName, string? CommuneName,
     string? Subject, string Message, InquiryStatus Status, string? InternalNotes,
     string? HandledByUserId, string LanguageCode, DateTime? ResolvedAt);
 
@@ -48,6 +51,8 @@ public class CareerFormModel
     public int? Age { get; set; }
     public string? Prefecture { get; set; }
     public string? City { get; set; }
+    public string? ProvinceCode { get; set; }
+    public string? CommuneCode { get; set; }
     public string? Address { get; set; }
     public string? Phone { get; set; }
     public string Email { get; set; } = "";

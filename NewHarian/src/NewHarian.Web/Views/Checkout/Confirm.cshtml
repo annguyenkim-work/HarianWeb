@@ -4,7 +4,7 @@
     var cart = (NewHarian.Application.Cart.CartDto)ViewBag.Cart;
     var fee = (decimal)ViewBag.ShippingFee;
     var total = (decimal)ViewBag.Total;
-    var provinceName = (string)ViewBag.ProvinceName;
+    var shipTo = (string)(ViewBag.ShipTo ?? "");
     var isFree = (bool)ViewBag.IsFreeShipping;
 }
 
@@ -24,7 +24,7 @@
     <h2>@Localizer["Checkout.Customer"]</h2>
     <p>@Model.CustomerName<br />@Model.CustomerEmail<br />@Model.CustomerPhone<br />@Localizer["Checkout.CitizenId"]: @Model.CitizenId</p>
     <h2>@Localizer["Checkout.ShipTo"]</h2>
-    <p>@Model.ShippingAddress<br />@Model.ShippingDistrict @provinceName</p>
+    <p>@shipTo</p>
     @if (!string.IsNullOrEmpty(Model.Notes))
     {
         <p><strong>@Localizer["Checkout.Notes"]:</strong> @Model.Notes</p>

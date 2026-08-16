@@ -4,6 +4,7 @@ using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Catalog;
 using NewHarian.Domain.Enums;
+using System.Globalization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
@@ -53,9 +54,18 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct)
+    public async Task<IActionResult> UpdateStatus(int id, ServiceBookingStatus status, string? internalNotes, string? citizenId, string? amount, CancellationToken ct)
     {
-        var (ok, error) = await bookings.UpdateStatusAsync(id, status, internalNotes, ct);
+        decimal? parsedAmount = null;
+        if (!string.IsNullOrWhiteSpace(amount))
+        {
+            if (!decimal.TryParse(amount, NumberStyles.Number, CultureInfo.InvariantCulture, out var v)
+                && !decimal.TryParse(amount, NumberStyles.Number, CultureInfo.GetCultureInfo("vi-VN"), out v))
+                return Json(new { ok = false, error = "Thành tiền không hợp lệ." });
+            parsedAmount = v;
+        }
+
+        var (ok, error) = await bookings.UpdateStatusAsync(id, status, internalNotes, citizenId, parsedAmount, ct);
         return Json(new { ok, error, status = status.ToString() });
     }
 }

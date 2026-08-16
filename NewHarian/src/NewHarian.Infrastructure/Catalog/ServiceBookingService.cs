@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Address;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Catalog;
 using NewHarian.Application.Email;
@@ -19,6 +20,7 @@ public class ServiceBookingService(
     IAuditService audit,
     IStatusHistoryService history,
     IAdminNotificationService notifications,
+    IVietnamDivisionCatalog catalog,
     ILogger<ServiceBookingService> logger) : IServiceBookingService
 {
     public async Task<(bool Ok, string? Error, string? BookingNumber)> CreateAsync(ServiceBookingRequest request, CancellationToken ct = default)
@@ -40,6 +42,10 @@ public class ServiceBookingService(
             if (string.IsNullOrWhiteSpace(request.CustomerPhone) || !GuestValidation.IsPhone(request.CustomerPhone))
                 return RejectCreate("Số điện thoại không hợp lệ (8-20 ký tự)."); // BOOK_PHONE_INVALID
 
+            var citizenId = GuestValidation.NormalizeCitizenId(request.CitizenId);
+            if (citizenId.Length > 0 && !GuestValidation.IsCitizenId(citizenId))
+                return RejectCreate("CCCD / CMND phải gồm 9 hoặc 12 chữ số.");
+
             if (request.PreferredDate < DateOnly.FromDateTime(DateTime.UtcNow.Date))
                 return RejectCreate("Ngày hẹn phải từ hôm nay trở đi.");
 
@@ -47,16 +53,10 @@ public class ServiceBookingService(
             if (time is not ("Sáng" or "Chiều"))
                 return RejectCreate("Vui lòng chọn khung giờ Sáng hoặc Chiều.");
 
-            if (!GuestValidation.FitsMax(request.ServiceAddress, GuestValidation.AddressMax))
-                return RejectCreate("Địa chỉ tối đa 500 ký tự.");
+            if (!AddressFormat.TryBind(catalog, request.ProvinceCode, request.CommuneCode, request.ServiceAddress, out var resolved, out var addrErr))
+                return RejectCreate(addrErr ?? "Vui lòng chọn Tỉnh/Thành phố và Xã/Phường.");
             if (!GuestValidation.FitsMax(request.Notes, GuestValidation.NotesMax))
                 return RejectCreate("Ghi chú tối đa 2000 ký tự.");
-
-            var isAtHome = variant.VariantLabel.Contains("nhà", StringComparison.OrdinalIgnoreCase)
-                           || variant.VariantLabel.Contains("home", StringComparison.OrdinalIgnoreCase)
-                           || variant.Sku.Contains("HOME", StringComparison.OrdinalIgnoreCase);
-            if (isAtHome && string.IsNullOrWhiteSpace(request.ServiceAddress))
-                return RejectCreate("Vui lòng nhập địa chỉ khi chọn dịch vụ tại nhà.");
 
             var bookingNumber = await NextBookingNumberAsync(ct);
             var booking = new ServiceBooking
@@ -67,9 +67,14 @@ public class ServiceBookingService(
                 CustomerName = request.CustomerName.Trim(),
                 CustomerEmail = request.CustomerEmail.Trim(),
                 CustomerPhone = request.CustomerPhone.Trim(),
+                CitizenId = citizenId.Length == 0 ? null : citizenId,
                 PreferredDate = request.PreferredDate,
                 PreferredTime = time,
                 ServiceAddress = request.ServiceAddress?.Trim(),
+                ProvinceCode = resolved.ProvinceCode,
+                ProvinceName = resolved.ProvinceName,
+                CommuneCode = resolved.CommuneCode,
+                CommuneName = resolved.CommuneName,
                 Notes = request.Notes?.Trim(),
                 Status = ServiceBookingStatus.New,
                 LanguageCode = string.IsNullOrWhiteSpace(request.LanguageCode) ? "vi" : request.LanguageCode,
@@ -114,9 +119,10 @@ public class ServiceBookingService(
                 ["CustomerName"] = EmailTemplateService.Enc(booking.CustomerName),
                 ["CustomerEmail"] = EmailTemplateService.Enc(booking.CustomerEmail),
                 ["CustomerPhone"] = EmailTemplateService.Enc(booking.CustomerPhone),
+                ["CitizenId"] = EmailTemplateService.Enc(booking.CitizenId),
                 ["PreferredDate"] = booking.PreferredDate.ToString("yyyy-MM-dd"),
                 ["PreferredTime"] = EmailTemplateService.Enc(booking.PreferredTime),
-                ["ServiceAddress"] = EmailTemplateService.Enc(booking.ServiceAddress),
+                ["ServiceAddress"] = EmailTemplateService.Enc(AddressFormat.Join(booking.ServiceAddress, booking.CommuneName, booking.ProvinceName)),
                 ["Notes"] = EmailTemplateService.Enc(booking.Notes)
             };
 
@@ -178,7 +184,8 @@ public class ServiceBookingService(
                 b.BookingNumber.ToLower().Contains(term) ||
                 b.CustomerName.ToLower().Contains(term) ||
                 b.CustomerEmail.ToLower().Contains(term) ||
-                b.CustomerPhone.ToLower().Contains(term));
+                b.CustomerPhone.ToLower().Contains(term) ||
+                (b.CitizenId != null && b.CitizenId.Contains(term)));
         }
 
         (from, to) = AdminListQuery.NormalizeDateRange(from, to);
@@ -247,14 +254,16 @@ public class ServiceBookingService(
             .FirstOrDefaultAsync(x => x.Id == id, ct);
         if (b is null) return null;
         return new ServiceBookingDetailDto(
-            b.Id, b.BookingNumber, b.CustomerName, b.CustomerEmail, b.CustomerPhone,
+            b.Id, b.BookingNumber, b.CustomerName, b.CustomerEmail, b.CustomerPhone, b.CitizenId,
             b.Service.Translations.FirstOrDefault(t => t.LanguageCode == "vi")?.Name ?? b.Service.Slug,
             b.ServiceVariant.VariantLabel,
-            b.PreferredDate, b.PreferredTime, b.ServiceAddress, b.Notes, b.InternalNotes,
+            b.PreferredDate, b.PreferredTime, b.ServiceAddress,
+            b.ProvinceCode, b.ProvinceName, b.CommuneCode, b.CommuneName,
+            b.Notes, b.InternalNotes, b.Amount,
             b.Status, b.LanguageCode, b.CreatedAt);
     }
 
-    public async Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, ServiceBookingStatus status, string? internalNotes, CancellationToken ct = default)
+    public async Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, ServiceBookingStatus status, string? internalNotes, string? citizenId, decimal? amount, CancellationToken ct = default)
     {
         logger.LogInformation("UpdateBookingStatus Start Id={Id} Status={Status}", id, status);
         try
@@ -272,8 +281,39 @@ public class ServiceBookingService(
                 return (false, msg);
             }
 
+            var cid = GuestValidation.NormalizeCitizenId(citizenId);
+            if (cid.Length > 0 && !GuestValidation.IsCitizenId(cid))
+            {
+                const string msg = "CCCD / CMND phải gồm 9 hoặc 12 chữ số.";
+                logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, msg);
+                return (false, msg);
+            }
+            if (amount is < 0)
+            {
+                const string msg = "Thành tiền không hợp lệ.";
+                logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, msg);
+                return (false, msg);
+            }
+            if (status == ServiceBookingStatus.Completed)
+            {
+                if (!GuestValidation.IsCitizenId(cid))
+                {
+                    const string msg = "Vui lòng nhập CCCD / CMND khi hoàn thành dịch vụ.";
+                    logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, msg);
+                    return (false, msg);
+                }
+                if (amount is null)
+                {
+                    const string msg = "Vui lòng nhập thành tiền khi hoàn thành dịch vụ.";
+                    logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, msg);
+                    return (false, msg);
+                }
+            }
+
             var from = b.Status;
             b.Status = status;
+            b.CitizenId = cid.Length == 0 ? null : cid;
+            b.Amount = amount;
             if (internalNotes is not null) b.InternalNotes = internalNotes;
             if (status == ServiceBookingStatus.Confirmed) b.ConfirmedAt ??= DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
@@ -282,7 +322,7 @@ public class ServiceBookingService(
                 "ServiceBooking",
                 b.Id.ToString(),
                 new { Status = from.ToString() },
-                new { Status = status.ToString(), InternalNotes = internalNotes },
+                new { Status = status.ToString(), InternalNotes = internalNotes, CitizenId = b.CitizenId, Amount = b.Amount },
                 ct);
             await history.AppendBookingAsync(
                 b.Id,

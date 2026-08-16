@@ -28,6 +28,7 @@
 
     @await Component.InvokeAsync("SiteFooter")
     @await Component.InvokeAsync("CookieConsent")
+    <script src="~/js/address-fields.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

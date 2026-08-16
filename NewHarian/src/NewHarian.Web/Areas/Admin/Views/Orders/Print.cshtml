@@ -1,4 +1,5 @@
 @model NewHarian.Application.Orders.OrderSummaryDto
+@using NewHarian.Application.Address
 @using NewHarian.Application.Orders
 @{
     Layout = null;
@@ -107,7 +108,7 @@
         </div>
         <div style="grid-column: 1 / -1">
             <div class="label">Địa chỉ</div>
-            <div class="value">@Model.ShippingAddress @(Model.ShippingDistrict) @Model.ProvinceName</div>
+            <div class="value">@AddressFormat.Join(Model.ShippingAddress, Model.ShippingDistrict, Model.ProvinceName)</div>
         </div>
     </div>
 

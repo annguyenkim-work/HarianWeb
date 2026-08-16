@@ -9,6 +9,8 @@ public class DealerFormModel
     public string Email { get; set; } = "";
     public string CitizenId { get; set; } = "";
     public string Address { get; set; } = "";
+    public string ProvinceCode { get; set; } = "";
+    public string CommuneCode { get; set; } = "";
     public string? Message { get; set; }
     /// <summary>Honeypot — must stay empty.</summary>
     public string? Website { get; set; }
@@ -20,11 +22,14 @@ public record DealerListItemDto(
 
 public record DealerDetailDto(
     int Id, DateTime CreatedAt, string FullName, string Phone, string Email, string? CitizenId, string Address,
+    string? ProvinceCode, string? ProvinceName, string? CommuneCode, string? CommuneName,
     string? Message, DealerStatus Status, decimal? DiscountPercent, string? InternalNotes,
     string? ReviewedByUserId, string LanguageCode, DateTime? ReviewedAt);
 
 public record DealerOptionDto(
-    int Id, string FullName, string Phone, string Email, string Address, string? CitizenId, decimal DiscountPercent);
+    int Id, string FullName, string Phone, string Email, string Address,
+    string? ProvinceCode, string? ProvinceName, string? CommuneCode, string? CommuneName,
+    string? CitizenId, decimal DiscountPercent);
 
 public class DealerCreateRequest
 {
@@ -33,6 +38,8 @@ public class DealerCreateRequest
     public string Email { get; set; } = "";
     public string CitizenId { get; set; } = "";
     public string Address { get; set; } = "";
+    public string ProvinceCode { get; set; } = "";
+    public string CommuneCode { get; set; } = "";
     public string? Message { get; set; }
     public decimal DiscountPercent { get; set; }
     public string? InternalNotes { get; set; }

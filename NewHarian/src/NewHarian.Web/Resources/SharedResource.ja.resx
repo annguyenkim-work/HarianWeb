@@ -57,6 +57,7 @@
   <data name="Book.Name" xml:space="preserve"><value>お名前</value></data>
   <data name="Book.Email" xml:space="preserve"><value>メール</value></data>
   <data name="Book.Phone" xml:space="preserve"><value>電話</value></data>
+  <data name="Book.CitizenIdHint" xml:space="preserve"><value>予約時は任意（9桁または12桁）。サービス完了時にスタッフが必要とします。</value></data>
   <data name="Book.Date" xml:space="preserve"><value>希望日</value></data>
   <data name="Book.Time" xml:space="preserve"><value>時間帯</value></data>
   <data name="Book.Address" xml:space="preserve"><value>住所（訪問の場合必須）</value></data>
@@ -85,6 +86,9 @@
   <data name="Checkout.Address" xml:space="preserve"><value>お届け先住所</value></data>
   <data name="Checkout.Province" xml:space="preserve"><value>都道府県</value></data>
   <data name="Checkout.District" xml:space="preserve"><value>市区町村</value></data>
+  <data name="Address.Province" xml:space="preserve"><value>省 / 中央直轄市</value></data>
+  <data name="Address.Commune" xml:space="preserve"><value>坊 / 社</value></data>
+  <data name="Address.Line" xml:space="preserve"><value>番地・通り</value></data>
   <data name="Checkout.Postal" xml:space="preserve"><value>郵便番号</value></data>
   <data name="Checkout.Notes" xml:space="preserve"><value>備考</value></data>
   <data name="Checkout.Payment" xml:space="preserve"><value>お支払い方法</value></data>

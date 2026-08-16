@@ -1,6 +1,9 @@
 @model NewHarian.Application.Engagement.ContactFormModel
+@inject NewHarian.Application.Address.IVietnamDivisionCatalog Catalog
 @{
     ViewData["Title"] = Localizer["Contact.Confirm"];
+    Catalog.TryResolve(Model.ProvinceCode, Model.CommuneCode, out var addr);
+    var addressText = AddressFormat.Join(Model.Address, addr.CommuneName, addr.ProvinceName);
 }
 <section class="page-hero"><h1>@Localizer["Contact.Confirm"]</h1></section>
 <main class="content-main content-main--full" style="max-width:640px">
@@ -8,7 +11,7 @@
         <dt>@Localizer["Contact.Name"]</dt><dd>@Model.Name</dd>
         <dt>@Localizer["Contact.Email"]</dt><dd>@Model.Email</dd>
         <dt>@Localizer["Contact.Phone"]</dt><dd>@(Model.Phone ?? "-")</dd>
-        <dt>@Localizer["Contact.Address"]</dt><dd>@(Model.Address ?? "-")</dd>
+        <dt>@Localizer["Contact.Address"]</dt><dd>@addressText</dd>
         <dt>@Localizer["Contact.Message"]</dt><dd style="white-space:pre-wrap">@Model.Message</dd>
     </dl>
     <form action="/contact/submit" method="post" class="form-inline" style="gap:1rem"
@@ -19,6 +22,8 @@
         <input type="hidden" asp-for="Email" />
         <input type="hidden" asp-for="Phone" />
         <input type="hidden" asp-for="Address" />
+        <input type="hidden" asp-for="ProvinceCode" />
+        <input type="hidden" asp-for="CommuneCode" />
         <input type="hidden" asp-for="Message" />
         <a href="/contact" class="btn-secondary">@Localizer["Checkout.Edit"]</a>
         <button type="submit" class="btn-primary">@Localizer["Contact.Send"]</button>

@@ -57,6 +57,7 @@
   <data name="Book.Name" xml:space="preserve"><value>Full name</value></data>
   <data name="Book.Email" xml:space="preserve"><value>Email</value></data>
   <data name="Book.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Book.CitizenIdHint" xml:space="preserve"><value>Optional when booking (9 or 12 digits). Staff will need it when the service is completed.</value></data>
   <data name="Book.Date" xml:space="preserve"><value>Preferred date</value></data>
   <data name="Book.Time" xml:space="preserve"><value>Time</value></data>
   <data name="Book.Address" xml:space="preserve"><value>Address (required for at-home)</value></data>
@@ -85,6 +86,9 @@
   <data name="Checkout.Address" xml:space="preserve"><value>Shipping address</value></data>
   <data name="Checkout.Province" xml:space="preserve"><value>Province / City</value></data>
   <data name="Checkout.District" xml:space="preserve"><value>District</value></data>
+  <data name="Address.Province" xml:space="preserve"><value>Province / City</value></data>
+  <data name="Address.Commune" xml:space="preserve"><value>Ward / Commune</value></data>
+  <data name="Address.Line" xml:space="preserve"><value>Street address</value></data>
   <data name="Checkout.Postal" xml:space="preserve"><value>Postal code</value></data>
   <data name="Checkout.Notes" xml:space="preserve"><value>Order notes</value></data>
   <data name="Checkout.Payment" xml:space="preserve"><value>Payment method</value></data>

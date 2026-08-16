@@ -16,6 +16,22 @@
         <span class="detail-field__label">SĐT</span>
         <span class="detail-field__value">@Model.CustomerPhone</span>
     </div>
+    @{
+        var canEditFields = Model.Status is ServiceBookingStatus.New or ServiceBookingStatus.Confirmed;
+    }
+    <div class="detail-field">
+        <span class="detail-field__label">CCCD / CMND</span>
+        @if (canEditFields)
+        {
+            <input name="citizenId" class="form-control" maxlength="20" inputmode="numeric" autocomplete="off"
+                   value="@Model.CitizenId" placeholder="9 hoặc 12 chữ số" />
+            <span class="muted">Bắt buộc khi hoàn thành</span>
+        }
+        else
+        {
+            <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.CitizenId) ? "-" : Model.CitizenId)</span>
+        }
+    </div>
     <div class="detail-field">
         <span class="detail-field__label">Status</span>
         <span class="detail-field__value">@Model.Status</span>
@@ -32,9 +48,22 @@
         <span class="detail-field__label">Tạo lúc</span>
         <span class="detail-field__value">@Model.CreatedAt.ToLocalTime().ToString("g")</span>
     </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Thành tiền</span>
+        @if (canEditFields)
+        {
+            <input name="amount" type="number" min="0" step="1000" class="form-control"
+                   value="@(Model.Amount?.ToString(System.Globalization.CultureInfo.InvariantCulture))" placeholder="VNĐ" />
+            <span class="muted">Bắt buộc khi hoàn thành</span>
+        }
+        else
+        {
+            <span class="detail-field__value">@(Model.Amount is decimal amt ? $"{amt.ToString("N0")}đ" : "-")</span>
+        }
+    </div>
     <div class="detail-field detail-field--wide">
         <span class="detail-field__label">Địa chỉ</span>
-        <span class="detail-field__value">@(Model.ServiceAddress ?? "-")</span>
+        <span class="detail-field__value">@(string.IsNullOrWhiteSpace(AddressFormat.Join(Model.ServiceAddress, Model.CommuneName, Model.ProvinceName)) ? "-" : AddressFormat.Join(Model.ServiceAddress, Model.CommuneName, Model.ProvinceName))</span>
     </div>
     <div class="detail-field detail-field--wide">
         <span class="detail-field__label">Ghi chú KH</span>

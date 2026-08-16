@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.RateLimiting;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Engagement;
 using NewHarian.Application.Posts;
-using NewHarian.Application.Shipping;
 using NewHarian.Domain.Enums;
 
 namespace NewHarian.Web.Controllers;
@@ -12,14 +11,10 @@ namespace NewHarian.Web.Controllers;
 public class CareersController(
     IJobApplicationService apps,
     ISitePostService posts,
-    IMediaStorage media,
-    IShippingService shipping) : Controller
+    IMediaStorage media) : Controller
 {
     private const string SessionKey = "careers.draft";
     private string Lang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-
-    private async Task LoadProvincesAsync(CancellationToken ct)
-        => ViewBag.Provinces = await shipping.GetActiveProvincesAsync(Lang, ct);
 
     [HttpGet("/careers")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -60,7 +55,6 @@ public class CareersController(
         model.JobSlug = post.Slug;
         model.JobTitle = post.Title;
         ViewData["Title"] = "Ứng tuyển";
-        await LoadProvincesAsync(ct);
         return View(model);
     }
 
@@ -89,7 +83,6 @@ public class CareersController(
             if (cvFile.Length > CvMaxBytes)
             {
                 ModelState.AddModelError(string.Empty, $"File CV tối đa {MediaUploadLimits.MaxFileLabel}.");
-                await LoadProvincesAsync(ct);
                 return View(model);
             }
             try
@@ -101,7 +94,6 @@ public class CareersController(
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
-                await LoadProvincesAsync(ct);
                 return View(model);
             }
         }
@@ -109,14 +101,12 @@ public class CareersController(
         if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.Email))
         {
             ModelState.AddModelError(string.Empty, "Vui lòng kiểm tra họ tên và email.");
-            await LoadProvincesAsync(ct);
             return View(model);
         }
 
         if (model.ApplicationType == ApplicationType.Application && model.AttachmentMediaFileId is null or <= 0)
         {
             ModelState.AddModelError(string.Empty, "Vui lòng đính kèm CV khi ứng tuyển.");
-            await LoadProvincesAsync(ct);
             return View(model);
         }
 

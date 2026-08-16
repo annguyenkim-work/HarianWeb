@@ -22,6 +22,10 @@ public class Inquiry
     public string Email { get; set; } = string.Empty;
     public string? Phone { get; set; }
     public string? Address { get; set; }
+    public string? ProvinceCode { get; set; }
+    public string? ProvinceName { get; set; }
+    public string? CommuneCode { get; set; }
+    public string? CommuneName { get; set; }
     public string? Subject { get; set; }
     public string Message { get; set; } = string.Empty;
     public InquiryStatus Status { get; set; } = InquiryStatus.New;
@@ -42,6 +46,8 @@ public class JobApplication
     public int? Age { get; set; }
     public string? Prefecture { get; set; }
     public string? City { get; set; }
+    public string? ProvinceCode { get; set; }
+    public string? CommuneCode { get; set; }
     public string? Address { get; set; }
     public string? Phone { get; set; }
     public string Email { get; set; } = string.Empty;

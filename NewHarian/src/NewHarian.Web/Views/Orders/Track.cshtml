@@ -42,6 +42,7 @@
         <partial name="_OrderTimeline" model="histories" />
         <p>@Localizer["Orders.Status"]: <strong>@order.Status</strong></p>
         <p>@Localizer["Checkout.Payment"]: @order.PaymentMethod</p>
+        <p>@AddressFormat.Join(order.ShippingAddress, order.ShippingDistrict, order.ProvinceName)</p>
         @if (!string.IsNullOrWhiteSpace(order.CitizenId))
         {
             <p>@Localizer["Checkout.CitizenId"]: @order.CitizenId</p>

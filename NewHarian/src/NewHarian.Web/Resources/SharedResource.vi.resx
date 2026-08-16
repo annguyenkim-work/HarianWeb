@@ -57,6 +57,7 @@
   <data name="Book.Name" xml:space="preserve"><value>Họ tên</value></data>
   <data name="Book.Email" xml:space="preserve"><value>Email</value></data>
   <data name="Book.Phone" xml:space="preserve"><value>Điện thoại</value></data>
+  <data name="Book.CitizenIdHint" xml:space="preserve"><value>Không bắt buộc khi đặt lịch (9 hoặc 12 chữ số). Nhân viên sẽ cần CCCD khi hoàn thành dịch vụ.</value></data>
   <data name="Book.Date" xml:space="preserve"><value>Ngày hẹn</value></data>
   <data name="Book.Time" xml:space="preserve"><value>Buổi</value></data>
   <data name="Book.Address" xml:space="preserve"><value>Địa chỉ (bắt buộc nếu tại nhà)</value></data>
@@ -85,6 +86,9 @@
   <data name="Checkout.Address" xml:space="preserve"><value>Địa chỉ giao hàng</value></data>
   <data name="Checkout.Province" xml:space="preserve"><value>Tỉnh / Thành phố</value></data>
   <data name="Checkout.District" xml:space="preserve"><value>Quận / Huyện</value></data>
+  <data name="Address.Province" xml:space="preserve"><value>Tỉnh / Thành phố</value></data>
+  <data name="Address.Commune" xml:space="preserve"><value>Xã / Phường</value></data>
+  <data name="Address.Line" xml:space="preserve"><value>Địa chỉ (số nhà, đường)</value></data>
   <data name="Checkout.Postal" xml:space="preserve"><value>Mã bưu điện</value></data>
   <data name="Checkout.Notes" xml:space="preserve"><value>Ghi chú đơn hàng</value></data>
   <data name="Checkout.Payment" xml:space="preserve"><value>Phương thức thanh toán</value></data>
