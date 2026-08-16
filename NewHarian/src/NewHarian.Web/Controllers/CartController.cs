@@ -33,11 +33,19 @@ public class CartController(ICartService cart) : Controller
     {
         var (ok, error) = cart.Update(productVariantId, quantity);
         if (!ok)
+            return BadRequest(new { ok = false, error });
+
+        var snapshot = cart.GetCart();
+        var line = snapshot.Items.FirstOrDefault(i => i.ProductVariantId == productVariantId);
+        return Json(new
         {
-            TempData["Error"] = error;
-            return RedirectToAction(nameof(Index));
-        }
-        return RedirectToAction(nameof(Index));
+            ok = true,
+            quantity = line?.Quantity ?? quantity,
+            lineTotal = line?.LineTotal ?? 0,
+            lineTotalText = (line?.LineTotal ?? 0).ToString("N0") + "đ",
+            subTotal = snapshot.SubTotal,
+            subTotalText = snapshot.SubTotal.ToString("N0") + "đ"
+        });
     }
 
     [HttpPost]
