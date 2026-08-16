@@ -19,7 +19,7 @@
     <label>@Localizer["Contact.Name"] * <input asp-for="Name" class="form-control" required maxlength="200" /></label>
     <label>@Localizer["Contact.Email"] * <input asp-for="Email" type="email" class="form-control" required maxlength="200" /></label>
     <label>@Localizer["Contact.Phone"] <input asp-for="Phone" class="form-control" maxlength="20" /></label>
-    <label>@Localizer["Contact.Address"] <input asp-for="Address" class="form-control" maxlength="500" /></label>
+    @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "Address", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.Address })
     <label>@Localizer["Contact.Message"] * <textarea asp-for="Message" class="form-control" rows="6" required></textarea></label>
     <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>
 </form>

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NewHarian.Application.Address;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Cart;
@@ -16,6 +17,7 @@ using NewHarian.Application.Engagement;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Posts;
 using NewHarian.Application.Shipping;
+using NewHarian.Infrastructure.Address;
 using NewHarian.Infrastructure.Admin;
 using NewHarian.Infrastructure.Audit;
 using NewHarian.Infrastructure.Cart;
@@ -89,6 +91,7 @@ public static class InfrastructureServiceCollectionExtensions
             .AddPolicy(AuthorizationPolicies.AdminOnly, p => p.RequireRole(AppRoles.Admin))
             .AddPolicy(AuthorizationPolicies.AdminOrStaff, p => p.RequireRole(AppRoles.Admin, AppRoles.Staff));
 
+        services.AddSingleton<IVietnamDivisionCatalog, VietnamDivisionCatalog>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlContentSanitizer>();
         services.AddScoped<FileLoggingEmailSender>();
         services.AddScoped<ConfigurableEmailSender>();

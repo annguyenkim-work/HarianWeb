@@ -88,6 +88,7 @@
   const body = document.getElementById('dealer-modal-body');
   const open = async (url) => {
     body.innerHTML = await (await fetch(url)).text();
+    window.HarianAddress?.bindAll();
     modal.hidden = false;
   };
   document.getElementById('btn-add-dealer')?.addEventListener('click', () => open('@Url.Action("Create")'));

@@ -19,7 +19,7 @@ public class ShippingController(AppDbContext db, ILogger<ShippingController> log
         var rows = await db.ShippingProvinces.AsNoTracking()
             .Include(p => p.Rate)
             .OrderBy(p => p.SortOrder).ThenBy(p => p.NameVi)
-            .Select(p => new ShippingRow(p.Id, p.NameVi, p.Rate != null ? p.Rate.Fee : 0m, p.IsActive))
+            .Select(p => new ShippingRow(p.Id, p.Code, p.NameVi, p.Rate != null ? p.Rate.Fee : 0m, p.IsActive))
             .ToListAsync(ct);
         var (items, pager) = AdminPaging.Apply(rows, page);
         ViewBag.Pager = pager;
@@ -62,7 +62,7 @@ public class ShippingController(AppDbContext db, ILogger<ShippingController> log
         }
     }
 
-    public record ShippingRow(int ProvinceId, string Name, decimal Fee, bool IsActive);
+    public record ShippingRow(int ProvinceId, string Code, string Name, decimal Fee, bool IsActive);
 }
 
 [Area("Admin")]

@@ -1,0 +1,18 @@
+@model NewHarian.Web.Models.AddressFieldsModel
+
+<div class="address-fields" data-address-root>
+    <label>@Localizer["Address.Province"] *
+        <select name="@Model.ProvinceField" class="form-control" data-address-province required>
+            <option value="">-</option>
+        </select>
+    </label>
+    <label>@Localizer["Address.Commune"] *
+        <select name="@Model.CommuneField" class="form-control" data-address-commune data-selected="@Model.CommuneValue" required disabled>
+            <option value="">-</option>
+        </select>
+    </label>
+    <label>@Localizer["Address.Line"] *
+        <input name="@Model.LineField" class="form-control" data-address-line required maxlength="500" value="@Model.LineValue" />
+    </label>
+    <input type="hidden" data-address-province-value value="@Model.ProvinceValue" />
+</div>

@@ -95,6 +95,8 @@
                             data-phone="@d.Phone"
                             data-email="@d.Email"
                             data-address="@d.Address"
+                            data-province="@d.ProvinceCode"
+                            data-commune="@d.CommuneCode"
                             data-citizenid="@d.CitizenId"
                             data-percent="@d.DiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)">@d.FullName — @d.Phone</option>
                 }
@@ -105,8 +107,7 @@
             <input asp-for="DealerDiscountPercent" type="number" min="0" max="100" step="0.01" class="form-control" />
         </label>
         <label class="detail-field detail-field--wide">
-            <span class="detail-field__label">Địa chỉ</span>
-            <input asp-for="ShippingAddress" class="form-control" maxlength="500" />
+            @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
         </label>
         <label class="detail-field detail-field--wide">
             <span class="detail-field__label">Ghi chú KH</span>

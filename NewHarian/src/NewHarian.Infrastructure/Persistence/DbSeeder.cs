@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NewHarian.Application.Address;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Email;
 using NewHarian.Domain.Entities;
@@ -147,14 +148,7 @@ public static class DbSeeder
 
         await EnsureEmailTemplatesAsync(db);
 
-        if (!await db.ShippingProvinces.AnyAsync())
-        {
-            await SeedProvincesAsync(db);
-        }
-        else if (await db.ShippingProvinces.CountAsync() < 20)
-        {
-            await SeedMissingProvincesAsync(db);
-        }
+        await SyncVietnamShippingProvincesAsync(db, sp.GetRequiredService<IVietnamDivisionCatalog>());
 
         if (!await db.Pages.AnyAsync(p => p.Slug == "home"))
         {
@@ -883,37 +877,53 @@ public static class DbSeeder
         await db.SaveChangesAsync();
     }
 
-    private static (string Code, string NameVi, decimal Fee)[] ProvinceSeedData() =>
-    [
-        ("HN", "Hà Nội", 30000m), ("HCM", "TP. Hồ Chí Minh", 30000m), ("DN", "Đà Nẵng", 35000m),
-        ("HP", "Hải Phòng", 35000m), ("CT", "Cần Thơ", 35000m), ("AG", "An Giang", 40000m),
-        ("BRVT", "Bà Rịa - Vũng Tàu", 35000m), ("BG", "Bắc Giang", 35000m), ("BK", "Bắc Kạn", 45000m),
-        ("BL", "Bạc Liêu", 45000m), ("BN", "Bắc Ninh", 30000m), ("BTre", "Bến Tre", 40000m),
-        ("BD", "Bình Định", 40000m), ("BDuong", "Bình Dương", 30000m), ("BP", "Bình Phước", 40000m),
-        ("BThuan", "Bình Thuận", 40000m), ("CM", "Cà Mau", 45000m), ("CB", "Cao Bằng", 45000m),
-        ("DL", "Đắk Lắk", 45000m), ("DNong", "Đắk Nông", 45000m), ("DB", "Điện Biên", 50000m),
-        ("DNai", "Đồng Nai", 30000m), ("DT", "Đồng Tháp", 40000m), ("GL", "Gia Lai", 45000m),
-        ("HG", "Hà Giang", 50000m), ("HNam", "Hà Nam", 35000m), ("HT", "Hà Tĩnh", 40000m),
-        ("HD", "Hải Dương", 35000m), ("HGiang", "Hậu Giang", 40000m), ("HB", "Hòa Bình", 40000m),
-        ("HY", "Hưng Yên", 30000m), ("KH", "Khánh Hòa", 40000m), ("KG", "Kiên Giang", 45000m),
-        ("KT", "Kon Tum", 50000m), ("LC", "Lai Châu", 50000m), ("LD", "Lâm Đồng", 45000m)
-    ];
-
-    private static async Task SeedProvincesAsync(AppDbContext db)
+    private static async Task SyncVietnamShippingProvincesAsync(AppDbContext db, IVietnamDivisionCatalog catalog)
     {
-        var sort = 1;
-        foreach (var p in ProvinceSeedData())
+        var codes = catalog.Provinces.Select(p => p.Code).ToHashSet(StringComparer.Ordinal);
+        var obsolete = await db.ShippingProvinces.Where(p => !codes.Contains(p.Code)).ToListAsync();
+        if (obsolete.Count > 0)
         {
-            db.ShippingProvinces.Add(new ShippingProvince
+            var obsoleteIds = obsolete.Select(p => p.Id).ToList();
+            var names = obsolete.ToDictionary(p => p.Id, p => p.NameVi);
+            var stuck = await db.Orders.Where(o => o.ShippingProvinceId != null && obsoleteIds.Contains(o.ShippingProvinceId.Value)).ToListAsync();
+            foreach (var order in stuck)
             {
-                Code = p.Code,
-                NameVi = p.NameVi,
-                NameEn = p.NameVi,
-                NameJa = p.NameVi,
-                SortOrder = sort++,
-                IsActive = true,
-                Rate = new ShippingRate { Fee = p.Fee }
-            });
+                if (string.IsNullOrWhiteSpace(order.ShippingCity) && order.ShippingProvinceId is int pid && names.TryGetValue(pid, out var name))
+                    order.ShippingCity = name;
+                order.ShippingProvinceId = null;
+            }
+            db.ShippingProvinces.RemoveRange(obsolete);
+            await db.SaveChangesAsync();
+        }
+
+        var existing = await db.ShippingProvinces.Include(p => p.Rate).ToListAsync();
+        var byCode = existing.ToDictionary(p => p.Code, StringComparer.Ordinal);
+        var sort = 1;
+        foreach (var p in catalog.Provinces)
+        {
+            if (!byCode.TryGetValue(p.Code, out var row))
+            {
+                db.ShippingProvinces.Add(new ShippingProvince
+                {
+                    Code = p.Code,
+                    NameVi = p.Name,
+                    NameEn = p.Name,
+                    NameJa = p.Name,
+                    SortOrder = sort++,
+                    IsActive = true,
+                    Rate = new ShippingRate { Fee = 30000m }
+                });
+            }
+            else
+            {
+                row.NameVi = p.Name;
+                row.NameEn ??= p.Name;
+                row.NameJa ??= p.Name;
+                row.SortOrder = sort++;
+                row.IsActive = true;
+                if (row.Rate is null)
+                    row.Rate = new ShippingRate { Fee = 30000m };
+            }
         }
         await db.SaveChangesAsync();
     }
@@ -931,7 +941,8 @@ public static class DbSeeder
 
         foreach (var row in existing.Where(t =>
                      t.Code is EmailTemplateCodes.OrderCustomer or EmailTemplateCodes.OrderStaff
-                         or EmailTemplateCodes.DealerStaff))
+                         or EmailTemplateCodes.DealerStaff or EmailTemplateCodes.BookingCustomer
+                         or EmailTemplateCodes.BookingStaff))
         {
             var changed = false;
             if (!row.PlaceholdersHelp.Contains("CitizenId", StringComparison.Ordinal))
@@ -950,25 +961,5 @@ public static class DbSeeder
         }
         if (db.ChangeTracker.HasChanges())
             await db.SaveChangesAsync();
-    }
-
-    private static async Task SeedMissingProvincesAsync(AppDbContext db)
-    {
-        var existing = await db.ShippingProvinces.Select(p => p.Code).ToListAsync();
-        var sort = (await db.ShippingProvinces.MaxAsync(p => (int?)p.SortOrder) ?? 0) + 1;
-        foreach (var p in ProvinceSeedData().Where(x => !existing.Contains(x.Code)))
-        {
-            db.ShippingProvinces.Add(new ShippingProvince
-            {
-                Code = p.Code,
-                NameVi = p.NameVi,
-                NameEn = p.NameVi,
-                NameJa = p.NameVi,
-                SortOrder = sort++,
-                IsActive = true,
-                Rate = new ShippingRate { Fee = p.Fee }
-            });
-        }
-        await db.SaveChangesAsync();
     }
 }

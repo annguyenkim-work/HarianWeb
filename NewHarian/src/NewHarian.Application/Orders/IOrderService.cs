@@ -9,6 +9,8 @@ public class CheckoutDraft
     public string CustomerPhone { get; set; } = string.Empty;
     public string CitizenId { get; set; } = string.Empty;
     public string ShippingAddress { get; set; } = string.Empty;
+    public string ShippingProvinceCode { get; set; } = string.Empty;
+    public string ShippingCommuneCode { get; set; } = string.Empty;
     public int ShippingProvinceId { get; set; }
     public string? ShippingDistrict { get; set; }
     public string? Notes { get; set; }
@@ -77,6 +79,8 @@ public class ManualOrderCreateRequest
     public int? DealerId { get; set; }
     public decimal? DealerDiscountPercent { get; set; }
     public string? ShippingAddress { get; set; }
+    public string? ShippingProvinceCode { get; set; }
+    public string? ShippingCommuneCode { get; set; }
     public string? Notes { get; set; }
     public string? InternalNotes { get; set; }
     public List<ManualOrderLineRequest> Lines { get; set; } = new() { new() };

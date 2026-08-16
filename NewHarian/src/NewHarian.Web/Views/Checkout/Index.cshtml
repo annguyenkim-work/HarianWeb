@@ -2,7 +2,6 @@
 @{
     ViewData["Title"] = Localizer["Checkout.Title"];
     var cart = (NewHarian.Application.Cart.CartDto)ViewBag.Cart;
-    var provinces = (IReadOnlyList<NewHarian.Application.Shipping.ProvinceOptionDto>)ViewBag.Provinces;
     var threshold = (decimal)ViewBag.FreeThreshold;
 }
 
@@ -24,17 +23,7 @@
             <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" autocomplete="off" />
             <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
         </label>
-        <label>@Localizer["Checkout.Address"] <input asp-for="ShippingAddress" class="form-control" required /></label>
-        <label>@Localizer["Checkout.Province"]
-            <select asp-for="ShippingProvinceId" class="form-control" id="province-select" required>
-                <option value="">-</option>
-                @foreach (var p in provinces)
-                {
-                    <option value="@p.Id">@p.Name</option>
-                }
-            </select>
-        </label>
-        <label>@Localizer["Checkout.District"] <input asp-for="ShippingDistrict" class="form-control" /></label>
+        @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
         <label>@Localizer["Checkout.Notes"] <textarea asp-for="Notes" class="form-control" rows="3" maxlength="2000"></textarea></label>
 
         <fieldset>
@@ -69,20 +58,24 @@
 @section Scripts {
 <script>
 (() => {
-  const sel = document.getElementById('province-select');
+  const form = document.getElementById('checkout-form');
   const shipEl = document.getElementById('sum-ship');
   const totalEl = document.getElementById('sum-total');
+  const freeShipLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Checkout.FreeShip"].Value));
   async function refresh() {
-    if (!sel.value) { shipEl.textContent = '-'; return; }
-    const res = await fetch('/checkout/shipping-fee?provinceId=' + sel.value);
+    const sel = form?.querySelector('[data-address-province]');
+    if (!sel?.value) { if (shipEl) shipEl.textContent = '-'; return; }
+    const res = await fetch('/checkout/shipping-fee?provinceCode=' + encodeURIComponent(sel.value));
     if (!res.ok) return;
     const data = await res.json();
-    const freeShipLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Checkout.FreeShip"].Value));
-    shipEl.textContent = data.isFree ? freeShipLabel : data.feeText;
-    totalEl.textContent = data.totalText;
+    if (shipEl) shipEl.textContent = data.isFree ? freeShipLabel : data.feeText;
+    if (totalEl) totalEl.textContent = data.totalText;
   }
-  sel?.addEventListener('change', refresh);
-  if (sel?.value) refresh();
+  form?.addEventListener('change', e => {
+    if (e.target.matches('[data-address-province]')) refresh();
+  });
+  form?.addEventListener('harian:address-ready', refresh);
+  refresh();
 })();
 </script>
 }

@@ -188,9 +188,15 @@ public class ServiceBooking
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
+    public string? CitizenId { get; set; }
+    public decimal? Amount { get; set; }
     public DateOnly PreferredDate { get; set; }
     public string PreferredTime { get; set; } = string.Empty;
     public string? ServiceAddress { get; set; }
+    public string? ProvinceCode { get; set; }
+    public string? ProvinceName { get; set; }
+    public string? CommuneCode { get; set; }
+    public string? CommuneName { get; set; }
     public string? Notes { get; set; }
     public ServiceBookingStatus Status { get; set; } = ServiceBookingStatus.New;
     public string? InternalNotes { get; set; }

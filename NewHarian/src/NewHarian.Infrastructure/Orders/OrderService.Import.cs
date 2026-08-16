@@ -10,7 +10,7 @@ public partial class OrderService
     private static readonly string[] ImportHeaders =
     [
         "OrderGroup", "Source", "ExternalRef", "CustomerName", "CitizenId", "CustomerPhone",
-        "CustomerEmail", "ShippingAddress", "Notes", "Sku", "Quantity", "UnitPrice"
+        "CustomerEmail", "ShippingAddress", "ProvinceCode", "CommuneCode", "Notes", "Sku", "Quantity", "UnitPrice"
     ];
 
     public byte[] BuildOrderImportTemplate()
@@ -26,18 +26,20 @@ public partial class OrderService
         ws.Cell(2, 5).Value = "001234567890";
         ws.Cell(2, 6).Value = "0900000000";
         ws.Cell(2, 7).Value = "";
-        ws.Cell(2, 8).Value = "Tai cua hang";
-        ws.Cell(2, 9).Value = "";
-        ws.Cell(2, 10).Value = "SKU-MAU";
-        ws.Cell(2, 11).Value = 1;
-        ws.Cell(2, 12).Value = "";
+        ws.Cell(2, 8).Value = "12 Pho Hue";
+        ws.Cell(2, 9).Value = "01";
+        ws.Cell(2, 10).Value = "00004";
+        ws.Cell(2, 11).Value = "";
+        ws.Cell(2, 12).Value = "SKU-MAU";
+        ws.Cell(2, 13).Value = 1;
+        ws.Cell(2, 14).Value = "";
         ws.Cell(3, 1).Value = "G1";
         ws.Cell(3, 2).Value = "Store";
         ws.Cell(3, 4).Value = "Nguyen Van A";
         ws.Cell(3, 5).Value = "001234567890";
         ws.Cell(3, 6).Value = "0900000000";
-        ws.Cell(3, 10).Value = "SKU-MAU-2";
-        ws.Cell(3, 11).Value = 2;
+        ws.Cell(3, 12).Value = "SKU-MAU-2";
+        ws.Cell(3, 13).Value = 2;
         ws.Row(1).Style.Font.Bold = true;
         ws.Columns().AdjustToContents();
         using var ms = new MemoryStream();
@@ -64,7 +66,7 @@ public partial class OrderService
                     map[name] = cell.Address.ColumnNumber;
             }
 
-            foreach (var required in new[] { "OrderGroup", "Source", "CustomerName", "CitizenId", "Sku", "Quantity" })
+            foreach (var required in new[] { "OrderGroup", "Source", "CustomerName", "CitizenId", "ShippingAddress", "ProvinceCode", "CommuneCode", "Sku", "Quantity" })
             {
                 if (!map.ContainsKey(required))
                 {
@@ -97,6 +99,8 @@ public partial class OrderService
                     NullIfEmpty(Cell("CustomerPhone")),
                     NullIfEmpty(Cell("CustomerEmail")),
                     NullIfEmpty(Cell("ShippingAddress")),
+                    NullIfEmpty(Cell("ProvinceCode")),
+                    NullIfEmpty(Cell("CommuneCode")),
                     NullIfEmpty(Cell("Notes")),
                     sku,
                     Cell("Quantity"),
@@ -142,6 +146,10 @@ public partial class OrderService
                         groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "CustomerEmail khác dòng đầu nhóm."));
                     if (!string.Equals(Norm(row.ShippingAddress), Norm(head.ShippingAddress), StringComparison.OrdinalIgnoreCase))
                         groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "ShippingAddress khác dòng đầu nhóm."));
+                    if (!string.Equals(Norm(row.ProvinceCode), Norm(head.ProvinceCode), StringComparison.OrdinalIgnoreCase))
+                        groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "ProvinceCode khác dòng đầu nhóm."));
+                    if (!string.Equals(Norm(row.CommuneCode), Norm(head.CommuneCode), StringComparison.OrdinalIgnoreCase))
+                        groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "CommuneCode khác dòng đầu nhóm."));
                     if (!string.Equals(Norm(row.ExternalRef), Norm(head.ExternalRef), StringComparison.OrdinalIgnoreCase))
                         groupErrors.Add(new OrderImportError(row.Row, row.OrderGroup, "ExternalRef khác dòng đầu nhóm."));
                 }
@@ -195,6 +203,8 @@ public partial class OrderService
                     CustomerPhone = head.CustomerPhone,
                     CustomerEmail = head.CustomerEmail,
                     ShippingAddress = head.ShippingAddress,
+                    ShippingProvinceCode = head.ProvinceCode,
+                    ShippingCommuneCode = head.CommuneCode,
                     Notes = head.Notes,
                     Lines = lines
                 };
@@ -265,6 +275,8 @@ public partial class OrderService
         string? CustomerPhone,
         string? CustomerEmail,
         string? ShippingAddress,
+        string? ProvinceCode,
+        string? CommuneCode,
         string? Notes,
         string Sku,
         string Quantity,

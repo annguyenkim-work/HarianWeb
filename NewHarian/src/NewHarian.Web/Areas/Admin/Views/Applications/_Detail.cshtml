@@ -20,7 +20,7 @@
   </p>
 }
 <p><strong>@Model.FullName</strong> (@Model.Gender) - @Model.Email</p>
-<p>@Model.Phone · @Model.Address</p>
+<p>@Model.Phone · @AddressFormat.Join(Model.Address, Model.City, Model.Prefecture)</p>
 <p class="modal__message">@Model.Message</p>
 @if (!string.IsNullOrWhiteSpace(Model.AttachmentUrl)) {
   <p>CV: <a href="@Model.AttachmentUrl" target="_blank">@(Model.AttachmentName ?? "file")</a></p>

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using NewHarian.Application.Address;
 using NewHarian.Application.Cart;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
@@ -15,7 +16,8 @@ public class CheckoutController(
     ICartService cart,
     IShippingService shipping,
     IOrderService orders,
-    IBankTransferDisplayService bankTransfer) : Controller
+    IBankTransferDisplayService bankTransfer,
+    IVietnamDivisionCatalog catalog) : Controller
 {
     private const string DraftKey = "CheckoutDraft";
     private const string LastOrderKey = "LastPlacedOrder";
@@ -29,7 +31,6 @@ public class CheckoutController(
         if (basket.Items.Count == 0) return RedirectToAction("Index", "Cart");
 
         ViewBag.Cart = basket;
-        ViewBag.Provinces = await shipping.GetActiveProvincesAsync(Lang, ct);
         ViewBag.FreeThreshold = await shipping.GetFreeThresholdAsync(ct);
 
         var draft = LoadDraft() ?? new CheckoutDraft
@@ -53,7 +54,6 @@ public class CheckoutController(
         {
             ModelState.AddModelError(string.Empty, error);
             ViewBag.Cart = basket;
-            ViewBag.Provinces = await shipping.GetActiveProvincesAsync(Lang, ct);
             ViewBag.FreeThreshold = await shipping.GetFreeThresholdAsync(ct);
             return View(model);
         }
@@ -64,10 +64,10 @@ public class CheckoutController(
     }
 
     [HttpGet("/checkout/shipping-fee")]
-    public async Task<IActionResult> ShippingFee(int provinceId, CancellationToken ct)
+    public async Task<IActionResult> ShippingFee(string provinceCode, CancellationToken ct)
     {
         var basket = cart.GetCart();
-        var (fee, isFree) = await shipping.CalculateFeeAsync(basket.SubTotal, provinceId, ct);
+        var (fee, isFree) = await shipping.CalculateFeeAsync(basket.SubTotal, provinceCode ?? "", ct);
         return Json(new
         {
             fee,
@@ -87,12 +87,12 @@ public class CheckoutController(
         var basket = cart.GetCart();
         if (draft is null || basket.Items.Count == 0) return RedirectToAction(nameof(Index));
 
-        var (fee, isFree) = await shipping.CalculateFeeAsync(basket.SubTotal, draft.ShippingProvinceId, ct);
-        var provinces = await shipping.GetActiveProvincesAsync(Lang, ct);
+        var (fee, isFree) = await shipping.CalculateFeeAsync(basket.SubTotal, draft.ShippingProvinceCode, ct);
+        catalog.TryResolve(draft.ShippingProvinceCode, draft.ShippingCommuneCode, out var addr);
         ViewBag.Cart = basket;
         ViewBag.ShippingFee = fee;
         ViewBag.IsFreeShipping = isFree;
-        ViewBag.ProvinceName = provinces.FirstOrDefault(p => p.Id == draft.ShippingProvinceId)?.Name ?? "";
+        ViewBag.ShipTo = AddressFormat.Join(draft.ShippingAddress, addr.CommuneName, addr.ProvinceName);
         ViewBag.Total = basket.SubTotal + fee;
         return View(draft);
     }
@@ -146,7 +146,7 @@ public class CheckoutController(
         return View(order);
     }
 
-    private static string? ValidateDraft(CheckoutDraft m)
+    private string? ValidateDraft(CheckoutDraft m)
     {
         if (!GuestValidation.HasLength(m.CustomerName, 2, GuestValidation.NameMax))
             return "Vui lòng điền họ tên (2-200 ký tự)."; // CHK_REQUIRED
@@ -156,12 +156,9 @@ public class CheckoutController(
             return "Số điện thoại không hợp lệ (8-20 ký tự, chỉ số/khoảng trắng/+/-)."; // CHK_PHONE_INVALID
         if (!GuestValidation.IsCitizenId(m.CitizenId))
             return "CCCD phải gồm 9 hoặc 12 chữ số."; // CHK_CITIZEN_ID_INVALID
-        if (!GuestValidation.HasLength(m.ShippingAddress, 5, GuestValidation.AddressMax))
-            return "Vui lòng điền địa chỉ giao hàng (5-500 ký tự)."; // CHK_REQUIRED
-        if (m.ShippingProvinceId <= 0)
-            return "Vui lòng chọn Tỉnh/Thành phố."; // CHK_PROVINCE_REQUIRED
-        if (!GuestValidation.FitsMax(m.ShippingDistrict, 100))
-            return "Quận/Huyện tối đa 100 ký tự.";
+        var addrErr = AddressFormat.Require(catalog, m.ShippingProvinceCode, m.ShippingCommuneCode, m.ShippingAddress);
+        if (addrErr is not null)
+            return addrErr; // CHK_REQUIRED / CHK_PROVINCE_REQUIRED
         if (!GuestValidation.FitsMax(m.Notes, GuestValidation.NotesMax))
             return "Ghi chú tối đa 2000 ký tự.";
         if (m.PaymentMethod is not (PaymentMethod.COD or PaymentMethod.BankTransfer))

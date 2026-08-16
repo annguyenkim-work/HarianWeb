@@ -93,13 +93,13 @@
     </figure>
 
     <p><strong>Hủy đơn:</strong> khả dụng khi đơn còn ở AwaitingConfirmation / PendingPayment / Confirmed / Processing.</p>
-    <p class="muted">Đơn mới (web, tạo tay, import) bắt buộc <strong>CCCD</strong> (9 hoặc 12 chữ số) để xuất hóa đơn. Đơn <strong>đại lý</strong> chỉ tạo tay: chọn loại khách Đại lý, prefill hồ sơ, chiết khấu % có thể sửa trên đơn (giảm tổng tiền).</p>
+    <p class="muted">Đơn mới (web, tạo tay, import) bắt buộc <strong>CCCD</strong> (9 hoặc 12 chữ số) để xuất hóa đơn, và địa chỉ 3 trường: <strong>Tỉnh/Thành phố</strong> (mã <code>ProvinceCode</code> theo danh mục 34 tỉnh), <strong>Xã/Phường</strong> (<code>CommuneCode</code>), <strong>địa chỉ</strong> (số nhà, đường, 5–500 ký tự). File import Excel thêm cột <code>ProvinceCode</code> và <code>CommuneCode</code>. Đơn <strong>đại lý</strong> chỉ tạo tay: chọn loại khách Đại lý, prefill hồ sơ (kèm tỉnh/xã), chiết khấu % có thể sửa trên đơn (giảm tổng tiền).</p>
     <p class="muted">Gợi ý: luôn cập nhật <em>Ghi chú nội bộ</em> (đã gọi lúc nào, khách xác nhận gì) trước khi đổi trạng thái.</p>
 </section>
 
 <section id="dat-lich" class="help-section admin-help-section">
     <h2>Đặt lịch dịch vụ</h2>
-    <p>Menu <strong>Đặt lịch</strong> → <code>/admin/ServiceBookings</code>. Lọc theo trạng thái, mở <strong>Chi tiết</strong>, cập nhật Status + <em>Ghi chú nội bộ</em> → <strong>Lưu</strong>.</p>
+    <p>Menu <strong>Đặt lịch</strong> → <code>/admin/ServiceBookings</code>. Lọc theo trạng thái, mở <strong>Chi tiết</strong>, cập nhật Status + <em>Ghi chú nội bộ</em>. Khi bấm <strong>Hoàn thành</strong>, bắt buộc nhập <strong>CCCD</strong> (9 hoặc 12 chữ số) và <strong>Thành tiền</strong>.</p>
     <ul>
         <li><code>New</code> - vừa nhận từ website</li>
         <li><code>Confirmed</code> - đã liên hệ / chốt lịch với khách</li>
@@ -197,7 +197,7 @@
     <section id="cai-dat" class="help-section admin-help-section">
         <h2>Cài đặt website</h2>
         <ul>
-            <li><strong>Phí ship</strong> - theo tỉnh/thành; miễn phí ship từ ngưỡng cấu hình (hiện 1.000.000đ trên site khách).</li>
+            <li><strong>Phí ship</strong> - theo 34 tỉnh/thành (mã <code>idProvince</code>); miễn phí ship từ ngưỡng cấu hình (hiện 1.000.000đ trên site khách).</li>
             <li><strong>Users</strong> - tạo/khóa tài khoản Admin/Staff.</li>
             <li><strong>Thương hiệu &amp; logo</strong> - tên thương hiệu, logo header/footer.</li>
             <li><strong>Email &amp; thông báo</strong> / <strong>Mẫu email</strong> - SMTP và nội dung email đơn hàng, đặt lịch, …</li>

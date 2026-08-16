@@ -34,7 +34,7 @@
     }
     <div class="detail-field detail-field--wide">
         <span class="detail-field__label">Địa chỉ</span>
-        <span class="detail-field__value">@Model.Address</span>
+        <span class="detail-field__value">@AddressFormat.Join(Model.Address, Model.CommuneName, Model.ProvinceName)</span>
     </div>
     <div class="detail-field detail-field--wide">
         <span class="detail-field__label">Ghi chú KH</span>

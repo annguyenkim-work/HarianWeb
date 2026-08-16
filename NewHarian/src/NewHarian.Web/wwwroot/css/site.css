@@ -1025,6 +1025,7 @@ body:has(.hero-slider) .site-header .lang-btn.is-active {
   border-color: var(--color-primary-green);
 }
 .add-cart-form, .form-stack { display: grid; gap: 0.75rem; max-width: 480px; margin-top: 1rem; }
+.address-fields { display: grid; gap: 0.75rem; }
 .form-control, .qty-input {
   display: block;
   width: 100%;

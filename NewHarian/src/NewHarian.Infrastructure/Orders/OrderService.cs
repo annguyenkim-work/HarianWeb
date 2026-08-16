@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Address;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Cart;
 using NewHarian.Application.Email;
@@ -25,6 +26,7 @@ public partial class OrderService(
     IStatusHistoryService history,
     IAdminNotificationService notifications,
     IBankTransferDisplayService bankTransfer,
+    IVietnamDivisionCatalog catalog,
     ILogger<OrderService> logger) : IOrderService
 {
     public async Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(CheckoutDraft draft, CancellationToken ct = default)
@@ -37,12 +39,14 @@ public partial class OrderService(
                 return RejectPlaceOrder("Giỏ hàng trống.");
 
             if (string.IsNullOrWhiteSpace(draft.CustomerName) || string.IsNullOrWhiteSpace(draft.CustomerEmail)
-                || string.IsNullOrWhiteSpace(draft.CustomerPhone) || string.IsNullOrWhiteSpace(draft.ShippingAddress)
-                || !GuestValidation.IsCitizenId(draft.CitizenId))
+                || string.IsNullOrWhiteSpace(draft.CustomerPhone) || !GuestValidation.IsCitizenId(draft.CitizenId))
                 return RejectPlaceOrder("Vui lòng điền đầy đủ thông tin bắt buộc (gồm CCCD).");
 
+            if (!AddressFormat.TryBind(catalog, draft.ShippingProvinceCode, draft.ShippingCommuneCode, draft.ShippingAddress, out var resolved, out var addrErr))
+                return RejectPlaceOrder(addrErr ?? "Vui lòng chọn Tỉnh/Thành phố và Xã/Phường.");
+
             var province = await db.ShippingProvinces.AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == draft.ShippingProvinceId && p.IsActive, ct);
+                .FirstOrDefaultAsync(p => p.Code == resolved.ProvinceCode && p.IsActive, ct);
             if (province is null)
                 return RejectPlaceOrder("Vui lòng chọn Tỉnh/Thành phố.");
 
@@ -50,7 +54,7 @@ public partial class OrderService(
                 return RejectPlaceOrder("Phương thức thanh toán không hợp lệ.");
 
             var subTotal = basket.SubTotal;
-            var (shipFee, _) = await shipping.CalculateFeeAsync(subTotal, draft.ShippingProvinceId, ct);
+            var (shipFee, _) = await shipping.CalculateFeeAsync(subTotal, province.Id, ct);
             var total = subTotal + shipFee;
 
             var orderNumber = await NextOrderNumberAsync(ct);
@@ -66,9 +70,10 @@ public partial class OrderService(
                 CustomerPhone = draft.CustomerPhone.Trim(),
                 CitizenId = GuestValidation.NormalizeCitizenId(draft.CitizenId),
                 ShippingAddress = draft.ShippingAddress.Trim(),
-                ShippingProvinceId = draft.ShippingProvinceId,
-                ShippingCity = province.NameVi,
-                ShippingDistrict = draft.ShippingDistrict?.Trim(),
+                ShippingProvinceId = province.Id,
+                ShippingCity = resolved.ProvinceName,
+                ShippingDistrict = resolved.CommuneName,
+                ShippingCommuneCode = resolved.CommuneCode,
                 Notes = draft.Notes?.Trim(),
                 SubTotal = subTotal,
                 ShippingFee = shipFee,
@@ -124,7 +129,7 @@ public partial class OrderService(
                 order.Id.ToString(),
                 ct);
 
-            await SendOrderEmailsAsync(order, province.NameVi, ct);
+            await SendOrderEmailsAsync(order, resolved.ProvinceName, ct);
             logger.LogInformation("PlaceOrder Done OrderNumber={OrderNumber}", order.OrderNumber);
             return (true, null, order.OrderNumber);
         }
@@ -352,6 +357,14 @@ public partial class OrderService(
             if (!GuestValidation.IsCitizenId(request.CitizenId))
                 return RejectManual("CCCD phải gồm 9 hoặc 12 chữ số.");
 
+            if (!AddressFormat.TryBind(catalog, request.ShippingProvinceCode, request.ShippingCommuneCode, request.ShippingAddress, out var resolved, out var addrErr))
+                return RejectManual(addrErr ?? "Vui lòng chọn Tỉnh/Thành phố và Xã/Phường.");
+
+            var shippingProvinceId = await db.ShippingProvinces.AsNoTracking()
+                .Where(p => p.Code == resolved.ProvinceCode && p.IsActive)
+                .Select(p => (int?)p.Id)
+                .FirstOrDefaultAsync(ct);
+
             var lines = (request.Lines ?? [])
                 .Where(l => !string.IsNullOrWhiteSpace(l.Sku))
                 .ToList();
@@ -445,6 +458,10 @@ public partial class OrderService(
                 DealerDiscountPercent = dealerId is null ? null : discountPercent,
                 DiscountAmount = discountAmount,
                 ShippingAddress = request.ShippingAddress?.Trim() ?? string.Empty,
+                ShippingProvinceId = shippingProvinceId,
+                ShippingCity = resolved.ProvinceName,
+                ShippingDistrict = resolved.CommuneName,
+                ShippingCommuneCode = resolved.CommuneCode,
                 Notes = request.Notes?.Trim(),
                 InternalNotes = request.InternalNotes?.Trim(),
                 SubTotal = subTotal,
@@ -797,7 +814,7 @@ public partial class OrderService(
             ["CustomerEmail"] = EmailTemplateService.Enc(order.CustomerEmail),
             ["CustomerPhone"] = EmailTemplateService.Enc(order.CustomerPhone),
             ["CitizenId"] = EmailTemplateService.Enc(order.CitizenId),
-            ["ShippingAddress"] = EmailTemplateService.Enc(order.ShippingAddress),
+            ["ShippingAddress"] = EmailTemplateService.Enc(AddressFormat.Join(order.ShippingAddress, order.ShippingDistrict, provinceName)),
             ["ProvinceName"] = EmailTemplateService.Enc(provinceName),
             ["PaymentMethod"] = EmailTemplateService.Enc(order.PaymentMethod.ToString()),
             ["OrderLinesHtml"] = lines,

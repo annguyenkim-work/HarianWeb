@@ -27,10 +27,9 @@
             <span class="detail-field__label">Chiết khấu % *</span>
             <input asp-for="DiscountPercent" type="number" min="0" max="100" step="0.01" class="form-control" required />
         </label>
-        <label class="detail-field detail-field--wide">
-            <span class="detail-field__label">Địa chỉ *</span>
-            <input asp-for="Address" class="form-control" required maxlength="500" />
-        </label>
+        <div class="detail-field detail-field--wide">
+            @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "Address", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.Address })
+        </div>
         <label class="detail-field">
             <span class="detail-field__label">Ghi chú</span>
             <textarea asp-for="Message" class="form-control" rows="2"></textarea>

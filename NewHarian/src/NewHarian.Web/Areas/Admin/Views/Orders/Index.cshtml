@@ -281,7 +281,9 @@
     const name = form.querySelector('[name="CustomerName"]');
     const phone = form.querySelector('[name="CustomerPhone"]');
     const email = form.querySelector('[name="CustomerEmail"]');
-    const address = form.querySelector('[name="ShippingAddress"]');
+    const address = form.querySelector('[data-address-line]');
+    const province = form.querySelector('[data-address-province]');
+    const commune = form.querySelector('[data-address-commune]');
     const citizenId = form.querySelector('[name="CitizenId"]');
 
     function applyKind() {
@@ -301,6 +303,11 @@
       if (phone) phone.value = opt.dataset.phone || '';
       if (email) email.value = opt.dataset.email || '';
       if (address) address.value = opt.dataset.address || '';
+      if (province) {
+        province.value = opt.dataset.province || '';
+        province.dispatchEvent(new Event('change'));
+      }
+      if (commune) commune.value = opt.dataset.commune || '';
       if (citizenId) citizenId.value = opt.dataset.citizenid || '';
       if (pct) pct.value = opt.dataset.percent || '';
     });
@@ -308,6 +315,7 @@
   }
 
   function bindCreateForm() {
+    window.HarianAddress?.bindAll();
     const form = createBody.querySelector('form');
     if (!form) return;
     wireSkuSuggest(form);

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Address;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Dealers;
 using NewHarian.Application.Email;
@@ -18,6 +19,7 @@ public sealed class DealerService(
     IEmailTemplateService emailTemplates,
     IAuditService audit,
     IAdminNotificationService notifications,
+    IVietnamDivisionCatalog catalog,
     ILogger<DealerService> logger) : IDealerService
 {
     private static readonly HashSet<string> SortKeys = new(StringComparer.OrdinalIgnoreCase)
@@ -43,6 +45,7 @@ public sealed class DealerService(
                 return (false, err, null);
             }
 
+            catalog.TryResolve(model.ProvinceCode, model.CommuneCode, out var resolved);
             var entity = new Dealer
             {
                 FullName = model.FullName.Trim(),
@@ -50,6 +53,10 @@ public sealed class DealerService(
                 Email = model.Email.Trim(),
                 CitizenId = GuestValidation.NormalizeCitizenId(model.CitizenId),
                 Address = model.Address.Trim(),
+                ProvinceCode = resolved.ProvinceCode,
+                ProvinceName = resolved.ProvinceName,
+                CommuneCode = resolved.CommuneCode,
+                CommuneName = resolved.CommuneName,
                 Message = string.IsNullOrWhiteSpace(model.Message) ? null : model.Message.Trim(),
                 Status = DealerStatus.Pending,
                 LanguageCode = lang is "en" or "ja" ? lang : "vi",
@@ -79,7 +86,7 @@ public sealed class DealerService(
                     ["CustomerEmail"] = EmailTemplateService.Enc(entity.Email),
                     ["CustomerPhone"] = EmailTemplateService.Enc(entity.Phone),
                     ["CitizenId"] = EmailTemplateService.Enc(entity.CitizenId),
-                    ["Address"] = EmailTemplateService.Enc(entity.Address),
+                    ["Address"] = EmailTemplateService.Enc(AddressFormat.Join(entity.Address, entity.CommuneName, entity.ProvinceName)),
                     ["Message"] = EmailTemplateService.Enc(entity.Message)
                 }, ct);
                 await email.SendAsync(staff, staffMail.Subject, staffMail.Body, ct);
@@ -290,6 +297,8 @@ public sealed class DealerService(
                 Email = request.Email,
                 CitizenId = request.CitizenId,
                 Address = request.Address,
+                ProvinceCode = request.ProvinceCode,
+                CommuneCode = request.CommuneCode,
                 Message = request.Message
             });
             if (err is not null)
@@ -303,6 +312,7 @@ public sealed class DealerService(
                 return (false, "Chiết khấu phải từ 0 đến 100.", null);
             }
 
+            catalog.TryResolve(request.ProvinceCode, request.CommuneCode, out var resolved);
             var now = DateTime.UtcNow;
             var entity = new Dealer
             {
@@ -311,6 +321,10 @@ public sealed class DealerService(
                 Email = request.Email.Trim(),
                 CitizenId = GuestValidation.NormalizeCitizenId(request.CitizenId),
                 Address = request.Address.Trim(),
+                ProvinceCode = resolved.ProvinceCode,
+                ProvinceName = resolved.ProvinceName,
+                CommuneCode = resolved.CommuneCode,
+                CommuneName = resolved.CommuneName,
                 Message = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim(),
                 Status = DealerStatus.Approved,
                 DiscountPercent = request.DiscountPercent,
@@ -340,13 +354,15 @@ public sealed class DealerService(
             .Where(d => d.Status == DealerStatus.Approved)
             .OrderBy(d => d.FullName)
             .Select(d => new DealerOptionDto(
-                d.Id, d.FullName, d.Phone, d.Email, d.Address, d.CitizenId, d.DiscountPercent ?? 0))
+                d.Id, d.FullName, d.Phone, d.Email, d.Address,
+                d.ProvinceCode, d.ProvinceName, d.CommuneCode, d.CommuneName,
+                d.CitizenId, d.DiscountPercent ?? 0))
             .ToListAsync(ct);
     }
 
     private static bool IsPercent(decimal p) => p is >= 0 and <= 100;
 
-    private static string? ValidateRegister(DealerFormModel model)
+    private string? ValidateRegister(DealerFormModel model)
     {
         if (!GuestValidation.HasLength(model.FullName, 2, GuestValidation.NameMax))
             return "Vui lòng điền họ tên (2-200 ký tự).";
@@ -356,8 +372,9 @@ public sealed class DealerService(
             return "Email không hợp lệ.";
         if (!GuestValidation.IsCitizenId(model.CitizenId))
             return "CCCD phải gồm 9 hoặc 12 chữ số.";
-        if (!GuestValidation.HasLength(model.Address, 5, GuestValidation.AddressMax))
-            return "Vui lòng điền địa chỉ (5-500 ký tự).";
+        var addrErr = AddressFormat.Require(catalog, model.ProvinceCode, model.CommuneCode, model.Address);
+        if (addrErr is not null)
+            return addrErr;
         if (!GuestValidation.FitsMax(model.Message, GuestValidation.NotesMax))
             return "Ghi chú tối đa 2000 ký tự.";
         return null;
@@ -377,7 +394,9 @@ public sealed class DealerService(
     }
 
     private static DealerDetailDto ToDetail(Dealer d) => new(
-        d.Id, d.CreatedAt, d.FullName, d.Phone, d.Email, d.CitizenId, d.Address, d.Message,
+        d.Id, d.CreatedAt, d.FullName, d.Phone, d.Email, d.CitizenId, d.Address,
+        d.ProvinceCode, d.ProvinceName, d.CommuneCode, d.CommuneName,
+        d.Message,
         d.Status, d.DiscountPercent, d.InternalNotes, d.ReviewedByUserId, d.LanguageCode, d.ReviewedAt);
 
     private async Task<string?> GetSettingAsync(string key, CancellationToken ct)
