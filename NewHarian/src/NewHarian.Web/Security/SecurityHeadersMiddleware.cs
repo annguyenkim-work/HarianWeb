@@ -10,12 +10,15 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
         headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
         // blob: needed for admin image crop/preview (URL.createObjectURL). http: kept until HTTPS+domain.
+        // frame-src / media-src: CMS TinyMCE video (YouTube/Vimeo) and <video> files.
         headers["Content-Security-Policy"] =
             "default-src 'self'; " +
             "img-src 'self' data: blob: http: https:; " +
             "style-src 'self' 'unsafe-inline' https:; " +
             "script-src 'self' 'unsafe-inline' https:; " +
             "font-src 'self' data: https:; " +
+            "frame-src 'self' https: http:; " +
+            "media-src 'self' blob: https: http:; " +
             "frame-ancestors 'self'; " +
             "base-uri 'self'; " +
             "form-action 'self'";

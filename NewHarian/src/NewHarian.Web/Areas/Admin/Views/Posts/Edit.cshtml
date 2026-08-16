@@ -94,6 +94,12 @@ document.addEventListener('DOMContentLoaded', function () {
           .catch(function () { reject('Upload lỗi'); });
       });
     },
+    valid_elements: '*[*]',
+    extended_valid_elements: 'iframe[src|width|height|frameborder|allow|allowfullscreen|style|class|id|title|loading|referrerpolicy],video[*],audio[*],source[*],style[*]',
+    valid_children: '+body[style],+div[style]',
+    verify_html: false,
+    sandbox_iframes: false,
+    media_live_embeds: true,
     content_style: 'body { font-family: Segoe UI, sans-serif; font-size: 14px; } img, video, iframe { max-width: 100%; height: auto; }'
   });
   document.getElementById('post-form')?.addEventListener('submit', function () {
