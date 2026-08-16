@@ -174,6 +174,7 @@
   <data name="Checkout.CitizenId" xml:space="preserve"><value>身分証番号（CCCD / CMND）</value></data>
   <data name="Checkout.CitizenIdHint" xml:space="preserve"><value>請求書発行に必要です（9桁または12桁）。</value></data>
   <data name="Dealers.PageTitle" xml:space="preserve"><value>代理店登録</value></data>
+  <data name="Dealers.RegisterCta" xml:space="preserve"><value>代理店に登録する</value></data>
   <data name="Dealers.Intro" xml:space="preserve"><value>連絡先をご記入ください。審査後にご連絡します。代理店向けのご注文は承認後にスタッフが作成します。</value></data>
   <data name="Dealers.Confirm" xml:space="preserve"><value>代理店登録内容の確認</value></data>
   <data name="Dealers.Thanks" xml:space="preserve"><value>申請を受け付けました</value></data>

@@ -1,0 +1,22 @@
+@model NewHarian.Application.Cms.PublicPageDto
+@{
+    ViewData["Title"] = Model.MetaTitle ?? Model.Title;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+}
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+    <span>/</span>
+    <span>@Model.Title</span>
+</nav>
+
+<main class="content-main content-main--full">
+    @foreach (var block in Model.Blocks)
+    {
+        <partial name="_ContentBlock" model="block" />
+    }
+
+    <p class="dealers-home-cta">
+        <a class="btn-primary" asp-controller="Dealers" asp-action="Index">@Localizer["Dealers.RegisterCta"]</a>
+    </p>
+</main>
