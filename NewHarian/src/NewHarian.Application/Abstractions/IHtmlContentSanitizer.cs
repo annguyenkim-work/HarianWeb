@@ -1,6 +1,6 @@
 namespace NewHarian.Application.Abstractions;
 
-/// <summary>Server-side HTML allowlist sanitizer for CMS / product rich text.</summary>
+/// <summary>Sanitizes CMS / product rich text: keep layout and media, strip script XSS.</summary>
 public interface IHtmlContentSanitizer
 {
     string? Sanitize(string? html);
