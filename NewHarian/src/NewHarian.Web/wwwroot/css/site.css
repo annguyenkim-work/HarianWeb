@@ -1341,6 +1341,14 @@ body:has(.hero-slider) .site-header .lang-btn.is-active {
   width: 100%;
   margin-bottom: 2rem;
 }
+.dealers-home-cta {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0 0.5rem;
+}
+.dealers-home-cta .btn-primary {
+  min-width: 14rem;
+}
 .cms-block { margin-top: 0; }
 .cms-body {
   line-height: 1.7;

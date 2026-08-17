@@ -19,7 +19,7 @@ public class DealersController(IDealerService dealers, ICmsPageService cms) : Co
     {
         var page = await cms.GetPublishedBySlugAsync("dealers/home", Lang, ct);
         if (page is null) return NotFound();
-        return View("~/Views/Shared/CmsContentPage.cshtml", page);
+        return View("Home", page);
     }
 
     [HttpGet("/dealers/register")]
