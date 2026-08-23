@@ -16,11 +16,27 @@
 
 @if (summary is not null)
 {
-    <div class="filter-bar" style="margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:1rem">
-        <div><strong>Giá trị kho:</strong> @summary.TotalValue.ToString("N0")đ</div>
-        <div><strong>SKU tồn thấp:</strong> @summary.LowStockSkuCount <span class="muted">(≤ @summary.LowStockThreshold)</span></div>
-        <div><strong>Lô sắp hết hạn:</strong> @summary.ExpiringSoonLotCount <span class="muted">(@summary.ExpiringWithinDays ngày)</span></div>
-        <div><strong>Lô quá hạn:</strong> @summary.ExpiredLotCount</div>
+    <div class="dash-kpi-grid">
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Giá trị kho</span>
+            <span class="dash-kpi__value">@summary.TotalValue.ToString("N0")đ</span>
+            <span class="dash-kpi__hint">Σ SL × giá vốn lô</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Lô sắp hết hạn</span>
+            <span class="dash-kpi__value">@summary.ExpiringSoonLotCount</span>
+            <span class="dash-kpi__hint">Trong @summary.ExpiringWithinDays ngày</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">SKU tồn thấp</span>
+            <span class="dash-kpi__value">@summary.LowStockSkuCount</span>
+            <span class="dash-kpi__hint">SKU active · tồn ≤ @summary.LowStockThreshold</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Lô quá hạn</span>
+            <span class="dash-kpi__value">@summary.ExpiredLotCount</span>
+            <span class="dash-kpi__hint">HSD trước hôm nay · còn SL</span>
+        </div>
     </div>
 }
 
