@@ -39,7 +39,8 @@ public record AdminVariantEditDto(
     int SortOrder,
     bool IsActive,
     int? ImageMediaFileId,
-    string? ImageUrl);
+    string? ImageUrl,
+    int StockQuantity = 0);
 
 public record AdminColorDefinitionOptionDto(int Id, string NameVi);
 
@@ -97,11 +98,13 @@ public class VariantSaveRequest
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public int? ImageMediaFileId { get; set; }
-    /// <summary>Display-only; not persisted.</summary>
+    /// <summary>Display-only; not persisted (source of truth is StockLots).</summary>
     public string? ImageUrl { get; set; }
+    /// <summary>Display-only cache total; managed via Kho.</summary>
+    public int StockQuantity { get; set; }
 }
 
-/// <summary>Shared save request for both Products and Services; Kind decides target table in SaveProductAsync.</summary>
+/// <summary>Shared save request for both Products and Services; Kind decides target table.</summary>
 public class ProductSaveRequest
 {
     public int? Id { get; set; }
@@ -130,23 +133,4 @@ public class ProductSaveRequest
     /// <summary>Comma/semicolon-separated tag names (physical products only).</summary>
     public string? TagsCsv { get; set; }
     public List<VariantSaveRequest> Variants { get; set; } = [];
-}
-
-public interface IAdminCatalogService
-{
-    Task<IReadOnlyList<AdminCategoryListItemDto>> ListCategoriesAsync(CancellationToken ct = default);
-    Task<AdminCategoryEditDto?> GetCategoryAsync(int id, CancellationToken ct = default);
-    Task<(bool Ok, string? Error, int? Id)> SaveCategoryAsync(CategorySaveRequest request, CancellationToken ct = default);
-    Task<(bool Ok, string? Error)> DeleteCategoryAsync(int id, CancellationToken ct = default);
-    Task MoveCategoryAsync(int id, int direction, CancellationToken ct = default);
-
-    /// <summary>Lists Products (Kind=Product) or Services (Kind=Service) depending on kind.</summary>
-    Task<IReadOnlyList<AdminProductListItemDto>> ListProductsAsync(int? categoryId, CatalogKind kind, CancellationToken ct = default);
-    Task<AdminProductEditDto?> GetProductAsync(int id, CatalogKind kind, CancellationToken ct = default);
-    /// <summary>Saves to Products or Services table based on request.Kind.</summary>
-    Task<(bool Ok, string? Error, int? Id)> SaveProductAsync(ProductSaveRequest request, CancellationToken ct = default);
-    Task<(bool Ok, string? Error)> DeleteProductAsync(int id, CatalogKind kind, CancellationToken ct = default);
-    Task MoveProductAsync(int id, int direction, CatalogKind kind, CancellationToken ct = default);
-    Task<IReadOnlyList<AdminCategoryOptionDto>> GetCategoryOptionsAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<AdminColorDefinitionOptionDto>> GetColorDefinitionsAsync(CancellationToken ct = default);
 }

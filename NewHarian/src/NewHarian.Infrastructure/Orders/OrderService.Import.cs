@@ -47,7 +47,11 @@ public partial class OrderService
         return ms.ToArray();
     }
 
-    public async Task<OrderImportResult> ImportOrdersAsync(Stream excelStream, CancellationToken ct = default)
+    public async Task<OrderImportResult> ImportOrdersAsync(
+        Stream excelStream,
+        string? actorUserId = null,
+        string? actorName = null,
+        CancellationToken ct = default)
     {
         logger.LogInformation("ImportOrders Start");
         var errors = new List<OrderImportError>();
@@ -209,7 +213,7 @@ public partial class OrderService
                     Lines = lines
                 };
 
-                var (ok, error, orderNumber) = await CreateManualOrderAsync(request, ct);
+                var (ok, error, orderNumber) = await CreateManualOrderAsync(request, actorUserId, actorName, ct);
                 if (!ok)
                 {
                     errors.Add(new OrderImportError(head.Row, head.OrderGroup, error ?? "Không tạo được đơn."));

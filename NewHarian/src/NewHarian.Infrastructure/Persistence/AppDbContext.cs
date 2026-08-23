@@ -27,6 +27,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ServiceBookingHistory> ServiceBookingHistories => Set<ServiceBookingHistory>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<WarehouseLocation> WarehouseLocations => Set<WarehouseLocation>();
+    public DbSet<StockLot> StockLots => Set<StockLot>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<OrderItemLotAllocation> OrderItemLotAllocations => Set<OrderItemLotAllocation>();
+
     public DbSet<ShippingProvince> ShippingProvinces => Set<ShippingProvince>();
     public DbSet<ShippingRate> ShippingRates => Set<ShippingRate>();
     public DbSet<Page> Pages => Set<Page>();
@@ -97,6 +102,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.ColorDefinitionId).IsRequired(false);
             e.Property(x => x.Price).HasPrecision(18, 2);
             e.Property(x => x.CompareAtPrice).HasPrecision(18, 2);
+            e.Property(x => x.StockQuantity).HasDefaultValue(0);
             e.HasOne(x => x.Product).WithMany(x => x.Variants).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.ColorDefinition).WithMany().HasForeignKey(x => x.ColorDefinitionId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne(x => x.Image).WithMany().HasForeignKey(x => x.ImageMediaFileId).OnDelete(DeleteBehavior.SetNull);
@@ -229,6 +235,45 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.UnitPrice).HasPrecision(18, 2);
             e.Property(x => x.LineTotal).HasPrecision(18, 2);
             e.HasOne(x => x.Order).WithMany(x => x.Items).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<WarehouseLocation>(e =>
+        {
+            e.HasIndex(x => x.Code).IsUnique();
+            e.Property(x => x.Code).HasMaxLength(50);
+            e.Property(x => x.Name).HasMaxLength(200);
+        });
+
+        builder.Entity<StockLot>(e =>
+        {
+            e.HasIndex(x => new { x.ProductVariantId, x.ExpiryDate });
+            e.HasIndex(x => x.WarehouseLocationId);
+            e.Property(x => x.LotCode).HasMaxLength(100);
+            e.Property(x => x.UnitCost).HasPrecision(18, 2);
+            e.Property(x => x.Notes).HasMaxLength(1000);
+            e.HasOne(x => x.ProductVariant).WithMany().HasForeignKey(x => x.ProductVariantId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.WarehouseLocation).WithMany(x => x.Lots).HasForeignKey(x => x.WarehouseLocationId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<StockMovement>(e =>
+        {
+            e.HasIndex(x => x.StockLotId);
+            e.HasIndex(x => x.OrderId);
+            e.HasIndex(x => x.CreatedAt);
+            e.Property(x => x.ActorUserId).HasMaxLength(450);
+            e.Property(x => x.ActorName).HasMaxLength(200);
+            e.Property(x => x.Notes).HasMaxLength(1000);
+            e.HasOne(x => x.StockLot).WithMany(x => x.Movements).HasForeignKey(x => x.StockLotId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.OrderItem).WithMany().HasForeignKey(x => x.OrderItemId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<OrderItemLotAllocation>(e =>
+        {
+            e.HasIndex(x => x.OrderItemId);
+            e.HasIndex(x => x.StockLotId);
+            e.HasOne(x => x.OrderItem).WithMany(x => x.LotAllocations).HasForeignKey(x => x.OrderItemId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.StockLot).WithMany(x => x.Allocations).HasForeignKey(x => x.StockLotId).OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<Payment>(e =>

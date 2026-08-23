@@ -5,6 +5,7 @@ public static class EmailTemplateCodes
     public const string OrderCustomer = "order.customer";
     public const string OrderStaff = "order.staff";
     public const string OrderCancelStaff = "order.cancel.staff";
+    public const string StockShortfallStaff = "stock.shortfall.staff";
     public const string InquiryCustomer = "inquiry.customer";
     public const string InquiryStaff = "inquiry.staff";
     public const string ApplicationCustomer = "application.customer";

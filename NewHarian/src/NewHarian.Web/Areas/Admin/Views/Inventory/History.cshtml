@@ -1,0 +1,87 @@
+@model IReadOnlyList<NewHarian.Application.Inventory.StockMovementListItemDto>
+@using NewHarian.Application.Inventory
+@{
+    ViewData["Title"] = "Kho: Lịch sử";
+    Layout = "_AdminLayout";
+    var kind = ViewBag.Kind as StockHistoryFilterKind? ?? StockHistoryFilterKind.All;
+    DateOnly? from = ViewBag.From as DateOnly?;
+    DateOnly? to = ViewBag.To as DateOnly?;
+}
+
+<div class="admin-toolbar">
+    <h1>Kho: Lịch sử xuất nhập</h1>
+    <a class="btn-secondary" asp-action="Index">Về kho</a>
+</div>
+
+<form method="get" class="filter-bar filter-bar--row" style="margin-bottom:1rem">
+    <label>Loại
+        <select name="kind" class="form-control">
+            @if (kind == StockHistoryFilterKind.All)
+            {
+                <option value="@((int)StockHistoryFilterKind.All)" selected>Tất cả</option>
+            }
+            else
+            {
+                <option value="@((int)StockHistoryFilterKind.All)">Tất cả</option>
+            }
+            @if (kind == StockHistoryFilterKind.In)
+            {
+                <option value="@((int)StockHistoryFilterKind.In)" selected>Nhập</option>
+            }
+            else
+            {
+                <option value="@((int)StockHistoryFilterKind.In)">Nhập</option>
+            }
+            @if (kind == StockHistoryFilterKind.Out)
+            {
+                <option value="@((int)StockHistoryFilterKind.Out)" selected>Xuất</option>
+            }
+            else
+            {
+                <option value="@((int)StockHistoryFilterKind.Out)">Xuất</option>
+            }
+        </select>
+    </label>
+    <label>Từ
+        <input type="date" name="from" value="@(from?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </label>
+    <label>Đến
+        <input type="date" name="to" value="@(to?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </label>
+    <button type="submit" class="btn-secondary">Tìm kiếm</button>
+</form>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Loại</th>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Vị trí</th>
+            <th>Ghi chú</th>
+            <th>Ngày thực hiện</th>
+            <th>Người thực hiện</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var m in Model)
+    {
+        <tr>
+            <td>@m.TypeLabelVi</td>
+            <td>@m.ProductName</td>
+            <td>@(m.Quantity > 0 ? $"+{m.Quantity}" : m.Quantity.ToString())</td>
+            <td>@m.LocationLabel</td>
+            <td>@(string.IsNullOrWhiteSpace(m.Notes) ? "-" : m.Notes)</td>
+            <td>@m.CreatedAt.ToLocalTime().ToString("g")</td>
+            <td>@(string.IsNullOrWhiteSpace(m.ActorName) ? "-" : m.ActorName)</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@if (Model.Count == 0)
+{
+    <p class="muted">Không có bản ghi trong khoảng đã chọn.</p>
+}
+
+<partial name="_AdminPager" />

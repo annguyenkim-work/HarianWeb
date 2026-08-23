@@ -34,6 +34,8 @@ public class Order
     public DateTime? ConfirmedAt { get; set; }
     public DateTime? ShippedAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
+    /// <summary>Set when stock was deducted (Processing); cleared on restore.</summary>
+    public DateTime? StockDeductedAt { get; set; }
 
     public ShippingProvince? ShippingProvince { get; set; }
     public Dealer? Dealer { get; set; }
@@ -56,6 +58,7 @@ public class OrderItem
     public decimal LineTotal { get; set; }
 
     public Order Order { get; set; } = null!;
+    public ICollection<OrderItemLotAllocation> LotAllocations { get; set; } = new List<OrderItemLotAllocation>();
 }
 
 public class Payment

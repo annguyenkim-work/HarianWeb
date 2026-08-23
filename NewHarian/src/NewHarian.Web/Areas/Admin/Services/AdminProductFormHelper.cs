@@ -42,7 +42,8 @@ public static class AdminProductFormHelper
             SortOrder = v.SortOrder,
             IsActive = v.IsActive,
             ImageMediaFileId = v.ImageMediaFileId,
-            ImageUrl = v.ImageUrl
+            ImageUrl = v.ImageUrl,
+            StockQuantity = v.StockQuantity
         }).ToList()
     };
 

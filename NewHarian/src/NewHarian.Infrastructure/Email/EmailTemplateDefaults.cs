@@ -41,6 +41,14 @@ public static class EmailTemplateDefaults
             "[Harian] Khách hủy đơn {{OrderNumber}}",
             "<p>Khách đã hủy đơn CK <strong>{{OrderNumber}}</strong> ({{CustomerEmail}}).</p>"),
 
+        T(EmailTemplateCodes.StockShortfallStaff, "Kho - thiếu hàng khi trừ (staff)",
+            "OrderNumber, DetailsHtml",
+            "[Harian] Thiếu tồn khi xử lý đơn {{OrderNumber}}",
+            """
+            <p>Đơn <strong>{{OrderNumber}}</strong> đã chuyển sang xử lý nhưng không đủ tồn theo lô.</p>
+            <p>{{DetailsHtml}}</p>
+            """),
+
         T(EmailTemplateCodes.InquiryCustomer, "Liên hệ - cảm ơn khách",
             "CustomerName",
             "Cảm ơn bạn đã liên hệ - Harian",

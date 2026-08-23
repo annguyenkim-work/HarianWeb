@@ -8,11 +8,11 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 [Area("Admin")]
 [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
-public class CategoriesController(IAdminCatalogService catalog, IMediaStorage media) : Controller
+public class CategoriesController(IAdminCategoryService categories, IMediaStorage media) : Controller
 {
     public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
     {
-        var (items, pager) = AdminPaging.Apply(await catalog.ListCategoriesAsync(ct), page);
+        var (items, pager) = AdminPaging.Apply(await categories.ListCategoriesAsync(ct), page);
         ViewBag.Pager = pager;
         return View(items);
     }
@@ -25,7 +25,7 @@ public class CategoriesController(IAdminCatalogService catalog, IMediaStorage me
             return PartialView("_CategoryForm", new CategorySaveRequest { IsActive = true });
         }
 
-        var cat = await catalog.GetCategoryAsync(id.Value, ct);
+        var cat = await categories.GetCategoryAsync(id.Value, ct);
         if (cat is null) return NotFound();
         return PartialView("_CategoryForm", new CategorySaveRequest
         {
@@ -55,7 +55,7 @@ public class CategoriesController(IAdminCatalogService catalog, IMediaStorage me
             model.ImageUrl = uploaded.Url;
         }
 
-        var (ok, error, _) = await catalog.SaveCategoryAsync(model, ct);
+        var (ok, error, _) = await categories.SaveCategoryAsync(model, ct);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Lỗi lưu.");
@@ -68,7 +68,7 @@ public class CategoriesController(IAdminCatalogService catalog, IMediaStorage me
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Move(int id, int direction, CancellationToken ct)
     {
-        await catalog.MoveCategoryAsync(id, direction, ct);
+        await categories.MoveCategoryAsync(id, direction, ct);
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 
@@ -76,7 +76,7 @@ public class CategoriesController(IAdminCatalogService catalog, IMediaStorage me
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var (ok, error) = await catalog.DeleteCategoryAsync(id, ct);
+        var (ok, error) = await categories.DeleteCategoryAsync(id, ct);
         TempData[ok ? "Success" : "Error"] = ok ? "Đã vô hiệu hóa danh mục." : error;
         return AdminListRedirect.ToRefererOrIndex(this);
     }

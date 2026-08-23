@@ -77,7 +77,8 @@ public class ProductVariant
     public MediaFile? Image { get; set; }
     public decimal Price { get; set; }
     public decimal? CompareAtPrice { get; set; }
-    public int? StockQuantity { get; set; }
+    /// <summary>Cache of sum(StockLots.QuantityOnHand). Source of truth is lots.</summary>
+    public int StockQuantity { get; set; }
     public int? LowStockThreshold { get; set; }
     public bool IsDefault { get; set; }
     public int SortOrder { get; set; }

@@ -68,6 +68,14 @@ public enum ServiceBookingStatus
     Cancelled = 3
 }
 
+public enum StockMovementType
+{
+    Receipt = 0,
+    Issue = 1,
+    Adjust = 2,
+    Restore = 3
+}
+
 public enum ContentBlockType
 {
     TextWithImage = 0,

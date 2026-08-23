@@ -441,6 +441,48 @@ public sealed class JobApplicationService(
             a.SitePostId, jobTitle, a.SitePost?.Slug);
     }
 
+    public async Task<MediaOpenResult?> OpenCvAsync(int id, CancellationToken ct = default)
+    {
+        logger.LogInformation("DownloadApplicationCv Start ApplicationId={Id}", id);
+        try
+        {
+            var mediaId = await db.JobApplications.AsNoTracking()
+                .Where(a => a.Id == id)
+                .Select(a => a.AttachmentMediaFileId)
+                .FirstOrDefaultAsync(ct);
+            if (mediaId is null)
+            {
+                logger.LogWarning(
+                    "DownloadApplicationCv Done rejected ApplicationId={Id} Error={Error}",
+                    id,
+                    "No attachment");
+                return null;
+            }
+
+            var opened = await mediaStorage.OpenAsync(mediaId.Value, ct);
+            if (opened is null)
+            {
+                logger.LogWarning(
+                    "DownloadApplicationCv Done rejected ApplicationId={Id} MediaId={MediaId} Error={Error}",
+                    id,
+                    mediaId,
+                    "File missing");
+                return null;
+            }
+
+            logger.LogInformation(
+                "DownloadApplicationCv Done ApplicationId={Id} MediaId={MediaId}",
+                id,
+                mediaId);
+            return opened;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "DownloadApplicationCv Error ApplicationId={Id}", id);
+            throw;
+        }
+    }
+
     public async Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, ApplicationStatus status, string? notes, string? userId, CancellationToken ct = default)
     {
         logger.LogInformation("UpdateApplicationStatus Start Id={Id} Status={Status}", id, status);

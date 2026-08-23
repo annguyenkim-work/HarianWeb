@@ -1,0 +1,16 @@
+@model NewHarian.Application.Inventory.WarehouseLocationSaveRequest
+
+<form asp-area="Admin" asp-controller="Inventory" asp-action="SaveLocation" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <h2>@(Model.Id is null ? "Thêm vị trí" : "Sửa vị trí")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <label>Mã <input asp-for="Code" class="form-control" required maxlength="50" placeholder="vd. A-01" /></label>
+    <label>Tên <input asp-for="Name" class="form-control" required maxlength="200" placeholder="vd. Kệ 2" /></label>
+    <label>Thứ tự <input asp-for="SortOrder" type="number" class="form-control" /></label>
+    <label class="form-check-row__item"><input asp-for="IsActive" /> Active</label>
+    <div style="margin-top:1rem;display:flex;gap:0.5rem">
+        <button type="submit" class="btn-primary">Lưu</button>
+        <button type="button" class="btn-link" data-close-inventory-modal data-close-settings-inv-modal>Đóng</button>
+    </div>
+</form>

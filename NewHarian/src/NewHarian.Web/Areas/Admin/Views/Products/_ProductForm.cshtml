@@ -148,6 +148,11 @@
 
             <span>Đơn giá</span>
 
+            @if (!isService)
+            {
+                <span class="col-variant-stock">Tồn</span>
+            }
+
             <span class="col-variant-image">Ảnh SKU</span>
 
             <span class="col-variant-flag">Default</span>
@@ -191,6 +196,10 @@
                     }
                 </select>
                 <input asp-for="Variants[i].Price" type="number" step="1000" class="form-control" />
+                @if (!isService)
+                {
+                    <input type="number" class="form-control col-variant-stock" value="@Model.Variants[i].StockQuantity" readonly title="Tồn tổng (từ kho lô)" />
+                }
                 <div class="col-variant-image variant-image-cell">
                     <input type="hidden" asp-for="Variants[i].ImageMediaFileId" class="variant-image-id" />
                     <input type="hidden" asp-for="Variants[i].ImageUrl" class="variant-image-url" />
