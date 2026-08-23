@@ -1,0 +1,187 @@
+@model IReadOnlyList<NewHarian.Application.Inventory.WarehouseLocationListItemDto>
+@using NewHarian.Application.Inventory
+@{
+    ViewData["Title"] = "Kho";
+    Layout = "_AdminLayout";
+    var summary = ViewBag.Summary as InventorySummaryDto;
+}
+
+<div class="admin-toolbar">
+    <h1>Kho</h1>
+    <div class="admin-toolbar__actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+        <a class="btn-secondary" asp-action="History">Lịch sử</a>
+        <button type="button" class="btn-icon btn-primary" id="btn-receive-lot" title="Nhập kho" aria-label="Nhập kho"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+    </div>
+</div>
+
+@if (summary is not null)
+{
+    <div class="dash-kpi-grid">
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Giá trị kho</span>
+            <span class="dash-kpi__value">@summary.TotalValue.ToString("N0")đ</span>
+            <span class="dash-kpi__hint">Σ SL × giá vốn lô</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Lô sắp hết hạn</span>
+            <span class="dash-kpi__value">@summary.ExpiringSoonLotCount</span>
+            <span class="dash-kpi__hint">Trong @summary.ExpiringWithinDays ngày</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">SKU tồn thấp</span>
+            <span class="dash-kpi__value">@summary.LowStockSkuCount</span>
+            <span class="dash-kpi__hint">SKU active · tồn ≤ @summary.LowStockThreshold</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Lô quá hạn</span>
+            <span class="dash-kpi__value">@summary.ExpiredLotCount</span>
+            <span class="dash-kpi__hint">HSD trước hôm nay · còn SL</span>
+        </div>
+    </div>
+}
+
+<table class="data-table" id="location-table">
+    <thead>
+        <tr>
+            <th style="width:3rem"></th>
+            <th>Mã</th>
+            <th>Tên</th>
+            <th>Số lô</th>
+            <th>Tổng SL</th>
+            <th>Active</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var loc in Model)
+    {
+        <tr class="location-row" data-id="@loc.Id">
+            <td>
+                <button type="button" class="btn-icon btn-expand-location" data-id="@loc.Id" title="Down" aria-label="Down" aria-expanded="false">
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </button>
+            </td>
+            <td>@loc.Code</td>
+            <td>@loc.Name</td>
+            <td>@loc.LotCount</td>
+            <td>@loc.TotalQuantity</td>
+            <td>@(loc.IsActive ? "Có" : "Không")</td>
+        </tr>
+        <tr class="location-lots-row" data-parent="@loc.Id" hidden>
+            <td colspan="6">
+                <div class="location-lots-panel muted">Đang tải…</div>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@if (Model.Count == 0)
+{
+    <p class="muted">Chưa có vị trí kho. Admin tạo tại <a asp-area="Admin" asp-controller="Settings" asp-action="Inventory">Cài đặt kho</a>.</p>
+}
+
+<div id="inventory-modal" class="admin-modal" hidden>
+    <div class="admin-modal__backdrop" data-close-inventory-modal></div>
+    <div class="admin-modal__panel modal__box modal__box--wide modal__box--inventory" id="inventory-modal-body"></div>
+</div>
+
+@section Scripts {
+<script src="~/js/admin-sku-suggest.js" asp-append-version="true"></script>
+<script>
+(() => {
+  const modal = document.getElementById('inventory-modal');
+  const body = document.getElementById('inventory-modal-body');
+  const loaded = new Set();
+
+  function openModal() {
+    modal.hidden = false;
+    document.body.classList.add('admin-modal-open');
+  }
+  function closeModal() {
+    modal.hidden = true;
+    document.body.classList.remove('admin-modal-open');
+    body.querySelectorAll('.sku-suggest__list--portal').forEach(el => el.remove());
+  }
+
+  async function openForm(url) {
+    const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    body.innerHTML = await res.text();
+    openModal();
+    bindForm();
+  }
+
+  function bindForm() {
+    const form = body.querySelector('form');
+    if (!form) return;
+    window.AdminSkuSuggest.wire(form, { mode: 'variantId', portalRoot: body });
+
+    form.querySelectorAll('[data-close], [data-close-inventory-modal]').forEach(btn => {
+      btn.addEventListener('click', closeModal);
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const idInput = form.querySelector('.js-variant-id');
+      if (form.id === 'receive-lot-form' && (!idInput?.value || idInput.value === '0')) {
+        let err = form.querySelector('.js-receive-sku-error');
+        if (!err) {
+          err = document.createElement('div');
+          err.className = 'text-danger js-receive-sku-error';
+          err.style.marginBottom = '0.5rem';
+          form.querySelector('h2')?.after(err);
+        }
+        err.textContent = 'Chọn sản phẩm từ danh sách gợi ý.';
+        form.querySelector('.js-sku-input')?.focus();
+        return;
+      }
+      const fd = new FormData(form);
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) { location.href = data.redirect || location.href; return; }
+      }
+      body.innerHTML = await res.text();
+      bindForm();
+    });
+  }
+
+  async function toggleExpand(btn) {
+    const id = btn.dataset.id;
+    const panelRow = document.querySelector('.location-lots-row[data-parent="' + id + '"]');
+    if (!panelRow) return;
+    const open = btn.getAttribute('aria-expanded') === 'true';
+    if (open) {
+      panelRow.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      btn.querySelector('i')?.classList.replace('fa-chevron-up', 'fa-chevron-down');
+      return;
+    }
+    panelRow.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    btn.querySelector('i')?.classList.replace('fa-chevron-down', 'fa-chevron-up');
+    if (!loaded.has(id)) {
+      const panel = panelRow.querySelector('.location-lots-panel');
+      const res = await fetch('@Url.Action("LotsByLocation")?id=' + id, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      panel.innerHTML = await res.text();
+      loaded.add(id);
+      panel.querySelectorAll('.btn-adjust-lot').forEach(b => {
+        b.addEventListener('click', () => openForm('@Url.Action("Adjust")?id=' + b.dataset.id));
+      });
+    }
+  }
+
+  document.querySelectorAll('.btn-expand-location').forEach(btn => {
+    btn.addEventListener('click', () => toggleExpand(btn));
+  });
+  document.getElementById('btn-receive-lot')?.addEventListener('click', () => openForm('@Url.Action("Receive")'));
+  modal?.addEventListener('click', (e) => {
+    if (e.target.matches('[data-close-inventory-modal]')) closeModal();
+  });
+})();
+</script>
+}

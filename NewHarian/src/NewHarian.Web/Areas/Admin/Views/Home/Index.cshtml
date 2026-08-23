@@ -56,6 +56,24 @@
         <span class="dash-kpi__label">Hồ sơ ứng tuyển mới</span>
         <span class="dash-kpi__value">@k.NewApplications</span>
     </a>
+    @if (Model.Inventory is { } inv)
+    {
+        <a class="dash-kpi" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+            <span class="dash-kpi__label">Giá trị kho</span>
+            <span class="dash-kpi__value">@Vnd(inv.TotalValue)</span>
+            <span class="dash-kpi__hint">Σ SL × giá vốn lô</span>
+        </a>
+        <a class="dash-kpi" asp-area="Admin" asp-controller="Inventory" asp-action="Index" asp-route-expiringSoon="true">
+            <span class="dash-kpi__label">Lô sắp hết hạn</span>
+            <span class="dash-kpi__value">@inv.ExpiringSoonLotCount</span>
+            <span class="dash-kpi__hint">Trong @inv.ExpiringWithinDays ngày · quá hạn: @inv.ExpiredLotCount</span>
+        </a>
+        <a class="dash-kpi" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+            <span class="dash-kpi__label">SKU tồn thấp</span>
+            <span class="dash-kpi__value">@inv.LowStockSkuCount</span>
+            <span class="dash-kpi__hint">SKU active · tồn ≤ @inv.LowStockThreshold</span>
+        </a>
+    }
 </div>
 
 @if (isAdmin)

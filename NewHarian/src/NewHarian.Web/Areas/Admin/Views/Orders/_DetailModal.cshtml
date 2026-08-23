@@ -79,6 +79,40 @@
 }
 </ul>
 
+@{
+    var stockPick = ViewBag.StockPick as NewHarian.Application.Inventory.OrderStockPickPlanDto;
+}
+@if (stockPick is not null && stockPick.Lines.Count > 0)
+{
+    <div class="order-stock-pick" style="margin:1rem 0;padding:0.75rem;border:1px solid var(--border, #ddd);border-radius:6px">
+        <strong>@(stockPick.AlreadyDeducted ? "Đã lấy hàng (FEFO)" : "Gợi ý lấy hàng (FEFO)")</strong>
+        @foreach (var line in stockPick.Lines)
+        {
+            <div style="margin-top:0.5rem">
+                <div>@line.Sku - @line.ProductName × @line.RequestedQty
+                    @if (line.ShortfallQty > 0)
+                    {
+                        <span class="text-danger">(thiếu @line.ShortfallQty)</span>
+                    }
+                </div>
+                @if (line.Suggestions.Count == 0)
+                {
+                    <p class="muted" style="margin:0.25rem 0 0">Chưa có lô tồn.</p>
+                }
+                else
+                {
+                    <ul style="margin:0.25rem 0 0;padding-left:1.25rem">
+                    @foreach (var s in line.Suggestions)
+                    {
+                        <li>@s.LocationCode (@s.LocationName) · lô @(s.LotCode ?? "-") · HSD @s.ExpiryDate.ToString("dd/MM/yyyy") · lấy @s.AllocateQty</li>
+                    }
+                    </ul>
+                }
+            </div>
+        }
+    </div>
+}
+
 <label>Ghi chú nội bộ
     <textarea name="internalNotes" class="form-control" rows="2">@Model.InternalNotes</textarea>
 </label>

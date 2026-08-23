@@ -907,6 +907,7 @@
 }
 .manual-order-line label { display: grid; gap: 0.25rem; font-size: 0.85rem; margin: 0; }
 .sku-suggest { position: relative; }
+.sku-suggest__label { display: block; margin-bottom: 0.25rem; }
 .sku-suggest__list {
   position: absolute;
   z-index: 40;
@@ -978,6 +979,22 @@
   overflow: auto;
   box-sizing: border-box;
 }
+/* Inventory receive: do NOT set z-index on .sku-suggest (traps dropdown under following fields).
+   Thêm đơn does not use this modifier — keep its stacking behavior unchanged. */
+.modal__box--wide.modal__box--inventory {
+  overflow: visible;
+  position: relative;
+}
+.sku-suggest__list--portal {
+  position: absolute !important;
+  margin: 0;
+  max-height: min(240px, 40vh);
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  z-index: 300;
+}
 .modal__message {
   margin: 0.75rem 0 1rem;
   white-space: pre-wrap;
@@ -1037,6 +1054,9 @@
   overflow: auto;
   border-radius: 12px;
   box-shadow: 0 16px 48px rgba(15, 23, 42, 0.18);
+}
+.admin-modal__panel.modal__box--inventory {
+  overflow: visible;
 }
 .modal__box--xwide {
   width: min(1320px, 96vw);

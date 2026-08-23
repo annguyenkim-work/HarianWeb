@@ -1138,6 +1138,9 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("StockDeductedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal>("SubTotal")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -1266,6 +1269,32 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrderId");
 
                     b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.OrderItemLotAllocation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StockLotId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("StockLotId");
+
+                    b.ToTable("OrderItemLotAllocations");
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.Page", b =>
@@ -1542,8 +1571,10 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("StockQuantity")
-                        .HasColumnType("integer");
+                    b.Property<int>("StockQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("VariantLabel")
                         .IsRequired()
@@ -2073,6 +2104,101 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.ToTable("SiteSettingTranslations");
                 });
 
+            modelBuilder.Entity("NewHarian.Domain.Entities.StockLot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("ExpiryDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("LotCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("QuantityOnHand")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("WarehouseLocationId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WarehouseLocationId");
+
+                    b.HasIndex("ProductVariantId", "ExpiryDate");
+
+                    b.ToTable("StockLots");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.StockMovement", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ActorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ActorUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("OrderItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StockLotId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("StockLotId");
+
+                    b.ToTable("StockMovements");
+                });
+
             modelBuilder.Entity("NewHarian.Domain.Entities.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -2097,6 +2223,38 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.WarehouseLocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("WarehouseLocations");
                 });
 
             modelBuilder.Entity("NewHarian.Infrastructure.Identity.ApplicationUser", b =>
@@ -2396,6 +2554,25 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("NewHarian.Domain.Entities.OrderItemLotAllocation", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.OrderItem", "OrderItem")
+                        .WithMany("LotAllocations")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NewHarian.Domain.Entities.StockLot", "StockLot")
+                        .WithMany("Allocations")
+                        .HasForeignKey("StockLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("StockLot");
+                });
+
             modelBuilder.Entity("NewHarian.Domain.Entities.PageTranslation", b =>
                 {
                     b.HasOne("NewHarian.Domain.Entities.Page", "Page")
@@ -2618,6 +2795,50 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Navigation("SiteSetting");
                 });
 
+            modelBuilder.Entity("NewHarian.Domain.Entities.StockLot", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.ProductVariant", "ProductVariant")
+                        .WithMany()
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NewHarian.Domain.Entities.WarehouseLocation", "WarehouseLocation")
+                        .WithMany("Lots")
+                        .HasForeignKey("WarehouseLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProductVariant");
+
+                    b.Navigation("WarehouseLocation");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.StockMovement", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("NewHarian.Domain.Entities.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("NewHarian.Domain.Entities.StockLot", "StockLot")
+                        .WithMany("Movements")
+                        .HasForeignKey("StockLotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("StockLot");
+                });
+
             modelBuilder.Entity("NewHarian.Domain.Entities.AdminNotification", b =>
                 {
                     b.Navigation("Reads");
@@ -2673,6 +2894,11 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Navigation("Payment");
                 });
 
+            modelBuilder.Entity("NewHarian.Domain.Entities.OrderItem", b =>
+                {
+                    b.Navigation("LotAllocations");
+                });
+
             modelBuilder.Entity("NewHarian.Domain.Entities.Page", b =>
                 {
                     b.Navigation("ContentBlocks");
@@ -2720,9 +2946,21 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Navigation("Translations");
                 });
 
+            modelBuilder.Entity("NewHarian.Domain.Entities.StockLot", b =>
+                {
+                    b.Navigation("Allocations");
+
+                    b.Navigation("Movements");
+                });
+
             modelBuilder.Entity("NewHarian.Domain.Entities.Tag", b =>
                 {
                     b.Navigation("ProductTags");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.WarehouseLocation", b =>
+                {
+                    b.Navigation("Lots");
                 });
 #pragma warning restore 612, 618
         }

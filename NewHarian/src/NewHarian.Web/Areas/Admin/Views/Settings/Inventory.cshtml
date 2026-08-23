@@ -1,0 +1,137 @@
+@model NewHarian.Application.Settings.InventorySettingsDto
+@using NewHarian.Application.Inventory
+@{
+    ViewData["Title"] = "Cài đặt kho";
+    Layout = "_AdminLayout";
+    var locations = ViewBag.Locations as IReadOnlyList<WarehouseLocationListItemDto> ?? [];
+}
+
+<div class="admin-toolbar">
+    <h1>Cài đặt kho</h1>
+</div>
+
+@if (TempData["Success"] is string ok)
+{
+    <p class="text-success">@ok</p>
+}
+
+<section class="admin-card" style="margin-bottom:1.5rem;max-width:520px">
+    <h2>Ngưỡng cảnh báo</h2>
+    <p class="muted">Dùng trên màn Kho và Dashboard.</p>
+    <form method="post" class="form-stack">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <label>Ngưỡng tồn thấp (SKU)
+            <input asp-for="LowStockThreshold" class="form-control" type="number" min="0" step="1" required />
+        </label>
+        <p class="muted">SKU active có tồn ≤ giá trị này được tính tồn thấp. Mặc định 5.</p>
+        <label>Sắp hết hạn trong (ngày)
+            <input asp-for="ExpiringWithinDays" class="form-control" type="number" min="1" step="1" required />
+        </label>
+        <p class="muted">Lô còn hàng có HSD trong khoảng này được tính sắp hết hạn. Mặc định 30.</p>
+        <button type="submit" class="btn-primary">Lưu ngưỡng</button>
+    </form>
+</section>
+
+<section class="admin-card">
+    <div class="admin-toolbar" style="margin-bottom:0.75rem">
+        <h2 style="margin:0">Vị trí kho</h2>
+        <button type="button" class="btn-secondary" id="btn-add-location">Thêm vị trí</button>
+    </div>
+    <table class="data-table" id="settings-location-table">
+        <thead>
+            <tr>
+                <th>Mã</th>
+                <th>Tên</th>
+                <th>Số lô</th>
+                <th>Tổng SL</th>
+                <th>Active</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var loc in locations)
+        {
+            <tr>
+                <td>@loc.Code</td>
+                <td>@loc.Name</td>
+                <td>@loc.LotCount</td>
+                <td>@loc.TotalQuantity</td>
+                <td>@(loc.IsActive ? "Có" : "Không")</td>
+                <td class="actions">
+                    <button type="button" class="btn-icon btn-edit-location" data-id="@loc.Id" title="Sửa" aria-label="Sửa">
+                        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                    </button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    @if (locations.Count == 0)
+    {
+        <p class="muted">Chưa có vị trí. Bấm Thêm vị trí để tạo.</p>
+    }
+</section>
+
+<div id="settings-inventory-modal" class="admin-modal" hidden>
+    <div class="admin-modal__backdrop" data-close-settings-inv-modal></div>
+    <div class="admin-modal__panel modal__box" id="settings-inventory-modal-body"></div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+  const modal = document.getElementById('settings-inventory-modal');
+  const body = document.getElementById('settings-inventory-modal-body');
+  const editUrl = '@Url.Action("EditLocation", "Inventory", new { area = "Admin" })';
+
+  function openModal() {
+    modal.hidden = false;
+    document.body.classList.add('admin-modal-open');
+  }
+  function closeModal() {
+    modal.hidden = true;
+    document.body.classList.remove('admin-modal-open');
+  }
+
+  async function openForm(url) {
+    const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    body.innerHTML = await res.text();
+    openModal();
+    bindForm();
+  }
+
+  function bindForm() {
+    const form = body.querySelector('form');
+    if (!form) return;
+    body.querySelectorAll('[data-close], [data-close-inventory-modal], [data-close-settings-inv-modal]').forEach(btn => {
+      btn.addEventListener('click', closeModal);
+    });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) { location.href = data.redirect || location.href; return; }
+      }
+      body.innerHTML = await res.text();
+      bindForm();
+    });
+  }
+
+  document.getElementById('btn-add-location')?.addEventListener('click', () => openForm(editUrl));
+  document.querySelectorAll('.btn-edit-location').forEach(btn => {
+    btn.addEventListener('click', () => openForm(editUrl + '?id=' + btn.dataset.id));
+  });
+  modal?.addEventListener('click', (e) => {
+    if (e.target.matches('[data-close-settings-inv-modal]')) closeModal();
+  });
+})();
+</script>
+}

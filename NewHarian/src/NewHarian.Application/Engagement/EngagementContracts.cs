@@ -1,4 +1,5 @@
 using NewHarian.Domain.Enums;
+using NewHarian.Application.Abstractions;
 
 namespace NewHarian.Application.Engagement;
 
@@ -85,5 +86,6 @@ public interface IJobApplicationService
         string? dir = null,
         CancellationToken ct = default);
     Task<ApplicationDetailDto?> GetAsync(int id, CancellationToken ct = default);
+    Task<MediaOpenResult?> OpenCvAsync(int id, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> UpdateStatusAsync(int id, ApplicationStatus status, string? notes, string? userId, CancellationToken ct = default);
 }

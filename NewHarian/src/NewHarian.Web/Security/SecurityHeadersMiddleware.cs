@@ -11,6 +11,7 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
         headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
         // blob: needed for admin image crop/preview (URL.createObjectURL). http: kept until HTTPS+domain.
         // frame-src / media-src: CMS TinyMCE video (YouTube/Vimeo) and <video> files.
+        // data: on media-src: inline notification / beep audio (data:audio/mpeg;base64,...).
         headers["Content-Security-Policy"] =
             "default-src 'self'; " +
             "img-src 'self' data: blob: http: https:; " +
@@ -18,7 +19,7 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
             "script-src 'self' 'unsafe-inline' https:; " +
             "font-src 'self' data: https:; " +
             "frame-src 'self' https: http:; " +
-            "media-src 'self' blob: https: http:; " +
+            "media-src 'self' data: blob: https: http:; " +
             "frame-ancestors 'self'; " +
             "base-uri 'self'; " +
             "form-action 'self'";

@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Catalog;
 using NewHarian.Domain.Enums;
-using NewHarian.Infrastructure.Persistence;
 using NewHarian.Web.Areas.Admin.Services;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
@@ -18,9 +16,11 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class ServiceProductsController(
-    IAdminCatalogService catalog,
+    IAdminServiceOfferingService services,
+    IAdminCategoryService categories,
+    IAdminColorService colors,
     IMediaStorage media,
-    AppDbContext db,
+    IAdminProductPreviewBuilder previewBuilder,
     IProductPreviewStore previewStore) : Controller
 {
     private const CatalogKind Type = CatalogKind.Service;
@@ -34,9 +34,9 @@ public class ServiceProductsController(
         ViewBag.ManagedType = Type;
         ViewBag.ListTitle = "Dịch vụ";
         ViewBag.AdminController = "ServiceProducts";
-        ViewBag.Categories = await catalog.GetCategoryOptionsAsync(ct);
+        ViewBag.Categories = await categories.GetCategoryOptionsAsync(ct);
         ViewBag.CategoryId = categoryId;
-        var all = await catalog.ListProductsAsync(categoryId, Type, ct);
+        var all = await services.ListServicesAsync(categoryId, ct);
         var (items, pager) = AdminPaging.Apply(all, page);
         ViewBag.Pager = pager;
         return View(SharedIndex, items);
@@ -47,8 +47,8 @@ public class ServiceProductsController(
     {
         ViewBag.LockedProductType = Type;
         ViewBag.AdminController = "ServiceProducts";
-        ViewBag.Categories = await catalog.GetCategoryOptionsAsync(ct);
-        ViewBag.Colors = await catalog.GetColorDefinitionsAsync(ct);
+        ViewBag.Categories = await categories.GetCategoryOptionsAsync(ct);
+        ViewBag.Colors = await colors.GetOptionsAsync(ct);
 
         if (id is null)
         {
@@ -64,7 +64,7 @@ public class ServiceProductsController(
             });
         }
 
-        var p = await catalog.GetProductAsync(id.Value, Type, ct);
+        var p = await services.GetServiceAsync(id.Value, ct);
         if (p is null) return NotFound();
         return PartialView(SharedForm, AdminProductFormHelper.ToSaveRequest(p));
     }
@@ -75,14 +75,14 @@ public class ServiceProductsController(
     {
         ViewBag.LockedProductType = Type;
         ViewBag.AdminController = "ServiceProducts";
-        ViewBag.Categories = await catalog.GetCategoryOptionsAsync(ct);
-        ViewBag.Colors = await catalog.GetColorDefinitionsAsync(ct);
+        ViewBag.Categories = await categories.GetCategoryOptionsAsync(ct);
+        ViewBag.Colors = await colors.GetOptionsAsync(ct);
         model.Variants ??= [];
         model.Kind = Type;
 
         if (model.Id is int existingId)
         {
-            var existing = await catalog.GetProductAsync(existingId, Type, ct);
+            var existing = await services.GetServiceAsync(existingId, ct);
             if (existing is null)
             {
                 ModelState.AddModelError(string.Empty, "Không thuộc danh sách dịch vụ (Service).");
@@ -90,7 +90,7 @@ public class ServiceProductsController(
             }
         }
 
-        var (ok, error, _) = await catalog.SaveProductAsync(model, ct);
+        var (ok, error, _) = await services.SaveServiceAsync(model, ct);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Lỗi lưu.");
@@ -106,50 +106,11 @@ public class ServiceProductsController(
         model.Variants ??= [];
         model.Kind = Type;
 
-        if (model.CategoryId <= 0)
-            return BadRequest(new { ok = false, error = "Chọn danh mục trước khi xem trước." });
-        if (string.IsNullOrWhiteSpace(model.NameVi))
-            return BadRequest(new { ok = false, error = "Nhập tên tiếng Việt để xem trước." });
+        var (ok, error, snapshot) = await previewBuilder.BuildAsync(model, ct);
+        if (!ok || snapshot is null)
+            return BadRequest(new { ok = false, error = error ?? "Không tạo được preview." });
 
-        var category = await db.Categories.AsNoTracking()
-            .Include(c => c.Translations)
-            .FirstOrDefaultAsync(c => c.Id == model.CategoryId, ct);
-        if (category is null)
-            return BadRequest(new { ok = false, error = "Danh mục không hợp lệ." });
-
-        await AdminProductFormHelper.ResolvePreviewImageUrlsAsync(db, model, ct);
-
-        var colorIds = model.Variants
-            .Where(v => v.ColorDefinitionId.HasValue)
-            .Select(v => v.ColorDefinitionId!.Value)
-            .Distinct()
-            .ToList();
-        var colors = new Dictionary<int, IReadOnlyList<ColorTranslationSnapshot>>();
-        if (colorIds.Count > 0)
-        {
-            var colorEntities = await db.ColorDefinitions.AsNoTracking()
-                .Include(c => c.Translations)
-                .Where(c => colorIds.Contains(c.Id))
-                .ToListAsync(ct);
-            foreach (var c in colorEntities)
-            {
-                colors[c.Id] = c.Translations
-                    .Select(t => new ColorTranslationSnapshot(t.LanguageCode, t.Name, t.Meaning))
-                    .ToList();
-            }
-        }
-
-        var categoryNames = category.Translations
-            .GroupBy(t => t.LanguageCode)
-            .ToDictionary(g => g.Key, g => g.First().Name);
-
-        var token = previewStore.Save(new ProductPreviewSnapshot
-        {
-            Request = model,
-            CategorySlug = category.Slug,
-            CategoryNames = categoryNames,
-            Colors = colors
-        });
+        var token = previewStore.Save(snapshot);
         var url = Url.Action(nameof(PreviewView), new { token, lang = "vi", area = "Admin" });
         return Json(new { ok = true, url });
     }
@@ -196,9 +157,9 @@ public class ServiceProductsController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Move(int id, int direction, int? categoryId, CancellationToken ct)
     {
-        var p = await catalog.GetProductAsync(id, Type, ct);
+        var p = await services.GetServiceAsync(id, ct);
         if (p is null) return NotFound();
-        await catalog.MoveProductAsync(id, direction, Type, ct);
+        await services.MoveServiceAsync(id, direction, ct);
         return AdminListRedirect.ToRefererOrIndex(this, new { area = "Admin", categoryId });
     }
 
@@ -206,10 +167,10 @@ public class ServiceProductsController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var p = await catalog.GetProductAsync(id, Type, ct);
+        var p = await services.GetServiceAsync(id, ct);
         if (p is null)
             return Json(new { ok = false, error = "Không tìm thấy." });
-        var (ok, error) = await catalog.DeleteProductAsync(id, Type, ct);
+        var (ok, error) = await services.DeleteServiceAsync(id, ct);
         return Json(new { ok, error });
     }
 }

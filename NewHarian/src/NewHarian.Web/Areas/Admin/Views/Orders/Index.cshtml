@@ -135,6 +135,7 @@
 </dialog>
 
 @section Scripts {
+<script src="~/js/admin-sku-suggest.js"></script>
 <script>
 (() => {
   const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -184,95 +185,6 @@
     });
   }
 
-  function wireSkuSuggest(form) {
-    const url = form.dataset.suggestUrl;
-    if (!url || form.dataset.skuWired === '1') return;
-    form.dataset.skuWired = '1';
-    let timer = null;
-
-    const hideLists = (except) => {
-      form.querySelectorAll('.sku-suggest__list').forEach(list => {
-        if (list !== except) {
-          list.hidden = true;
-          list.innerHTML = '';
-        }
-      });
-    };
-
-    form.addEventListener('input', (e) => {
-      const input = e.target.closest('.js-sku-input');
-      if (!input) return;
-      const wrap = input.closest('.sku-suggest');
-      const list = wrap?.querySelector('.sku-suggest__list');
-      if (!list) return;
-      clearTimeout(timer);
-      const q = input.value.trim();
-      if (q.length < 1) {
-        hideLists();
-        return;
-      }
-      timer = setTimeout(async () => {
-        try {
-          const res = await fetch(url + '?q=' + encodeURIComponent(q));
-          const items = await res.json();
-          if (!Array.isArray(items) || items.length === 0) {
-            list.innerHTML = '<li class="sku-suggest__empty">Không tìm thấy</li>';
-            list.hidden = false;
-            hideLists(list);
-            return;
-          }
-          list.innerHTML = items.map(it => {
-            const sku = it.sku ?? it.Sku ?? '';
-            const price = it.price ?? it.Price ?? '';
-            const display = it.display ?? it.Display ?? sku;
-            return `<li role="option" tabindex="-1" data-sku="${escapeAttr(sku)}" data-price="${escapeAttr(price)}">${escapeHtml(display)}</li>`;
-          }).join('');
-          list.hidden = false;
-          hideLists(list);
-        } catch {
-          hideLists();
-        }
-      }, 220);
-    });
-
-    form.addEventListener('click', (e) => {
-      const opt = e.target.closest('.sku-suggest__list [data-sku]');
-      if (!opt) return;
-      e.preventDefault();
-      const wrap = opt.closest('.sku-suggest');
-      const row = opt.closest('.manual-order-line');
-      const input = wrap?.querySelector('.js-sku-input');
-      const price = row?.querySelector('.js-sku-price');
-      const list = wrap?.querySelector('.sku-suggest__list');
-      if (input) input.value = opt.dataset.sku || '';
-      if (price && opt.dataset.price !== undefined && opt.dataset.price !== '') {
-        price.value = String(Math.round(Number(opt.dataset.price)));
-      }
-      if (list) {
-        list.hidden = true;
-        list.innerHTML = '';
-      }
-    });
-
-    form.addEventListener('focusin', (e) => {
-      if (!e.target.closest('.sku-suggest')) hideLists();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!form.contains(e.target)) hideLists();
-      else if (!e.target.closest('.sku-suggest')) hideLists();
-    });
-  }
-
-  function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-  }
-  function escapeAttr(s) {
-    return escapeHtml(s).replace(/`/g, '');
-  }
-
   function wireDealerPicker(form) {
     const sel = form.querySelector('#dealer-select');
     const wrapSel = form.querySelector('#dealer-select-wrap');
@@ -318,8 +230,86 @@
     window.HarianAddress?.bindAll();
     const form = createBody.querySelector('form');
     if (!form) return;
-    wireSkuSuggest(form);
+    window.AdminSkuSuggest.wire(form, { mode: 'sku' });
     wireDealerPicker(form);
+
+    const pickUrl = '@Url.Action("PreviewStockPick", "Orders", new { area = "Admin" })';
+    const pickBox = () => createBody.querySelector('#manual-order-stock-pick');
+
+    async function refreshStockPick() {
+      const box = pickBox();
+      if (!box) return;
+      const lines = [];
+      createBody.querySelectorAll('.manual-order-line').forEach(row => {
+        const sku = row.querySelector('.js-sku-input')?.value?.trim();
+        const qty = Number(row.querySelector('input[name*="Quantity"]')?.value || 0);
+        if (sku && qty > 0) lines.push({ sku, quantity: qty });
+      });
+      if (lines.length === 0) {
+        box.hidden = true;
+        box.innerHTML = '';
+        return;
+      }
+      try {
+        const res = await fetch(pickUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(lines)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const plan = await res.json();
+        const rows = plan.lines ?? plan.Lines ?? [];
+        if (!Array.isArray(rows) || rows.length === 0) {
+          box.hidden = true;
+          box.innerHTML = '';
+          return;
+        }
+        box.innerHTML = '<strong>Gợi ý lấy hàng (FEFO)</strong>' + rows.map(line => {
+          const sku = line.sku ?? line.Sku ?? '';
+          const name = line.productName ?? line.ProductName ?? '';
+          const req = line.requestedQty ?? line.RequestedQty ?? 0;
+          const shortfall = line.shortfallQty ?? line.ShortfallQty ?? 0;
+          const suggestions = line.suggestions ?? line.Suggestions ?? [];
+          let html = `<div style="margin-top:0.5rem"><div>${escapeHtml(sku)} - ${escapeHtml(name)} × ${req}`;
+          if (shortfall > 0) html += ` <span class="text-danger">(thiếu ${shortfall})</span>`;
+          html += '</div>';
+          if (!suggestions.length) {
+            html += '<p class="muted" style="margin:0.25rem 0 0">Chưa có lô tồn.</p>';
+          } else {
+            html += '<ul style="margin:0.25rem 0 0;padding-left:1.25rem">';
+            suggestions.forEach(s => {
+              const loc = `${s.locationCode ?? s.LocationCode} (${s.locationName ?? s.LocationName})`;
+              const lot = s.lotCode ?? s.LotCode ?? '-';
+              const exp = s.expiryDate ?? s.ExpiryDate ?? '';
+              const expText = exp ? String(exp).slice(0, 10).split('-').reverse().join('/') : '-';
+              const take = s.allocateQty ?? s.AllocateQty ?? 0;
+              html += `<li>${escapeHtml(loc)} · lô ${escapeHtml(lot)} · HSD ${escapeHtml(expText)} · lấy ${take}</li>`;
+            });
+            html += '</ul>';
+          }
+          return html + '</div>';
+        }).join('');
+        box.hidden = false;
+      } catch {
+        box.hidden = false;
+        box.innerHTML = '<span class="text-danger">Không tải được gợi ý lấy hàng.</span>';
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    createBody.querySelector('#btn-preview-stock-pick')?.addEventListener('click', () => refreshStockPick());
+    createBody.querySelector('#manual-order-lines')?.addEventListener('change', () => refreshStockPick());
+    createBody.querySelector('#manual-order-lines')?.addEventListener('input', e => {
+      if (e.target.closest('.js-sku-input') || e.target.matches('input[name*="Quantity"]')) {
+        clearTimeout(createBody._pickTimer);
+        createBody._pickTimer = setTimeout(refreshStockPick, 400);
+      }
+    });
 
     createBody.querySelector('#btn-add-line')?.addEventListener('click', () => {
       const tpl = createBody.querySelector('#manual-order-line-tpl');
@@ -337,6 +327,7 @@
       if (rows.length <= 1) return;
       btn.closest('.manual-order-line')?.remove();
       reindexLines(wrap);
+      refreshStockPick();
     });
 
     form.addEventListener('submit', async (e) => {

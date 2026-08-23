@@ -1,0 +1,47 @@
+@model IReadOnlyList<NewHarian.Application.Inventory.StockLotListItemDto>
+@{
+    var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+}
+
+@if (Model.Count == 0)
+{
+    <p class="muted" style="margin:0.5rem 0">Chưa có SKU tại vị trí này.</p>
+}
+else
+{
+    <table class="data-table" style="margin:0.5rem 0">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Sản phẩm</th>
+                <th>Lô</th>
+                <th>HSD</th>
+                <th>SL</th>
+                <th>Giá vốn</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var lot in Model)
+        {
+            var expired = lot.ExpiryDate < today;
+            var soon = !expired && lot.ExpiryDate <= today.AddDays(30);
+            <tr>
+                <td>@lot.Sku</td>
+                <td>@lot.ProductName @(string.IsNullOrWhiteSpace(lot.VariantLabel) ? "" : $"({lot.VariantLabel})")</td>
+                <td>@(lot.LotCode ?? "-")</td>
+                <td>
+                    @lot.ExpiryDate.ToString("dd/MM/yyyy")
+                    @if (expired) { <span class="muted"> (quá hạn)</span> }
+                    else if (soon) { <span class="muted"> (sắp hết)</span> }
+                </td>
+                <td>@lot.QuantityOnHand</td>
+                <td>@lot.UnitCost.ToString("N0")đ</td>
+                <td class="actions">
+                    <button type="button" class="btn-icon btn-adjust-lot" data-id="@lot.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Dealers;
+using NewHarian.Application.Inventory;
 using NewHarian.Application.Orders;
 using NewHarian.Domain.Enums;
 
@@ -10,12 +12,20 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
-public class OrdersController(IOrderService orders, IStatusHistoryService history, IDealerService dealers) : Controller
+public class OrdersController(
+    IOrderAdminService orders,
+    IOrderImportExportService importExport,
+    IStatusHistoryService history,
+    IDealerService dealers,
+    IOrderStockService orderStock) : Controller
 {
     private static readonly HashSet<string> SortKeys = new(StringComparer.OrdinalIgnoreCase)
     {
         "orderNumber", "customer", "total", "payment", "status", "createdAt", "source"
     };
+
+    private string? ActorUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+    private string? ActorName() => User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Email);
 
     public async Task<IActionResult> Index(
         OrderStatus? status,
@@ -63,7 +73,7 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
         dir = AdminListQuery.NormalizeDir(dir, AdminListQuery.DefaultDirForColumn(sort));
         (from, to) = AdminListQuery.NormalizeDateRange(from, to);
 
-        var bytes = await orders.ExportOrdersExcelAsync(status, payment, q, sort, dir, from, to, source, ct);
+        var bytes = await importExport.ExportOrdersExcelAsync(status, payment, q, sort, dir, from, to, source, ct);
         var fileName = $"orders-{DateTime.Now:yyyyMMdd-HHmm}.xlsx";
         return File(bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -76,6 +86,9 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
         var item = await orders.AdminGetAsync(id, ct);
         if (item is null) return NotFound();
         ViewBag.Histories = await history.ListForOrderAsync(id, ct);
+        ViewBag.StockPick = item.Status is OrderStatus.Confirmed
+            ? await orderStock.PreviewPickPlanAsync(id, ct)
+            : await orderStock.GetAllocationsAsync(id, ct);
         return PartialView("_DetailModal", item);
     }
 
@@ -94,18 +107,20 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
         return PartialView("_ManualOrderForm", new ManualOrderCreateRequest());
     }
 
-    [HttpGet]
-    public async Task<IActionResult> SuggestVariants(string? q, CancellationToken ct)
+    /// <summary>FEFO gợi ý vị trí/lô theo SKU trên form Thêm đơn (trước khi lưu).</summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> PreviewStockPick([FromBody] List<StockPickSkuLineRequest>? lines, CancellationToken ct)
     {
-        var items = await orders.SuggestVariantsAsync(q, 15, ct);
-        return Json(items);
+        var plan = await orderStock.PreviewPickBySkusAsync(lines ?? [], ct);
+        return Json(plan);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ManualOrderCreateRequest model, CancellationToken ct)
     {
-        var (ok, error, orderNumber) = await orders.CreateManualOrderAsync(model, ct);
+        var (ok, error, orderNumber) = await orders.CreateManualOrderAsync(model, ActorUserId(), ActorName(), ct);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Không tạo được đơn.");
@@ -130,7 +145,7 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
     [HttpGet]
     public IActionResult ImportTemplate()
     {
-        var bytes = orders.BuildOrderImportTemplate();
+        var bytes = importExport.BuildOrderImportTemplate();
         return File(bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "orders-import-template.xlsx");
@@ -155,7 +170,7 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
         }
 
         await using var stream = file.OpenReadStream();
-        var result = await orders.ImportOrdersAsync(stream, ct);
+        var result = await importExport.ImportOrdersAsync(stream, ActorUserId(), ActorName(), ct);
         return PartialView("_ImportOrdersResult", result);
     }
 
@@ -179,7 +194,7 @@ public class OrdersController(IOrderService orders, IStatusHistoryService histor
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(int id, OrderStatus status, string? internalNotes, CancellationToken ct)
     {
-        var (ok, error) = await orders.AdminUpdateStatusAsync(id, status, internalNotes, ct);
+        var (ok, error) = await orders.AdminUpdateStatusAsync(id, status, internalNotes, ActorUserId(), ActorName(), ct);
         return Json(new { ok, error, status = status.ToString() });
     }
 }

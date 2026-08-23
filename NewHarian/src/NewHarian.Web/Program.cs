@@ -46,6 +46,7 @@ builder.Services.AddResponseCompression(options =>
 builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.AddScoped<NewHarian.Web.Areas.Admin.Services.IProductPreviewStore, NewHarian.Web.Areas.Admin.Services.ProductPreviewStore>();
+builder.Services.AddScoped<NewHarian.Web.Areas.Admin.Services.IAdminProductPreviewBuilder, NewHarian.Web.Areas.Admin.Services.AdminProductPreviewBuilder>();
 builder.Services.AddControllersWithViews()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();

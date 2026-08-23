@@ -520,6 +520,7 @@
         <input name="Variants[${idx}].VariantLabel" class="form-control col-variant-size" />
         ${colorSelectHtml(form, idx)}
         <input name="Variants[${idx}].Price" type="number" step="1000" class="form-control" required />
+        <input type="number" class="form-control col-variant-stock" value="0" readonly title="Tồn tổng (từ kho lô)" />
         ${variantImageCellHtml(idx)}
         <label class="col-variant-flag" title="Default"><input type="radio" name="defaultVariant" value="${idx}" class="variant-default-radio" ${idx === 0 ? 'checked' : ''} /></label>
         <input type="hidden" name="Variants[${idx}].IsDefault" value="${idx === 0 ? 'true' : 'false'}" class="variant-default-flag" />

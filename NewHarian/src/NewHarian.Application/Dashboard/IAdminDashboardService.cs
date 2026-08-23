@@ -32,7 +32,16 @@ public sealed class AdminDashboardDto
     public IReadOnlyList<DashboardDayCountDto>? BookingsByDay { get; init; }
     public IReadOnlyList<DashboardDayPointDto>? BookingGmvByDay { get; init; }
     public decimal BookingGmvTotal { get; init; }
+    public InventoryDashboardDto? Inventory { get; init; }
 }
+
+public sealed record InventoryDashboardDto(
+    decimal TotalValue,
+    int LowStockSkuCount,
+    int LowStockThreshold,
+    int ExpiringSoonLotCount,
+    int ExpiringWithinDays,
+    int ExpiredLotCount);
 
 public interface IAdminDashboardService
 {

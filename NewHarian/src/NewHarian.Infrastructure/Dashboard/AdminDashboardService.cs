@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Dashboard;
+using NewHarian.Application.Inventory;
 using NewHarian.Application.Orders;
 using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Persistence;
 
 namespace NewHarian.Infrastructure.Dashboard;
 
-public sealed class AdminDashboardService(AppDbContext db) : IAdminDashboardService
+public sealed class AdminDashboardService(AppDbContext db, IInventoryService inventory) : IAdminDashboardService
 {
     private const int MaxRangeDays = 366;
 
@@ -48,10 +49,18 @@ public sealed class AdminDashboardService(AppDbContext db) : IAdminDashboardServ
                              && a.Status == ApplicationStatus.New, ct);
 
         var kpis = new DashboardKpiDto(pendingOrders, newBookings, newInquiries, newApplications);
+        var invSummary = await inventory.GetSummaryAsync(ct: ct);
+        var invDto = new InventoryDashboardDto(
+            invSummary.TotalValue,
+            invSummary.LowStockSkuCount,
+            invSummary.LowStockThreshold,
+            invSummary.ExpiringSoonLotCount,
+            invSummary.ExpiringWithinDays,
+            invSummary.ExpiredLotCount);
 
         if (!includeCharts)
         {
-            return new AdminDashboardDto { Range = range, Kpis = kpis };
+            return new AdminDashboardDto { Range = range, Kpis = kpis, Inventory = invDto };
         }
 
         var gmvRaw = await db.Orders.AsNoTracking()
@@ -173,7 +182,8 @@ public sealed class AdminDashboardService(AppDbContext db) : IAdminDashboardServ
             BookingsByStatus = bookingsByStatus,
             BookingsByDay = bookingsByDay,
             BookingGmvByDay = bookingGmvByDay,
-            BookingGmvTotal = bookingGmvTotal
+            BookingGmvTotal = bookingGmvTotal,
+            Inventory = invDto
         };
     }
 

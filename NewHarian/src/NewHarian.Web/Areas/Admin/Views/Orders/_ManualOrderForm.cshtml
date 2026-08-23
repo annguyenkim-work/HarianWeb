@@ -20,7 +20,7 @@
 }
 
 <form asp-area="Admin" asp-controller="Orders" asp-action="Create" method="post" class="manual-order-form"
-      data-suggest-url="@Url.Action("SuggestVariants", "Orders", new { area = "Admin" })">
+      data-suggest-url="@Url.Action("SuggestVariants", "Products", new { area = "Admin" })">
     @Html.AntiForgeryToken()
     <h2>Thêm đơn hàng</h2>
 
@@ -125,7 +125,7 @@
         {
             <div class="manual-order-line">
                 <label class="sku-suggest">
-                    <span>Sản phẩm / SKU *</span>
+                    <span>Sản phẩm *</span>
                     <input name="Lines[@i].Sku" value="@Model.Lines[i].Sku" class="form-control js-sku-input" autocomplete="off" required placeholder="Gõ tên hoặc SKU…" />
                     <ul class="sku-suggest__list" hidden></ul>
                 </label>
@@ -143,6 +143,10 @@
     </div>
     <p class="manual-order-form__hint muted">Gõ để tìm sản phẩm theo tên hoặc SKU. Mặc định trạng thái <strong>Hoàn thành</strong> (đã thanh toán Offline); có thể đổi trước khi tạo.</p>
     <button type="button" class="btn-secondary" id="btn-add-line">+ Thêm dòng</button>
+    <button type="button" class="btn-secondary" id="btn-preview-stock-pick" style="margin-left:0.35rem">Xem gợi ý lấy hàng</button>
+
+    <div id="manual-order-stock-pick" class="order-stock-pick" hidden
+         style="margin:0.75rem 0;padding:0.75rem;border:1px solid #ddd;border-radius:6px"></div>
 
     <div class="modal__actions">
         <button type="button" class="btn-secondary" data-close>Hủy</button>
@@ -153,7 +157,7 @@
 <template id="manual-order-line-tpl">
     <div class="manual-order-line">
         <label class="sku-suggest">
-            <span>Sản phẩm / SKU *</span>
+            <span>Sản phẩm *</span>
             <input name="Lines[__i__].Sku" class="form-control js-sku-input" autocomplete="off" required placeholder="Gõ tên hoặc SKU…" />
             <ul class="sku-suggest__list" hidden></ul>
         </label>

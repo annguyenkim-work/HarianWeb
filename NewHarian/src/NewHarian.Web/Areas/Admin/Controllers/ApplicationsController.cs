@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Engagement;
 using NewHarian.Application.Posts;
 using NewHarian.Domain.Enums;
-using NewHarian.Infrastructure.Persistence;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
@@ -14,10 +12,7 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 [Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 public class ApplicationsController(
     IJobApplicationService apps,
-    IAdminSitePostService posts,
-    IMediaStorage media,
-    AppDbContext db,
-    ILogger<ApplicationsController> logger) : Controller
+    IAdminSitePostService posts) : Controller
 {
     public async Task<IActionResult> Index(
         ApplicationStatus? status,
@@ -60,33 +55,9 @@ public class ApplicationsController(
     [HttpGet]
     public async Task<IActionResult> Cv(int id, CancellationToken ct)
     {
-        logger.LogInformation("DownloadApplicationCv Start ApplicationId={Id}", id);
-        try
-        {
-            var application = await db.JobApplications.AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Id == id, ct);
-            if (application?.AttachmentMediaFileId is not int mediaId)
-            {
-                logger.LogWarning("DownloadApplicationCv Done rejected ApplicationId={Id} Error={Error}", id, "No attachment");
-                return NotFound();
-            }
-
-            var opened = await media.OpenAsync(mediaId, ct);
-            if (opened is null)
-            {
-                logger.LogWarning("DownloadApplicationCv Done rejected ApplicationId={Id} MediaId={MediaId} Error={Error}",
-                    id, mediaId, "File missing");
-                return NotFound();
-            }
-
-            logger.LogInformation("DownloadApplicationCv Done ApplicationId={Id} MediaId={MediaId}", id, mediaId);
-            return File(opened.Content, opened.ContentType, opened.DownloadFileName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "DownloadApplicationCv Error ApplicationId={Id}", id);
-            throw;
-        }
+        var opened = await apps.OpenCvAsync(id, ct);
+        if (opened is null) return NotFound();
+        return File(opened.Content, opened.ContentType, opened.DownloadFileName);
     }
 
     [HttpPost]

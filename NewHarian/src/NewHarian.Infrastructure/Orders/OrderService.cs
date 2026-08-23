@@ -7,6 +7,7 @@ using NewHarian.Application.Cart;
 using NewHarian.Application.Email;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
+using NewHarian.Application.Inventory;
 using NewHarian.Application.Shipping;
 using NewHarian.Application.Validation;
 using NewHarian.Domain.Entities;
@@ -27,7 +28,8 @@ public partial class OrderService(
     IAdminNotificationService notifications,
     IBankTransferDisplayService bankTransfer,
     IVietnamDivisionCatalog catalog,
-    ILogger<OrderService> logger) : IOrderService
+    IOrderStockService orderStock,
+    ILogger<OrderService> logger) : IOrderService, IOrderAdminService, IOrderImportExportService
 {
     public async Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(CheckoutDraft draft, CancellationToken ct = default)
     {
@@ -336,6 +338,8 @@ public partial class OrderService(
 
     public async Task<(bool Ok, string? Error, string? OrderNumber)> CreateManualOrderAsync(
         ManualOrderCreateRequest request,
+        string? actorUserId = null,
+        string? actorName = null,
         CancellationToken ct = default)
     {
         logger.LogInformation("CreateManualOrder Start Source={Source}", request.Source);
@@ -491,6 +495,19 @@ public partial class OrderService(
             db.Orders.Add(order);
             await db.SaveChangesAsync(ct);
 
+            // Store / channel capture at Processing+ (incl. default Delivered): trừ FEFO ngay khi tạo
+            if (RequiresStockDeduction(status))
+            {
+                var (deductOk, deductErr, _) = await orderStock.DeductForOrderAsync(order.Id, actorUserId, actorName, ct);
+                if (!deductOk)
+                {
+                    logger.LogWarning(
+                        "CreateManualOrder Done rejected OrderNumber={OrderNumber} Error={Error}",
+                        order.OrderNumber, deductErr);
+                    return RejectManual(deductErr ?? "Không trừ được tồn kho.");
+                }
+            }
+
             var statusLabel = StatusHistoryMessages.ForOrder(StatusHistoryEventTypes.StatusChanged, status);
             await history.AppendOrderAsync(
                 order.Id,
@@ -538,51 +555,13 @@ public partial class OrderService(
         return (false, error, null);
     }
 
-    public async Task<IReadOnlyList<VariantSuggestDto>> SuggestVariantsAsync(
-        string? q,
-        int take = 15,
+    public async Task<(bool Ok, string? Error)> AdminUpdateStatusAsync(
+        int id,
+        OrderStatus status,
+        string? internalNotes,
+        string? actorUserId = null,
+        string? actorName = null,
         CancellationToken ct = default)
-    {
-        var term = (q ?? string.Empty).Trim();
-        if (term.Length < 1)
-            return Array.Empty<VariantSuggestDto>();
-
-        take = Math.Clamp(take, 1, 30);
-        var lower = term.ToLowerInvariant();
-
-        var rows = await db.ProductVariants.AsNoTracking()
-            .Where(v => v.IsActive && v.Product.Status != ProductStatus.Archived)
-            .Where(v =>
-                v.Sku.ToLower().Contains(lower) ||
-                v.VariantLabel.ToLower().Contains(lower) ||
-                v.Product.Translations.Any(t => t.Name.ToLower().Contains(lower)))
-            .OrderBy(v => v.Sku)
-            .Take(take)
-            .Select(v => new
-            {
-                v.Sku,
-                v.VariantLabel,
-                v.Price,
-                Name = v.Product.Translations
-                    .Where(t => t.LanguageCode == "vi")
-                    .Select(t => t.Name)
-                    .FirstOrDefault()
-                    ?? v.Product.Translations.Select(t => t.Name).FirstOrDefault()
-                    ?? v.Product.Slug
-            })
-            .ToListAsync(ct);
-
-        return rows.Select(v =>
-        {
-            var label = string.IsNullOrWhiteSpace(v.VariantLabel)
-                ? v.Name
-                : $"{v.Name} — {v.VariantLabel}";
-            var display = $"{label} ({v.Sku}) · {v.Price:N0}đ";
-            return new VariantSuggestDto(v.Sku, v.Name, v.VariantLabel, v.Price, display);
-        }).ToList();
-    }
-
-    public async Task<(bool Ok, string? Error)> AdminUpdateStatusAsync(int id, OrderStatus status, string? internalNotes, CancellationToken ct = default)
     {
         logger.LogInformation("AdminUpdateStatus Start Id={Id} Status={Status}", id, status);
         try
@@ -608,6 +587,26 @@ public partial class OrderService(
             if (status == OrderStatus.Shipped) o.ShippedAt ??= DateTime.UtcNow;
             if (status == OrderStatus.Delivered) o.DeliveredAt ??= DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
+
+            if (RequiresStockDeduction(status))
+            {
+                var (deductOk, deductErr, _) = await orderStock.DeductForOrderAsync(id, actorUserId, actorName, ct);
+                if (!deductOk)
+                {
+                    logger.LogWarning("AdminUpdateStatus Done rejected Id={Id} Error={Error}", id, deductErr);
+                    return (false, deductErr ?? "Không trừ được tồn kho.");
+                }
+            }
+            else if (status == OrderStatus.Cancelled)
+            {
+                var (restoreOk, restoreErr) = await orderStock.RestoreForOrderAsync(id, actorUserId, actorName, ct);
+                if (!restoreOk)
+                {
+                    logger.LogWarning("AdminUpdateStatus Done rejected Id={Id} Error={Error}", id, restoreErr);
+                    return (false, restoreErr ?? "Không hoàn được tồn kho.");
+                }
+            }
+
             await audit.WriteAsync(
                 "Order.StatusChanged",
                 "Order",
@@ -769,6 +768,9 @@ public partial class OrderService(
             .ToListAsync(ct);
         return PublicReferenceCodes.Format(prefix, PublicReferenceCodes.NextSequence(existing, prefix));
     }
+
+    private static bool RequiresStockDeduction(OrderStatus status)
+        => status is OrderStatus.Processing or OrderStatus.Shipped or OrderStatus.Delivered;
 
     private static bool IsAllowedTransition(OrderStatus from, OrderStatus to, PaymentMethod method)
     {

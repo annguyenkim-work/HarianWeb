@@ -1,0 +1,49 @@
+@model NewHarian.Application.Inventory.StockLotReceiveRequest
+@using NewHarian.Application.Inventory
+@{
+    var locations = ViewBag.Locations as IReadOnlyList<WarehouseLocationListItemDto> ?? [];
+    var selectedLabel = ViewBag.SelectedVariantLabel as string ?? "";
+}
+
+<form asp-action="Receive" method="post" id="receive-lot-form"
+      data-suggest-url="@Url.Action("SuggestVariants", "Products", new { area = "Admin" })">
+    @Html.AntiForgeryToken()
+    <h2>Nhập lô</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="sku-suggest">
+        <label class="sku-suggest__label" for="receive-sku-input">Sản phẩm *</label>
+        <input type="hidden" asp-for="ProductVariantId" class="js-variant-id" />
+        <input id="receive-sku-input" type="text" class="form-control js-sku-input" value="@selectedLabel" required
+               autocomplete="off" placeholder="Gõ tên hoặc SKU…" />
+        <ul class="sku-suggest__list" hidden></ul>
+    </div>
+
+    <label>Vị trí
+        <select asp-for="WarehouseLocationId" class="form-control" required>
+            <option value="">Chọn</option>
+            @foreach (var loc in locations.Where(l => l.IsActive))
+            {
+                if (Model.WarehouseLocationId == loc.Id)
+                {
+                    <option value="@loc.Id" selected>@loc.Code - @loc.Name</option>
+                }
+                else
+                {
+                    <option value="@loc.Id">@loc.Code - @loc.Name</option>
+                }
+            }
+        </select>
+    </label>
+
+    <label>Mã lô (tuỳ chọn) <input asp-for="LotCode" class="form-control" maxlength="100" /></label>
+    <label>Hạn sử dụng <input asp-for="ExpiryDate" type="date" class="form-control" required /></label>
+    <label>Giá vốn / đơn vị <input asp-for="UnitCost" type="number" step="1000" min="0" class="form-control" required /></label>
+    <label>Số lượng <input asp-for="Quantity" type="number" min="1" class="form-control" required /></label>
+    <label>Ghi chú <input asp-for="Notes" class="form-control" maxlength="1000" /></label>
+
+    <div style="margin-top:1rem;display:flex;gap:0.5rem">
+        <button type="submit" class="btn-primary">Nhập kho</button>
+        <button type="button" class="btn-link" data-close-inventory-modal>Đóng</button>
+    </div>
+</form>
