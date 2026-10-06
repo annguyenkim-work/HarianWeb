@@ -9,7 +9,10 @@
     Layout = "_AdminLayout";
     var cats = (IReadOnlyList<NewHarian.Application.Catalog.AdminCategoryOptionDto>)ViewBag.Categories;
     var categoryId = ViewBag.CategoryId as int?;
-    var canReorder = categoryId.HasValue;
+    var isService = managedType == CatalogKind.Service;
+    var canEdit = User.HasPermission(isService ? Permissions.Services.Edit : Permissions.Products.Edit);
+    var hasReorder = User.HasPermission(isService ? Permissions.Services.Reorder : Permissions.Products.Reorder);
+    var canReorder = hasReorder && categoryId.HasValue;
     var pager = ViewBag.Pager as AdminPagerModel;
     var offset = pager?.Offset ?? 0;
     var total = pager?.TotalCount ?? Model.Count;
@@ -17,7 +20,10 @@
 
 <div class="admin-toolbar">
     <h1>@listTitle</h1>
-    <button type="button" class="btn-icon btn-primary" id="btn-add-prod" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+    @if (canEdit)
+    {
+        <button type="button" class="btn-icon btn-primary" id="btn-add-prod" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+    }
 </div>
 
 <form method="get" class="filter-bar filter-bar--row" asp-area="Admin" asp-controller="@adminController" asp-action="Index">
@@ -39,7 +45,7 @@
 
 @if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
 @if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
-@if (!canReorder)
+@if (hasReorder && !canReorder)
 {
     <p class="muted">Chọn một danh mục để sắp xếp thứ tự hiển thị bằng ↑/↓. Mục mới tự động xếp cuối trong danh mục (theo loại).</p>
 }
@@ -77,8 +83,11 @@
             <td>@p.VariantCount</td>
             <td>@(p.FromPrice?.ToString("N0") is string priceText ? $"{priceText}đ" : "-")</td>
             <td class="actions">
+                @if (canEdit)
+                {
                 <button type="button" class="btn-icon btn-edit-prod" data-id="@p.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-                @if (p.Status != ProductStatus.Archived)
+                }
+                @if (canEdit && p.Status != ProductStatus.Archived)
                 {
                     <form asp-area="Admin" asp-controller="@adminController" asp-action="Delete" method="post" class="inline js-archive-prod">
                         @Html.AntiForgeryToken()
@@ -585,7 +594,7 @@
     if (!modal.hidden) closeModal();
   });
 
-  document.getElementById('btn-add-prod').addEventListener('click', () => openForm(null));
+  document.getElementById('btn-add-prod')?.addEventListener('click', () => openForm(null));
   document.querySelectorAll('.btn-edit-prod').forEach(b => b.addEventListener('click', () => openForm(b.dataset.id)));
 
   document.querySelectorAll('.js-archive-prod').forEach(form => {

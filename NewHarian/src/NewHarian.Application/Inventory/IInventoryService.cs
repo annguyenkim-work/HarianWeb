@@ -69,7 +69,8 @@ public sealed record OrderItemPickPlanDto(
     int RequestedQty,
     int AllocatedQty,
     int ShortfallQty,
-    IReadOnlyList<StockLotPickSuggestionDto> Suggestions);
+    IReadOnlyList<StockLotPickSuggestionDto> Suggestions,
+    int ExpiredQty = 0);
 
 public sealed record OrderStockPickPlanDto(
     int OrderId,

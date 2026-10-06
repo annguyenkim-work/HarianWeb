@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Catalog;
 using NewHarian.Domain.Enums;
 using NewHarian.Web.Areas.Admin.Services;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
@@ -13,7 +13,6 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 /// Reuses Products form/list views.
 /// </summary>
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class ServiceProductsController(
     IAdminServiceOfferingService services,
@@ -29,6 +28,7 @@ public class ServiceProductsController(
     private const string SharedPreview = "~/Areas/Admin/Views/Products/PreviewView.cshtml";
     private const string SharedPreviewExpired = "~/Areas/Admin/Views/Products/PreviewExpired.cshtml";
 
+    [HasPermission(Permissions.Services.View)]
     public async Task<IActionResult> Index(int? categoryId, int page = 1, CancellationToken ct = default)
     {
         ViewBag.ManagedType = Type;
@@ -43,6 +43,7 @@ public class ServiceProductsController(
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Services.Edit)]
     public async Task<IActionResult> Edit(int? id, CancellationToken ct)
     {
         ViewBag.LockedProductType = Type;
@@ -71,6 +72,7 @@ public class ServiceProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Services.Edit)]
     public async Task<IActionResult> Save(ProductSaveRequest model, CancellationToken ct)
     {
         ViewBag.LockedProductType = Type;
@@ -101,6 +103,7 @@ public class ServiceProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Services.Preview)]
     public async Task<IActionResult> Preview(ProductSaveRequest model, CancellationToken ct)
     {
         model.Variants ??= [];
@@ -116,6 +119,7 @@ public class ServiceProductsController(
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Services.Preview)]
     public IActionResult PreviewView(string token, string? lang)
     {
         var snapshot = previewStore.Get(token);
@@ -134,6 +138,7 @@ public class ServiceProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Services.UploadImage)]
     public async Task<IActionResult> UploadImage(IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
@@ -155,6 +160,7 @@ public class ServiceProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Services.Reorder)]
     public async Task<IActionResult> Move(int id, int direction, int? categoryId, CancellationToken ct)
     {
         var p = await services.GetServiceAsync(id, ct);
@@ -165,6 +171,7 @@ public class ServiceProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Services.Edit)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         var p = await services.GetServiceAsync(id, ct);

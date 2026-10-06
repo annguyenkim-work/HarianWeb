@@ -6,6 +6,6 @@ namespace NewHarian.Web.Areas.Admin.Services;
 
 public sealed class AdminNotificationRealtime(IHubContext<AdminNotificationsHub> hub) : IAdminNotificationRealtime
 {
-    public Task NotifyOpsAsync(AdminNotificationDto dto, CancellationToken ct = default)
-        => hub.Clients.Group(AdminNotificationsHub.OpsGroup).SendAsync("notificationCreated", dto, ct);
+    public Task NotifyAsync(AdminNotificationDto dto, string permission, CancellationToken ct = default)
+        => hub.Clients.Group(AdminNotificationsHub.GroupFor(permission)).SendAsync("notificationCreated", dto, ct);
 }

@@ -1,17 +1,17 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Posts;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class PostsController(IAdminSitePostService posts, IMediaStorage media) : Controller
 {
     [HttpGet]
+    [HasPermission(Permissions.Posts.Manage)]
     public async Task<IActionResult> Index(PostKind kind = PostKind.News, int page = 1, CancellationToken ct = default)
     {
         ViewBag.Kind = kind;
@@ -22,6 +22,7 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Posts.Manage)]
     public async Task<IActionResult> Edit(PostKind kind, int? id, CancellationToken ct)
     {
         ViewBag.Kind = kind;
@@ -59,6 +60,7 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Posts.Manage)]
     public async Task<IActionResult> Edit(SitePostSaveRequest model, IFormFile? coverFile, CancellationToken ct)
     {
         ViewBag.Kind = model.Kind;
@@ -86,6 +88,7 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Posts.UploadImage)]
     public async Task<IActionResult> UploadImage(IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
@@ -106,6 +109,7 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Posts.Manage)]
     public async Task<IActionResult> Move(int id, int direction, PostKind kind, CancellationToken ct)
     {
         await posts.MoveAsync(id, direction, ct);
@@ -114,6 +118,7 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Posts.Manage)]
     public async Task<IActionResult> Delete(int id, PostKind kind, CancellationToken ct)
     {
         var (ok, error) = await posts.DeleteAsync(id, ct);

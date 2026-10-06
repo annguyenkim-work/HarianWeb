@@ -1,15 +1,14 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Catalog;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Authorization;
 using System.Globalization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 public class ServiceBookingsController(IServiceBookingService bookings, IStatusHistoryService history) : Controller
 {
     private static readonly HashSet<string> SortKeys = new(StringComparer.OrdinalIgnoreCase)
@@ -17,6 +16,7 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
         "id", "customer", "phone", "product", "preferredDate", "status", "createdAt"
     };
 
+    [HasPermission(Permissions.Bookings.View)]
     public async Task<IActionResult> Index(
         ServiceBookingStatus? status,
         string? q,
@@ -44,6 +44,7 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Bookings.View)]
     public async Task<IActionResult> Detail(int id, CancellationToken ct)
     {
         var item = await bookings.GetAsync(id, ct);
@@ -54,6 +55,7 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Bookings.Update)]
     public async Task<IActionResult> UpdateStatus(int id, ServiceBookingStatus status, string? internalNotes, string? citizenId, string? amount, CancellationToken ct)
     {
         decimal? parsedAmount = null;

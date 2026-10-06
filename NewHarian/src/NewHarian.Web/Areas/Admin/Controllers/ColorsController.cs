@@ -1,14 +1,14 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Catalog;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public class ColorsController(IAdminColorService colors) : Controller
 {
+    [HasPermission(Permissions.Colors.View)]
     public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
     {
         var mapped = await colors.ListAsync(ct);
@@ -18,6 +18,7 @@ public class ColorsController(IAdminColorService colors) : Controller
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Colors.Edit)]
     public async Task<IActionResult> Edit(int? id, CancellationToken ct)
     {
         if (id is null)
@@ -30,6 +31,7 @@ public class ColorsController(IAdminColorService colors) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Colors.Edit)]
     public async Task<IActionResult> Save(ColorDefinitionSaveRequest model, CancellationToken ct)
     {
         var (ok, error, _) = await colors.SaveAsync(model, ct);
@@ -43,6 +45,7 @@ public class ColorsController(IAdminColorService colors) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Colors.Edit)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         var (ok, error) = await colors.DeleteAsync(id, ct);

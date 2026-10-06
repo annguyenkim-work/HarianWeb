@@ -1,15 +1,14 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Catalog;
 using NewHarian.Domain.Enums;
 using NewHarian.Web.Areas.Admin.Services;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 /// <summary>Admin CRUD for physical goods — CatalogKind.Product.</summary>
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class ProductsController(
     IAdminProductService products,
@@ -22,10 +21,11 @@ public class ProductsController(
     private const CatalogKind Type = CatalogKind.Product;
 
     [HttpGet]
+    [HasPermission(Permissions.Products.SuggestVariants)]
     public async Task<IActionResult> SuggestVariants(string? q, CancellationToken ct)
         => Json(await products.SuggestVariantsAsync(q, 15, ct));
 
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.View)]
     public async Task<IActionResult> Index(int? categoryId, int page = 1, CancellationToken ct = default)
     {
         ViewBag.ManagedType = Type;
@@ -40,7 +40,7 @@ public class ProductsController(
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.Edit)]
     public async Task<IActionResult> Edit(int? id, CancellationToken ct)
     {
         ViewBag.LockedProductType = Type;
@@ -69,7 +69,7 @@ public class ProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.Edit)]
     public async Task<IActionResult> Save(ProductSaveRequest model, CancellationToken ct)
     {
         ViewBag.LockedProductType = Type;
@@ -101,7 +101,7 @@ public class ProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.Preview)]
     public async Task<IActionResult> Preview(ProductSaveRequest model, CancellationToken ct)
     {
         model.Variants ??= [];
@@ -118,7 +118,7 @@ public class ProductsController(
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.Preview)]
     public IActionResult PreviewView(string token, string? lang)
     {
         var snapshot = previewStore.Get(token);
@@ -137,7 +137,7 @@ public class ProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.UploadImage)]
     public async Task<IActionResult> UploadImage(IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
@@ -159,7 +159,7 @@ public class ProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.Reorder)]
     public async Task<IActionResult> Move(int id, int direction, int? categoryId, CancellationToken ct)
     {
         var p = await products.GetProductAsync(id, ct);
@@ -170,7 +170,7 @@ public class ProductsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Products.Edit)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         var p = await products.GetProductAsync(id, ct);

@@ -5,6 +5,7 @@ public record StockPickSkuLineRequest(string Sku, int Quantity);
 public interface IOrderStockService
 {
     Task<OrderStockPickPlanDto?> PreviewPickPlanAsync(int orderId, CancellationToken ct = default);
+    /// <summary>Actual lot allocations once stock is deducted; otherwise falls back to a FEFO preview (<c>AlreadyDeducted == false</c>).</summary>
     Task<OrderStockPickPlanDto?> GetAllocationsAsync(int orderId, CancellationToken ct = default);
 
     /// <summary>FEFO preview for Thêm đơn (before save) by SKU + qty.</summary>

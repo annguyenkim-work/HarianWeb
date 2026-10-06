@@ -15,6 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="appsettings.E2E.json" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.*.local.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NewHarian.Application\NewHarian.Application.csproj" />
     <ProjectReference Include="..\NewHarian.Infrastructure\NewHarian.Infrastructure.csproj" />
   </ItemGroup>

@@ -14,6 +14,8 @@
 <div class="admin-toolbar">
     <h1>Đơn hàng</h1>
     <div class="admin-toolbar__actions">
+        @if (User.HasPermission(Permissions.Orders.Export))
+        {
         <a class="btn-secondary"
            asp-action="Export"
            asp-route-status="@ViewBag.Status"
@@ -24,8 +26,15 @@
            asp-route-dir="@dir"
            asp-route-from="@(from?.ToString("yyyy-MM-dd"))"
            asp-route-to="@(to?.ToString("yyyy-MM-dd"))">Export</a>
+        }
+        @if (User.HasPermission(Permissions.Orders.Import))
+        {
         <button type="button" class="btn-secondary" id="btn-import-orders" title="Import Excel">Import</button>
+        }
+        @if (User.HasPermission(Permissions.Orders.Create))
+        {
         <button type="button" class="btn-icon btn-primary" id="btn-add-order" title="Thêm đơn" aria-label="Thêm đơn"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+        }
     </div>
 </div>
 
@@ -269,9 +278,13 @@
           const name = line.productName ?? line.ProductName ?? '';
           const req = line.requestedQty ?? line.RequestedQty ?? 0;
           const shortfall = line.shortfallQty ?? line.ShortfallQty ?? 0;
+          const expired = line.expiredQty ?? line.ExpiredQty ?? 0;
           const suggestions = line.suggestions ?? line.Suggestions ?? [];
           let html = `<div style="margin-top:0.5rem"><div>${escapeHtml(sku)} - ${escapeHtml(name)} × ${req}`;
-          if (shortfall > 0) html += ` <span class="text-danger">(thiếu ${shortfall})</span>`;
+          if (shortfall > 0) {
+            const expiredNote = expired > 0 ? `, ${expired} trong lô hết hạn không xuất` : '';
+            html += ` <span class="text-danger">(thiếu ${shortfall}${expiredNote})</span>`;
+          }
           html += '</div>';
           if (!suggestions.length) {
             html += '<p class="muted" style="margin:0.25rem 0 0">Chưa có lô tồn.</p>';

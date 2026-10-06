@@ -1,14 +1,13 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Engagement;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 public class InquiriesController(IInquiryService inquiries) : Controller
 {
     private static readonly HashSet<string> SortKeys = new(StringComparer.OrdinalIgnoreCase)
@@ -16,6 +15,7 @@ public class InquiriesController(IInquiryService inquiries) : Controller
         "id", "createdAt", "name", "email", "phone", "status"
     };
 
+    [HasPermission(Permissions.Inquiries.View)]
     public async Task<IActionResult> Index(
         InquiryStatus? status,
         string? q,
@@ -38,6 +38,7 @@ public class InquiriesController(IInquiryService inquiries) : Controller
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Inquiries.View)]
     public async Task<IActionResult> Detail(int id, CancellationToken ct)
     {
         var item = await inquiries.GetAsync(id, ct);
@@ -47,6 +48,7 @@ public class InquiriesController(IInquiryService inquiries) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Inquiries.Update)]
     public async Task<IActionResult> UpdateStatus(int id, InquiryStatus status, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await inquiries.UpdateStatusAsync(id, status, internalNotes, User.Identity?.Name, ct);

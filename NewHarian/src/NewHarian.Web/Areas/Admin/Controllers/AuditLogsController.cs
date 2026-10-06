@@ -1,15 +1,15 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
 using NewHarian.Infrastructure.Persistence;
 using NewHarian.Web.Areas.Admin;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
-/// <summary>Hidden Admin-only audit trail — URL /admin/audit-logs (not linked in menu; for maintain/debug).</summary>
+/// <summary>Hidden audit trail — URL /admin/audit-logs (not linked in menu; for maintain/debug).</summary>
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.AuditLogs.View)]
 public class AuditLogsController(AppDbContext db) : Controller
 {
     [HttpGet("/admin/audit-logs")]

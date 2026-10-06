@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -89,11 +91,21 @@ public static class InfrastructureServiceCollectionExtensions
             options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             options.SlidingExpiration = true;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            // fetch/XHR (modals, JSON actions) must get a status code; a redirect would inject the full login/denied page.
+            options.Events.OnRedirectToLogin = ctx => RedirectOrStatus(ctx, StatusCodes.Status401Unauthorized);
+            options.Events.OnRedirectToAccessDenied = ctx => RedirectOrStatus(ctx, StatusCodes.Status403Forbidden);
         });
 
-        services.AddAuthorizationBuilder()
-            .AddPolicy(AuthorizationPolicies.AdminOnly, p => p.RequireRole(AppRoles.Admin))
-            .AddPolicy(AuthorizationPolicies.AdminOrStaff, p => p.RequireRole(AppRoles.Admin, AppRoles.Staff));
+        // Re-read roles from DB at most 1 min after a role change / deactivation (default 30 min).
+        services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
+
+        var authorization = services.AddAuthorizationBuilder();
+        foreach (var permission in Permissions.All)
+        {
+            authorization.AddPolicy(PermissionPolicy.For(permission), p => p
+                .RequireAuthenticatedUser()
+                .RequireAssertion(ctx => ctx.User.HasPermission(permission)));
+        }
 
         services.AddSingleton<IVietnamDivisionCatalog, VietnamDivisionCatalog>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlContentSanitizer>();
@@ -103,6 +115,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddHostedService<EmailOutboxHostedService>();
         services.AddScoped<IEmailTemplateService, EmailTemplateService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IStatusHistoryService, StatusHistoryService>();
         services.AddScoped<IAdminNotificationRealtime, NullAdminNotificationRealtime>();
         services.AddScoped<IAdminNotificationService, AdminNotificationService>();
@@ -152,5 +165,22 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddHostedService<LogWriterHostedService>();
         services.AddHostedService<LogCleanupHostedService>();
         return services;
+    }
+
+    private static Task RedirectOrStatus(RedirectContext<CookieAuthenticationOptions> ctx, int statusCode)
+    {
+        if (IsScriptRequest(ctx.Request))
+            ctx.Response.StatusCode = statusCode;
+        else
+            ctx.Response.Redirect(ctx.RedirectUri);
+        return Task.CompletedTask;
+    }
+
+    private static bool IsScriptRequest(HttpRequest request)
+    {
+        if (string.Equals(request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.Ordinal))
+            return true;
+        var fetchMode = request.Headers["Sec-Fetch-Mode"].ToString();
+        return fetchMode.Length > 0 && !string.Equals(fetchMode, "navigate", StringComparison.OrdinalIgnoreCase);
     }
 }

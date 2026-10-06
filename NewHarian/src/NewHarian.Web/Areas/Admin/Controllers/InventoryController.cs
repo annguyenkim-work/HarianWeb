@@ -1,17 +1,17 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Catalog;
 using NewHarian.Application.Inventory;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 public class InventoryController(IInventoryService inventory, IAdminProductService products) : Controller
 {
+    [HasPermission(Permissions.Inventory.View)]
     public async Task<IActionResult> Index(CancellationToken ct = default)
     {
         ViewBag.Summary = await inventory.GetSummaryAsync(ct);
@@ -19,9 +19,11 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
         return View(items);
     }
 
+    [HasPermission(Permissions.Inventory.View)]
     public IActionResult Locations() => RedirectToAction(nameof(Index));
 
     [HttpGet]
+    [HasPermission(Permissions.Inventory.ViewLots)]
     public async Task<IActionResult> LotsByLocation(int id, CancellationToken ct)
     {
         var lots = await inventory.ListLotsByLocationAsync(id, ct);
@@ -29,7 +31,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Inventory.ManageLocations)]
     public async Task<IActionResult> EditLocation(int? id, CancellationToken ct)
     {
         if (id is null)
@@ -42,7 +44,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HasPermission(Permissions.Inventory.ManageLocations)]
     public async Task<IActionResult> SaveLocation(WarehouseLocationSaveRequest model, CancellationToken ct)
     {
         var (ok, error) = await inventory.SaveLocationAsync(model, ct);
@@ -51,10 +53,11 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
             ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");
             return PartialView("_LocationForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action("Inventory", "Settings", new { area = "Admin" }) });
+        return Json(new { ok = true, redirect = Url.Action("Index", "InventorySettings", new { area = "Admin" }) });
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Inventory.Receive)]
     public async Task<IActionResult> Receive(int? locationId, CancellationToken ct)
     {
         ViewBag.Locations = await inventory.ListLocationsAsync(ct);
@@ -69,6 +72,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Inventory.Receive)]
     public async Task<IActionResult> Receive(StockLotReceiveRequest model, CancellationToken ct)
     {
         var (ok, error, _) = await inventory.ReceiveLotAsync(model, ActorUserId(), ActorName(), ct);
@@ -84,6 +88,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Inventory.Adjust)]
     public async Task<IActionResult> Adjust(int id, CancellationToken ct)
     {
         var lot = await inventory.GetLotAsync(id, ct);
@@ -98,6 +103,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Inventory.Adjust)]
     public async Task<IActionResult> Adjust(StockLotAdjustRequest model, CancellationToken ct)
     {
         var (ok, error) = await inventory.AdjustLotAsync(model, ActorUserId(), ActorName(), ct);
@@ -110,6 +116,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
         return Json(new { ok = true, redirect = Url.Action(nameof(Index)) });
     }
 
+    [HasPermission(Permissions.Inventory.ViewHistory)]
     public async Task<IActionResult> History(
         StockHistoryFilterKind? kind,
         DateOnly? from,

@@ -1,7 +1,8 @@
 using NewHarian.Infrastructure.Security;
 
-namespace NewHarian.Web.Tests;
+namespace NewHarian.UnitTests.Infrastructure.Security;
 
+[Trait("Category", "Unit")]
 public class HtmlContentSanitizerTests
 {
     private readonly HtmlContentSanitizer _sut = new();

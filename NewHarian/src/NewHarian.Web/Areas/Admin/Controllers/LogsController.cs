@@ -1,16 +1,16 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
 using NewHarian.Infrastructure.Persistence;
 using NewHarian.Web.Areas.Admin;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
-/// <summary>Hidden Admin-only log viewer — URL /admin/logs (not linked in menu).</summary>
+/// <summary>Hidden log viewer — URL /admin/logs (not linked in menu).</summary>
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.Logs.View)]
 public class LogsController(AppDbContext db) : Controller
 {
     [HttpGet("/admin/logs")]

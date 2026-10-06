@@ -27,7 +27,7 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
 
     private static readonly TimeZoneInfo LocalTz = ResolveLocalTz();
 
-    public async Task<AdminDashboardDto> GetAsync(DateOnly start, DateOnly end, bool includeCharts, CancellationToken ct = default)
+    public async Task<AdminDashboardDto> GetAsync(DateOnly start, DateOnly end, bool includeCharts, bool includeInventory, CancellationToken ct = default)
     {
         var range = NormalizeRange(start, end);
         var (utcFrom, utcToExclusive) = ToUtcBounds(range.Start, range.End);
@@ -49,14 +49,18 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
                              && a.Status == ApplicationStatus.New, ct);
 
         var kpis = new DashboardKpiDto(pendingOrders, newBookings, newInquiries, newApplications);
-        var invSummary = await inventory.GetSummaryAsync(ct: ct);
-        var invDto = new InventoryDashboardDto(
-            invSummary.TotalValue,
-            invSummary.LowStockSkuCount,
-            invSummary.LowStockThreshold,
-            invSummary.ExpiringSoonLotCount,
-            invSummary.ExpiringWithinDays,
-            invSummary.ExpiredLotCount);
+        InventoryDashboardDto? invDto = null;
+        if (includeInventory)
+        {
+            var invSummary = await inventory.GetSummaryAsync(ct: ct);
+            invDto = new InventoryDashboardDto(
+                invSummary.TotalValue,
+                invSummary.LowStockSkuCount,
+                invSummary.LowStockThreshold,
+                invSummary.ExpiringSoonLotCount,
+                invSummary.ExpiringWithinDays,
+                invSummary.ExpiredLotCount);
+        }
 
         if (!includeCharts)
         {
@@ -188,8 +192,11 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
     }
 
     public static DashboardDateRange NormalizeRange(DateOnly? start, DateOnly? end)
+        => NormalizeRange(start, end, DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, LocalTz)));
+
+    /// <summary>Defaults to the last 30 days ending <paramref name="today"/>; swaps reversed bounds; caps at 366 days.</summary>
+    public static DashboardDateRange NormalizeRange(DateOnly? start, DateOnly? end, DateOnly today)
     {
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, LocalTz));
         var defaultEnd = today;
         var defaultStart = today.AddDays(-29);
 

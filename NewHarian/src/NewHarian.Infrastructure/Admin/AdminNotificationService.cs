@@ -41,9 +41,15 @@ public sealed class AdminNotificationService(
                 row.Id, row.Type, row.Title, row.Body, row.Url, row.CreatedAt,
                 row.EntityType, row.EntityId, IsRead: false);
 
+            if (!AdminNotificationTypes.RequiredPermission.TryGetValue(type, out var permission))
+            {
+                logger.LogWarning("Notification type has no permission mapping, not pushed Type={Type} Id={Id}", type, row.Id);
+                return;
+            }
+
             try
             {
-                await realtime.NotifyOpsAsync(dto, ct);
+                await realtime.NotifyAsync(dto, permission, ct);
             }
             catch (Exception ex)
             {
@@ -56,12 +62,12 @@ public sealed class AdminNotificationService(
         }
     }
 
-    public async Task<IReadOnlyList<AdminNotificationDto>> ListAsync(string userId, int take = 20, CancellationToken ct = default)
+    public async Task<IReadOnlyList<AdminNotificationDto>> ListAsync(string userId, IReadOnlyCollection<string> visibleTypes, int take = 20, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 50);
         var since = DateTime.UtcNow - Retention;
         var rows = await db.AdminNotifications.AsNoTracking()
-            .Where(n => n.CreatedAt >= since)
+            .Where(n => n.CreatedAt >= since && visibleTypes.Contains(n.Type))
             .OrderByDescending(n => n.CreatedAt)
             .Take(take)
             .Select(n => new
@@ -82,11 +88,11 @@ public sealed class AdminNotificationService(
             n.Id, n.Type, n.Title, n.Body, n.Url, n.CreatedAt, n.EntityType, n.EntityId, n.IsRead)).ToList();
     }
 
-    public async Task<int> UnreadCountAsync(string userId, CancellationToken ct = default)
+    public async Task<int> UnreadCountAsync(string userId, IReadOnlyCollection<string> visibleTypes, CancellationToken ct = default)
     {
         var since = DateTime.UtcNow - Retention;
         return await db.AdminNotifications.AsNoTracking()
-            .Where(n => n.CreatedAt >= since && !n.Reads.Any(r => r.UserId == userId))
+            .Where(n => n.CreatedAt >= since && visibleTypes.Contains(n.Type) && !n.Reads.Any(r => r.UserId == userId))
             .CountAsync(ct);
     }
 
@@ -108,11 +114,11 @@ public sealed class AdminNotificationService(
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task MarkAllReadAsync(string userId, CancellationToken ct = default)
+    public async Task MarkAllReadAsync(string userId, IReadOnlyCollection<string> visibleTypes, CancellationToken ct = default)
     {
         var since = DateTime.UtcNow - Retention;
         var unreadIds = await db.AdminNotifications.AsNoTracking()
-            .Where(n => n.CreatedAt >= since && !n.Reads.Any(r => r.UserId == userId))
+            .Where(n => n.CreatedAt >= since && visibleTypes.Contains(n.Type) && !n.Reads.Any(r => r.UserId == userId))
             .Select(n => n.Id)
             .ToListAsync(ct);
 

@@ -1,15 +1,14 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
-using NewHarian.Application.Inventory;
 using NewHarian.Application.Settings;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.SiteSettings.Manage)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
-public class SettingsController(ISiteSettingsService settings, IInventoryService inventory) : Controller
+public class SettingsController(ISiteSettingsService settings) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)
         => View(await settings.GetBankAsync(ct));
@@ -77,29 +76,6 @@ public class SettingsController(ISiteSettingsService settings, IInventoryService
 
         TempData["Success"] = "Đã lưu email nhận thông báo.";
         return RedirectToAction(nameof(Email), new { area = "Admin" });
-    }
-
-    public async Task<IActionResult> Inventory(CancellationToken ct)
-    {
-        ViewBag.Locations = await inventory.ListLocationsAsync(ct);
-        return View(await settings.GetInventoryAsync(ct));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Inventory(InventorySettingsDto model, CancellationToken ct)
-    {
-        var result = await settings.SaveInventoryAsync(model, ct);
-        if (!result.Ok)
-        {
-            foreach (var error in result.Errors ?? new Dictionary<string, string>())
-                ModelState.AddModelError(error.Key, error.Value);
-            ViewBag.Locations = await inventory.ListLocationsAsync(ct);
-            return View(model);
-        }
-
-        TempData["Success"] = "Đã lưu cài đặt kho.";
-        return RedirectToAction(nameof(Inventory), new { area = "Admin" });
     }
 
     [HttpPost]

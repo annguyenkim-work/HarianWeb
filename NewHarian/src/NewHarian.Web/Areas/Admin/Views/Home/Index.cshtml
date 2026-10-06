@@ -2,7 +2,7 @@
 @using System.Text.Json
 @{
     ViewData["Title"] = "Dashboard";
-    var isAdmin = ViewBag.IsAdmin == true;
+    var showRevenue = ViewBag.ShowRevenue == true;
     var k = Model.Kpis;
     var startVal = Model.Range.Start.ToString("yyyy-MM-dd");
     var endVal = Model.Range.End.ToString("yyyy-MM-dd");
@@ -39,23 +39,35 @@
 </form>
 
 <div class="dash-kpi-grid">
-    <a class="dash-kpi" asp-area="Admin" asp-controller="Orders" asp-action="Index">
-        <span class="dash-kpi__label">Đơn chờ xử lý</span>
-        <span class="dash-kpi__value">@k.PendingOrders</span>
-        <span class="dash-kpi__hint">PendingPayment + AwaitingConfirmation</span>
-    </a>
-    <a class="dash-kpi" asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index" asp-route-status="New">
-        <span class="dash-kpi__label">Booking mới</span>
-        <span class="dash-kpi__value">@k.NewBookings</span>
-    </a>
-    <a class="dash-kpi" asp-area="Admin" asp-controller="Inquiries" asp-action="Index" asp-route-status="New">
-        <span class="dash-kpi__label">Liên hệ mới</span>
-        <span class="dash-kpi__value">@k.NewInquiries</span>
-    </a>
-    <a class="dash-kpi" asp-area="Admin" asp-controller="Applications" asp-action="Index" asp-route-status="New">
-        <span class="dash-kpi__label">Hồ sơ ứng tuyển mới</span>
-        <span class="dash-kpi__value">@k.NewApplications</span>
-    </a>
+    @if (User.HasPermission(Permissions.Orders.View))
+    {
+        <a class="dash-kpi" asp-area="Admin" asp-controller="Orders" asp-action="Index">
+            <span class="dash-kpi__label">Đơn chờ xử lý</span>
+            <span class="dash-kpi__value">@k.PendingOrders</span>
+            <span class="dash-kpi__hint">PendingPayment + AwaitingConfirmation</span>
+        </a>
+    }
+    @if (User.HasPermission(Permissions.Bookings.View))
+    {
+        <a class="dash-kpi" asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index" asp-route-status="New">
+            <span class="dash-kpi__label">Booking mới</span>
+            <span class="dash-kpi__value">@k.NewBookings</span>
+        </a>
+    }
+    @if (User.HasPermission(Permissions.Inquiries.View))
+    {
+        <a class="dash-kpi" asp-area="Admin" asp-controller="Inquiries" asp-action="Index" asp-route-status="New">
+            <span class="dash-kpi__label">Liên hệ mới</span>
+            <span class="dash-kpi__value">@k.NewInquiries</span>
+        </a>
+    }
+    @if (User.HasPermission(Permissions.Applications.View))
+    {
+        <a class="dash-kpi" asp-area="Admin" asp-controller="Applications" asp-action="Index" asp-route-status="New">
+            <span class="dash-kpi__label">Hồ sơ ứng tuyển mới</span>
+            <span class="dash-kpi__value">@k.NewApplications</span>
+        </a>
+    }
     @if (Model.Inventory is { } inv)
     {
         <a class="dash-kpi" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
@@ -76,7 +88,7 @@
     }
 </div>
 
-@if (isAdmin)
+@if (showRevenue)
 {
     <div class="dash-charts">
         <section class="dash-chart-card dash-chart-card--wide">
@@ -155,7 +167,7 @@
 }
 
 @section Scripts {
-@if (isAdmin)
+@if (showRevenue)
 {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>

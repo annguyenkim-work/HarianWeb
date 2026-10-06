@@ -1,0 +1,54 @@
+@model AdminUserSaveRequest
+@using NewHarian.Application.Abstractions
+@{
+    var isNew = Model.Id is null;
+    var hasLegacyStaff = Model.Roles.Contains(AppRoles.LegacyStaff);
+    var roleOptions = hasLegacyStaff ? AppRoles.Assignable.Append(AppRoles.LegacyStaff) : AppRoles.Assignable;
+}
+
+<form asp-area="Admin" asp-controller="Users" asp-action="Save" method="post" id="user-edit-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <h2>@(isNew ? "Thêm user" : "Sửa user")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-grid">
+        <label>
+            Email *
+            @if (isNew)
+            {
+                <input asp-for="Email" type="email" class="form-control" required />
+            }
+            else
+            {
+                <input asp-for="Email" class="form-control" readonly />
+            }
+        </label>
+        <label>
+            Họ tên
+            <input asp-for="FullName" class="form-control" />
+        </label>
+        <label>
+            @(isNew ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu không đổi)")
+            <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" required="@(isNew)" />
+        </label>
+        <label><input asp-for="IsActive" /> Đang hoạt động</label>
+
+        <fieldset class="full">
+            <legend>Role *</legend>
+            @foreach (var role in roleOptions)
+            {
+                <label><input type="checkbox" name="Roles" value="@role" checked="@Model.Roles.Contains(role)" /> @AppRoles.Label(role)</label>
+            }
+            @if (hasLegacyStaff)
+            {
+                <p class="muted">Staff (cũ) giữ quyền như trước khi phân quyền mới. Hãy chọn role phòng ban rồi bỏ tick Staff (cũ).</p>
+            }
+        </fieldset>
+    </div>
+
+    <div class="modal__actions">
+        <button type="button" data-close class="btn-secondary">Hủy</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+    </div>
+</form>

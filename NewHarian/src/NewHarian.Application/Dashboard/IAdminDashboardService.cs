@@ -45,5 +45,5 @@ public sealed record InventoryDashboardDto(
 
 public interface IAdminDashboardService
 {
-    Task<AdminDashboardDto> GetAsync(DateOnly start, DateOnly end, bool includeCharts, CancellationToken ct = default);
+    Task<AdminDashboardDto> GetAsync(DateOnly start, DateOnly end, bool includeCharts, bool includeInventory, CancellationToken ct = default);
 }

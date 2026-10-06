@@ -6,17 +6,25 @@
     var pager = ViewBag.Pager as AdminPagerModel;
     var offset = pager?.Offset ?? 0;
     var total = pager?.TotalCount ?? Model.Count;
+    var canEdit = User.HasPermission(Permissions.Categories.Edit);
+    var canReorder = User.HasPermission(Permissions.Categories.Reorder);
 }
 
 <div class="admin-toolbar">
     <h1>Danh mục</h1>
-    <button type="button" class="btn-icon btn-primary" id="btn-add-cat" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+    @if (canEdit)
+    {
+        <button type="button" class="btn-icon btn-primary" id="btn-add-cat" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+    }
 </div>
 
 @if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
 @if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 
-<p class="muted">Danh mục mới tự động xếp cuối danh sách. Dùng ↑/↓ để đổi thứ tự hiển thị.</p>
+@if (canReorder)
+{
+    <p class="muted">Danh mục mới tự động xếp cuối danh sách. Dùng ↑/↓ để đổi thứ tự hiển thị.</p>
+}
 
 <table class="data-table">
     <thead>
@@ -39,19 +47,25 @@
             <td class="sort-cell">
                 <div class="sort-controls">
                     <span class="sort-controls__pos">@(abs + 1)</span>
+                    @if (canReorder)
+                    {
                     <form asp-action="Move" method="post" class="sort-controls__move">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@c.Id" />
                         <button name="direction" value="-1" type="submit" class="btn-icon" title="Up" aria-label="Up" @(abs == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
                         <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(abs >= total - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
                     </form>
+                    }
                 </div>
             </td>
             <td>@(c.ShowOnHome ? "✓" : "-")</td>
             <td>@(c.IsActive ? "✓" : "-")</td>
             <td class="actions">
+                @if (canEdit)
+                {
                 <button type="button" class="btn-icon btn-edit-cat" data-id="@c.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-                @if (c.IsActive)
+                }
+                @if (canEdit && c.IsActive)
                 {
                     <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Vô hiệu hóa danh mục này? (không xóa dữ liệu)');">
                         @Html.AntiForgeryToken()
@@ -250,7 +264,7 @@
     body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
   }
 
-  document.getElementById('btn-add-cat').addEventListener('click', () => openForm(null));
+  document.getElementById('btn-add-cat')?.addEventListener('click', () => openForm(null));
   document.querySelectorAll('.btn-edit-cat').forEach(b => b.addEventListener('click', () => openForm(b.dataset.id)));
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && cropModal?.open) {

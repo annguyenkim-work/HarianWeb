@@ -1,17 +1,28 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Admin;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Hubs;
 
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
+/// <summary>One SignalR group per notification permission; a connection joins the groups its user holds.
+/// Role changes apply on the next connection (page load).</summary>
+[HasPermission(Permissions.Notifications.View)]
 public sealed class AdminNotificationsHub : Hub
 {
-    public const string OpsGroup = "ops";
+    public static string GroupFor(string permission) => "perm:" + permission;
 
     public override async Task OnConnectedAsync()
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, OpsGroup);
+        var user = Context.User;
+        if (user is not null)
+        {
+            foreach (var permission in AdminNotificationTypes.RequiredPermission.Values.Distinct())
+            {
+                if (user.HasPermission(permission))
+                    await Groups.AddToGroupAsync(Context.ConnectionId, GroupFor(permission));
+            }
+        }
         await base.OnConnectedAsync();
     }
 }

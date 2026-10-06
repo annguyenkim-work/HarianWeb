@@ -1,18 +1,16 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Cms;
 using NewHarian.Application.Shipping;
 using NewHarian.Domain.Entities;
-using NewHarian.Infrastructure.Identity;
 using NewHarian.Infrastructure.Persistence;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.Shipping.Manage)]
 public class ShippingController(IAdminShippingService shipping) : Controller
 {
     public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
@@ -35,7 +33,7 @@ public class ShippingController(IAdminShippingService shipping) : Controller
 }
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.Media.Manage)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class MediaController(AppDbContext db, IMediaStorage media) : Controller
 {
@@ -69,87 +67,7 @@ public class MediaController(AppDbContext db, IMediaStorage media) : Controller
 }
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
-public class UsersController(
-    UserManager<ApplicationUser> users,
-    RoleManager<IdentityRole> roles,
-    ILogger<UsersController> logger) : Controller
-{
-    public async Task<IActionResult> Index(int page = 1)
-    {
-        var list = users.Users.OrderBy(u => u.Email).ToList();
-        var vm = new List<UserRow>();
-        foreach (var u in list)
-        {
-            var r = await users.GetRolesAsync(u);
-            vm.Add(new UserRow(u.Id, u.Email ?? "", u.FullName, u.IsActive, string.Join(", ", r)));
-        }
-        var (items, pager) = AdminPaging.Apply(vm, page);
-        ViewBag.Pager = pager;
-        return View(items);
-    }
-
-    [HttpGet]
-    public IActionResult Create() => View(new CreateUserVm());
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateUserVm model)
-    {
-        logger.LogInformation("CreateUser Start Email={Email}", model.Email);
-        try
-        {
-            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
-            {
-                logger.LogWarning("CreateUser Done rejected Error={Error}", "Email và mật khẩu bắt buộc.");
-                ModelState.AddModelError("", "Email và mật khẩu bắt buộc.");
-                return View(model);
-            }
-            var role = model.Role is "Staff" or "Admin" ? model.Role : "Staff";
-            if (!await roles.RoleExistsAsync(role))
-                await roles.CreateAsync(new IdentityRole(role));
-
-            var user = new ApplicationUser
-            {
-                UserName = model.Email.Trim(),
-                Email = model.Email.Trim(),
-                EmailConfirmed = true,
-                FullName = model.FullName?.Trim() ?? model.Email,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-            var result = await users.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-            {
-                var errs = string.Join("; ", result.Errors.Select(e => e.Description));
-                logger.LogWarning("CreateUser Done rejected Email={Email} Error={Error}", model.Email, errs);
-                foreach (var e in result.Errors) ModelState.AddModelError("", e.Description);
-                return View(model);
-            }
-            await users.AddToRoleAsync(user, role);
-            logger.LogInformation("CreateUser Done Email={Email} UserId={UserId} Role={Role}", model.Email, user.Id, role);
-            TempData["Success"] = "Đã tạo user.";
-            return AdminListRedirect.ToRefererOrIndex(this);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "CreateUser Error Email={Email}", model.Email);
-            throw;
-        }
-    }
-
-    public record UserRow(string Id, string Email, string? FullName, bool IsActive, string Roles);
-    public class CreateUserVm
-    {
-        public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
-        public string? FullName { get; set; }
-        public string Role { get; set; } = "Staff";
-    }
-}
-
-[Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.Menus.Manage)]
 public class MenusController(IMenuAdminService menus) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -177,7 +95,7 @@ public class MenusController(IMenuAdminService menus) : Controller
 }
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.HomeSlides.Manage)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class HomeSlidesController(IHomeSlideAdminService slides) : Controller
 {
