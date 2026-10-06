@@ -1,16 +1,82 @@
-@model IReadOnlyList<NewHarian.Web.Areas.Admin.Controllers.UsersController.UserRow>
+@model IReadOnlyList<AdminUserListItemDto>
+@using NewHarian.Application.Abstractions
 @{ ViewData["Title"] = "Users"; Layout = "_AdminLayout"; }
+
 <div class="admin-toolbar">
-  <h1>Users</h1>
-  <a asp-action="Create" class="btn-icon btn-primary" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></a>
+    <h1>Users</h1>
+    <button type="button" class="btn-icon btn-primary" id="btn-add-user" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
 </div>
-@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
-<table class="data-table">
-<thead><tr><th>Email</th><th>Name</th><th>Roles</th><th>Active</th></tr></thead>
-<tbody>
-@foreach (var u in Model) {
-<tr><td>@u.Email</td><td>@u.FullName</td><td>@u.Roles</td><td>@(u.IsActive?"Yes":"No")</td></tr>
+
+@if (TempData["Success"] is string ok)
+{
+    <p class="text-success">@ok</p>
 }
-</tbody>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Họ tên</th>
+            <th>Role</th>
+            <th>Trạng thái</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var u in Model)
+    {
+        <tr>
+            <td>@u.Email</td>
+            <td>@(string.IsNullOrWhiteSpace(u.FullName) ? "-" : u.FullName)</td>
+            <td>@(u.Roles.Count == 0 ? "-" : string.Join(", ", u.Roles.Select(AppRoles.Label)))</td>
+            <td>@(u.IsActive ? "Đang hoạt động" : "Đã khóa")</td>
+            <td class="actions">
+                <button type="button" class="btn-icon btn-edit-user" data-id="@u.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+            </td>
+        </tr>
+    }
+    </tbody>
 </table>
+
 <partial name="_AdminPager" />
+
+<dialog id="user-modal" class="modal">
+    <div class="modal__box modal__box--wide" id="user-modal-body"></div>
+</dialog>
+
+@section Scripts {
+<script>
+(() => {
+  const modal = document.getElementById('user-modal');
+  const body = document.getElementById('user-modal-body');
+
+  async function openForm(id) {
+    const url = id ? `/admin/Users/Edit/${encodeURIComponent(id)}` : '/admin/Users/Edit';
+    body.innerHTML = await (await fetch(url)).text();
+    modal.showModal();
+    bindForm();
+  }
+
+  function bindForm() {
+    const form = body.querySelector('form');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) { location.reload(); return; }
+      } else {
+        body.innerHTML = await res.text();
+        bindForm();
+      }
+    });
+    body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
+  }
+
+  document.getElementById('btn-add-user').addEventListener('click', () => openForm(null));
+  document.querySelectorAll('.btn-edit-user').forEach(b => b.addEventListener('click', () => openForm(b.dataset.id)));
+})();
+</script>
+}

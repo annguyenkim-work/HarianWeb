@@ -274,7 +274,7 @@ public class ServiceBookingService(
                 logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, "Không tìm thấy.");
                 return (false, "Không tìm thấy.");
             }
-            if (!IsAllowedTransition(b.Status, status))
+            if (!ServiceBookingStatusPolicy.CanTransition(b.Status, status))
             {
                 var msg = $"Không chuyển từ {b.Status} → {status}.";
                 logger.LogWarning("UpdateBookingStatus Done rejected Id={Id} Error={Error}", id, msg);
@@ -338,20 +338,6 @@ public class ServiceBookingService(
             logger.LogError(ex, "UpdateBookingStatus Error Id={Id}", id);
             throw;
         }
-    }
-
-    /// <summary>New → Confirmed → Completed; cancel from New or Confirmed only.</summary>
-    private static bool IsAllowedTransition(ServiceBookingStatus from, ServiceBookingStatus to)
-    {
-        if (to == ServiceBookingStatus.Cancelled)
-            return from is ServiceBookingStatus.New or ServiceBookingStatus.Confirmed;
-
-        return (from, to) switch
-        {
-            (ServiceBookingStatus.New, ServiceBookingStatus.Confirmed) => true,
-            (ServiceBookingStatus.Confirmed, ServiceBookingStatus.Completed) => true,
-            _ => false
-        };
     }
 
     private async Task<string?> GetSettingAsync(string key)

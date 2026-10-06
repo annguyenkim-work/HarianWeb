@@ -1,13 +1,13 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
+[HasPermission(Permissions.Notifications.View)]
 public class NotificationsController(IAdminNotificationService notifications) : Controller
 {
     private string? UserId => User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -17,7 +17,7 @@ public class NotificationsController(IAdminNotificationService notifications) : 
     {
         var uid = UserId;
         if (uid is null) return Unauthorized();
-        var items = await notifications.ListAsync(uid, take, ct);
+        var items = await notifications.ListAsync(uid, AdminNotificationTypes.VisibleTo(User), take, ct);
         return Json(items);
     }
 
@@ -26,7 +26,7 @@ public class NotificationsController(IAdminNotificationService notifications) : 
     {
         var uid = UserId;
         if (uid is null) return Unauthorized();
-        var count = await notifications.UnreadCountAsync(uid, ct);
+        var count = await notifications.UnreadCountAsync(uid, AdminNotificationTypes.VisibleTo(User), ct);
         return Json(new { count });
     }
 
@@ -46,7 +46,7 @@ public class NotificationsController(IAdminNotificationService notifications) : 
     {
         var uid = UserId;
         if (uid is null) return Unauthorized();
-        await notifications.MarkAllReadAsync(uid, ct);
+        await notifications.MarkAllReadAsync(uid, AdminNotificationTypes.VisibleTo(User), ct);
         return Json(new { ok = true });
     }
 }

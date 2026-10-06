@@ -1,16 +1,16 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Cms;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class PagesController(IAdminCmsService cms, IMediaStorage media) : Controller
 {
+    [HasPermission(Permissions.CmsPages.View)]
     public async Task<IActionResult> Index(string? module, CancellationToken ct)
     {
         if (string.Equals(module, "careers", StringComparison.OrdinalIgnoreCase))
@@ -24,11 +24,13 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
     }
 
     [HttpGet]
+    [HasPermission(Permissions.CmsPages.View)]
     public IActionResult Edit(int id)
         => RedirectToAction(nameof(Blocks), new { id, area = "Admin" });
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.CmsPages.EditMeta)]
     public async Task<IActionResult> Edit(CmsPageSaveRequest model, CancellationToken ct)
     {
         if (await IsCareersPageAsync(model.Id, ct))
@@ -45,6 +47,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
     }
 
     [HttpGet]
+    [HasPermission(Permissions.CmsPages.ManageBlocks)]
     public async Task<IActionResult> Blocks(int id, CancellationToken ct)
     {
         var page = await cms.GetPageAsync(id, ct);
@@ -56,6 +59,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
     }
 
     [HttpGet]
+    [HasPermission(Permissions.CmsPages.ManageBlocks)]
     public async Task<IActionResult> EditBlock(int pageId, int? id, ContentBlockType? type, CancellationToken ct)
     {
         if (!await PageExists(pageId, ct)) return NotFound();
@@ -101,6 +105,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.CmsPages.ManageBlocks)]
     public async Task<IActionResult> EditBlock(CmsBlockSaveRequest model, IFormFile? imageFile, CancellationToken ct)
     {
         if (await IsCareersPageAsync(model.PageId, ct))
@@ -126,6 +131,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.CmsPages.ManageBlocks)]
     public async Task<IActionResult> UploadImage(IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
@@ -148,6 +154,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.CmsPages.ManageBlocks)]
     public async Task<IActionResult> DeleteBlock(int pageId, int id, CancellationToken ct)
     {
         var (ok, error) = await cms.DeleteBlockAsync(id, ct);
@@ -157,6 +164,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.CmsPages.ManageBlocks)]
     public async Task<IActionResult> MoveBlock(int pageId, int id, int direction, CancellationToken ct)
     {
         await cms.MoveBlockAsync(id, direction, ct);

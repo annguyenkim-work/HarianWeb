@@ -6,6 +6,8 @@
     <Project Path="src/NewHarian.Web/NewHarian.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/NewHarian.E2E/NewHarian.E2E.csproj" />
+    <Project Path="tests/NewHarian.UnitTests/NewHarian.UnitTests.csproj" />
     <Project Path="tests/NewHarian.Web.Tests/NewHarian.Web.Tests.csproj" />
   </Folder>
 </Solution>

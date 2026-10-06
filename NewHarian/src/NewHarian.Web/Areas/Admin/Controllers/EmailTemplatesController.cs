@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Email;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[HasPermission(Permissions.EmailTemplates.Manage)]
 public class EmailTemplatesController(IEmailTemplateService templates) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)

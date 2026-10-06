@@ -116,9 +116,7 @@ public sealed class StatusHistoryService(
                    ?? user.FindFirstValue(ClaimTypes.Name)
                    ?? user.Identity?.Name
                    ?? userId;
-        var actorType = user.IsInRole(AppRoles.Admin) ? "Admin"
-            : user.IsInRole(AppRoles.Staff) ? "Staff"
-            : "Admin";
+        var actorType = AppRoles.Assignable.Append(AppRoles.LegacyStaff).FirstOrDefault(user.IsInRole) ?? "Staff";
         return (actorType, userId, name);
     }
 }

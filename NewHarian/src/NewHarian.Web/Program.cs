@@ -1,10 +1,8 @@
 using System.Globalization;
 using System.IO.Compression;
-using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NewHarian.Infrastructure.DependencyInjection;
@@ -51,62 +49,8 @@ builder.Services.AddControllersWithViews()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
 
-// Rate limit guest form submits + admin login per IP
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.OnRejected = async (context, ct) =>
-    {
-        context.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
-        await context.HttpContext.Response.WriteAsync(
-            "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau một giờ.", ct);
-    };
-
-    static string ClientIp(HttpContext http) => http.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-    options.AddPolicy("contact-form", http =>
-        RateLimitPartition.GetFixedWindowLimiter(ClientIp(http), _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 5,
-            Window = TimeSpan.FromHours(1),
-            QueueLimit = 0
-        }));
-    options.AddPolicy("dealers-form", http =>
-        RateLimitPartition.GetFixedWindowLimiter(ClientIp(http), _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 5,
-            Window = TimeSpan.FromHours(1),
-            QueueLimit = 0
-        }));
-    options.AddPolicy("careers-form", http =>
-        RateLimitPartition.GetFixedWindowLimiter(ClientIp(http), _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 3,
-            Window = TimeSpan.FromHours(1),
-            QueueLimit = 0
-        }));
-    options.AddPolicy("admin-login", http =>
-        RateLimitPartition.GetFixedWindowLimiter(ClientIp(http), _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 20,
-            Window = TimeSpan.FromMinutes(15),
-            QueueLimit = 0
-        }));
-    options.AddPolicy("checkout-submit", http =>
-        RateLimitPartition.GetFixedWindowLimiter(ClientIp(http), _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 10,
-            Window = TimeSpan.FromHours(1),
-            QueueLimit = 0
-        }));
-    options.AddPolicy("booking-submit", http =>
-        RateLimitPartition.GetFixedWindowLimiter(ClientIp(http), _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 10,
-            Window = TimeSpan.FromHours(1),
-            QueueLimit = 0
-        }));
-});
+// Rate limit guest form submits + admin login per IP (limits overridable via RateLimiting:{policy})
+builder.Services.AddNewHarianRateLimiting(builder.Configuration);
 
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {

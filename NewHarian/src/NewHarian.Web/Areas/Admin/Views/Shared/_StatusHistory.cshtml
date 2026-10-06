@@ -13,9 +13,10 @@
         <ol class="status-history__list">
         @foreach (var h in items)
         {
+            var actorType = NewHarian.Application.Abstractions.AppRoles.Label(h.ActorType);
             var actor = string.IsNullOrWhiteSpace(h.ActorName)
-                ? h.ActorType
-                : $"{h.ActorType} · {h.ActorName}";
+                ? actorType
+                : $"{actorType} · {h.ActorName}";
             <li class="status-history__item">
                 <div class="status-history__marker" aria-hidden="true"></div>
                 <div class="status-history__body">

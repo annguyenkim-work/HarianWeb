@@ -1,4 +1,5 @@
 @model NewHarian.Application.Catalog.ServiceBookingDetailDto
+@using NewHarian.Application.Catalog
 @using NewHarian.Domain.Enums
 
 <h2>@Model.BookingNumber</h2>
@@ -76,15 +77,15 @@
 </label>
 
 <div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
-@if (Model.Status == ServiceBookingStatus.New)
+@if (ServiceBookingStatusPolicy.CanTransition(Model.Status, ServiceBookingStatus.Confirmed))
 {
     <button type="button" class="btn-primary" data-action="status" data-status="Confirmed" data-id="@Model.Id">Xác nhận lịch</button>
 }
-@if (Model.Status == ServiceBookingStatus.Confirmed)
+@if (ServiceBookingStatusPolicy.CanTransition(Model.Status, ServiceBookingStatus.Completed))
 {
     <button type="button" class="btn-primary" data-action="status" data-status="Completed" data-id="@Model.Id">Hoàn thành</button>
 }
-@if (Model.Status is ServiceBookingStatus.New or ServiceBookingStatus.Confirmed)
+@if (ServiceBookingStatusPolicy.CanTransition(Model.Status, ServiceBookingStatus.Cancelled))
 {
     <button type="button" class="btn-link" data-action="status" data-status="Cancelled" data-id="@Model.Id">Hủy lịch</button>
 }

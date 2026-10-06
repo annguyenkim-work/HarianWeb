@@ -1,14 +1,13 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Dealers;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 public class DealersController(IDealerService dealers) : Controller
 {
     private static readonly HashSet<string> SortKeys = new(StringComparer.OrdinalIgnoreCase)
@@ -16,6 +15,7 @@ public class DealersController(IDealerService dealers) : Controller
         "id", "createdAt", "name", "email", "phone", "status"
     };
 
+    [HasPermission(Permissions.Dealers.View)]
     public async Task<IActionResult> Index(
         DealerStatus? status,
         string? q,
@@ -36,6 +36,7 @@ public class DealersController(IDealerService dealers) : Controller
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Dealers.View)]
     public async Task<IActionResult> Detail(int id, CancellationToken ct)
     {
         var item = await dealers.GetAsync(id, ct);
@@ -44,10 +45,12 @@ public class DealersController(IDealerService dealers) : Controller
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Dealers.Create)]
     public IActionResult Create() => PartialView("_CreateForm", new DealerCreateRequest());
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Dealers.Create)]
     public async Task<IActionResult> Create(DealerCreateRequest model, CancellationToken ct)
     {
         var (ok, error, _) = await dealers.CreateApprovedAsync(model, User.Identity?.Name, ct);
@@ -65,6 +68,7 @@ public class DealersController(IDealerService dealers) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Dealers.Approve)]
     public async Task<IActionResult> Approve(int id, decimal discountPercent, string? internalNotes, string? citizenId, CancellationToken ct)
     {
         var (ok, error) = await dealers.ApproveAsync(id, discountPercent, internalNotes, User.Identity?.Name, citizenId, ct);
@@ -73,6 +77,7 @@ public class DealersController(IDealerService dealers) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Dealers.Approve)]
     public async Task<IActionResult> Reject(int id, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await dealers.RejectAsync(id, internalNotes, User.Identity?.Name, ct);
@@ -81,6 +86,7 @@ public class DealersController(IDealerService dealers) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Dealers.Edit)]
     public async Task<IActionResult> Save(int id, decimal discountPercent, string? internalNotes, string? citizenId, CancellationToken ct)
     {
         var (ok, error) = await dealers.SaveApprovedAsync(id, discountPercent, internalNotes, User.Identity?.Name, citizenId, ct);

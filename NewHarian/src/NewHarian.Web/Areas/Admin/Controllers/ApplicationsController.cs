@@ -1,19 +1,19 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Engagement;
 using NewHarian.Application.Posts;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 public class ApplicationsController(
     IJobApplicationService apps,
     IAdminSitePostService posts) : Controller
 {
+    [HasPermission(Permissions.Applications.View)]
     public async Task<IActionResult> Index(
         ApplicationStatus? status,
         int? sitePostId,
@@ -44,6 +44,7 @@ public class ApplicationsController(
     };
 
     [HttpGet]
+    [HasPermission(Permissions.Applications.View)]
     public async Task<IActionResult> Detail(int id, CancellationToken ct)
     {
         var item = await apps.GetAsync(id, ct);
@@ -53,6 +54,7 @@ public class ApplicationsController(
 
     /// <summary>Auth-gated CV download — files live outside wwwroot.</summary>
     [HttpGet]
+    [HasPermission(Permissions.Applications.DownloadCv)]
     public async Task<IActionResult> Cv(int id, CancellationToken ct)
     {
         var opened = await apps.OpenCvAsync(id, ct);
@@ -62,6 +64,7 @@ public class ApplicationsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Applications.Update)]
     public async Task<IActionResult> UpdateStatus(int id, ApplicationStatus status, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await apps.UpdateStatusAsync(id, status, internalNotes, User.Identity?.Name, ct);

@@ -496,7 +496,7 @@ public partial class OrderService(
             await db.SaveChangesAsync(ct);
 
             // Store / channel capture at Processing+ (incl. default Delivered): trừ FEFO ngay khi tạo
-            if (RequiresStockDeduction(status))
+            if (OrderStatusPolicy.RequiresStockDeduction(status))
             {
                 var (deductOk, deductErr, _) = await orderStock.DeductForOrderAsync(order.Id, actorUserId, actorName, ct);
                 if (!deductOk)
@@ -572,7 +572,7 @@ public partial class OrderService(
                 logger.LogWarning("AdminUpdateStatus Done rejected Id={Id} Error={Error}", id, "Không tìm thấy.");
                 return (false, "Không tìm thấy.");
             }
-            if (!IsAllowedTransition(o.Status, status, o.PaymentMethod))
+            if (!OrderStatusPolicy.CanTransition(o.Status, status))
             {
                 var msg = $"Không chuyển từ {o.Status} → {status}.";
                 logger.LogWarning("AdminUpdateStatus Done rejected Id={Id} Error={Error}", id, msg);
@@ -588,7 +588,7 @@ public partial class OrderService(
             if (status == OrderStatus.Delivered) o.DeliveredAt ??= DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
 
-            if (RequiresStockDeduction(status))
+            if (OrderStatusPolicy.RequiresStockDeduction(status))
             {
                 var (deductOk, deductErr, _) = await orderStock.DeductForOrderAsync(id, actorUserId, actorName, ct);
                 if (!deductOk)
@@ -641,7 +641,7 @@ public partial class OrderService(
                 logger.LogWarning("ConfirmCod Done rejected Id={Id} Error={Error}", id, "Không tìm thấy.");
                 return (false, "Không tìm thấy.");
             }
-            if (o.PaymentMethod != PaymentMethod.COD || o.Status != OrderStatus.AwaitingConfirmation)
+            if (!OrderStatusPolicy.CanConfirmCod(o.Status, o.PaymentMethod))
             {
                 logger.LogWarning("ConfirmCod Done rejected Id={Id} Error={Error}", id, "Chỉ xác nhận COD khi đang chờ xác nhận.");
                 return (false, "Chỉ xác nhận COD khi đang chờ xác nhận.");
@@ -687,7 +687,7 @@ public partial class OrderService(
                 logger.LogWarning("ConfirmBankTransfer Done rejected Id={Id} Error={Error}", id, "Không tìm thấy.");
                 return (false, "Không tìm thấy.");
             }
-            if (o.PaymentMethod != PaymentMethod.BankTransfer || o.Status != OrderStatus.PendingPayment)
+            if (!OrderStatusPolicy.CanConfirmBankTransfer(o.Status, o.PaymentMethod))
             {
                 logger.LogWarning("ConfirmBankTransfer Done rejected Id={Id} Error={Error}", id, "Chỉ xác nhận CK khi đang chờ thanh toán.");
                 return (false, "Chỉ xác nhận CK khi đang chờ thanh toán.");
@@ -767,23 +767,6 @@ public partial class OrderService(
             .Select(o => o.OrderNumber)
             .ToListAsync(ct);
         return PublicReferenceCodes.Format(prefix, PublicReferenceCodes.NextSequence(existing, prefix));
-    }
-
-    private static bool RequiresStockDeduction(OrderStatus status)
-        => status is OrderStatus.Processing or OrderStatus.Shipped or OrderStatus.Delivered;
-
-    private static bool IsAllowedTransition(OrderStatus from, OrderStatus to, PaymentMethod method)
-    {
-        if (to == OrderStatus.Cancelled)
-            return from is OrderStatus.AwaitingConfirmation or OrderStatus.PendingPayment or OrderStatus.Confirmed or OrderStatus.Processing;
-
-        return (from, to) switch
-        {
-            (OrderStatus.Confirmed, OrderStatus.Processing) => true,
-            (OrderStatus.Processing, OrderStatus.Shipped) => true,
-            (OrderStatus.Shipped, OrderStatus.Delivered) => true,
-            _ => false
-        };
     }
 
     private async Task SendOrderEmailsAsync(Order order, string provinceName, CancellationToken ct)

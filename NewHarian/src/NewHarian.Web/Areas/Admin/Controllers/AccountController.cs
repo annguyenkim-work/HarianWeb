@@ -56,8 +56,7 @@ public class AccountController(
                 return View(model);
             }
 
-            if (!await userManager.IsInRoleAsync(user, AppRoles.Admin) &&
-                !await userManager.IsInRoleAsync(user, AppRoles.Staff))
+            if (!RolePermissionMap.IsInternalRole(await userManager.GetRolesAsync(user)))
             {
                 await signInManager.SignOutAsync();
                 logger.LogWarning("Login Done rejected Email={Email} Error={Error}", model.Email, "Wrong role");
@@ -81,7 +80,7 @@ public class AccountController(
 
     [HttpPost("/admin/logout")]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
+    [Authorize]
     public async Task<IActionResult> Logout()
     {
         var email = User.Identity?.Name;

@@ -1,62 +1,81 @@
 @{
     ViewData["Title"] = "Hướng dẫn";
-    var isAdmin = ViewBag.IsAdmin as bool? == true;
+    var myRoles = AppRoles.Assignable.Append(AppRoles.LegacyStaff).Where(User.IsInRole).Select(AppRoles.Label).ToList();
+    var showOrders = User.HasPermission(Permissions.Orders.View);
+    var showBookings = User.HasPermission(Permissions.Bookings.View);
+    var showInquiries = User.HasPermission(Permissions.Inquiries.View);
+    var showDealers = User.HasPermission(Permissions.Dealers.View);
+    var showApplications = User.HasPermission(Permissions.Applications.View);
+    var showInventory = User.HasPermission(Permissions.Inventory.View);
+    var showCatalog = User.HasPermission(Permissions.Categories.View) || User.HasPermission(Permissions.Products.View)
+                      || User.HasPermission(Permissions.Services.View) || User.HasPermission(Permissions.Colors.View);
+    var showPosts = User.HasPermission(Permissions.Posts.Manage);
+    var showCms = User.HasPermission(Permissions.CmsPages.View) || User.HasPermission(Permissions.Menus.Manage)
+                  || User.HasPermission(Permissions.HomeSlides.Manage) || User.HasPermission(Permissions.Media.Manage);
+    var showSettings = User.HasPermission(Permissions.SiteSettings.Manage) || User.HasPermission(Permissions.Shipping.Manage)
+                       || User.HasPermission(Permissions.Users.Manage) || User.HasPermission(Permissions.EmailTemplates.Manage);
 }
 
 <div class="admin-page-head">
     <h1>Hướng dẫn sử dụng Admin</h1>
-    <p class="muted">Tiếng Việt - dành cho Staff@(isAdmin ? " và Admin" : ""). Phần cấu hình website chỉ hiện với tài khoản Admin.</p>
+    <p class="muted">Vai trò của bạn: <strong>@(myRoles.Count > 0 ? string.Join(", ", myRoles) : "-")</strong>. Trang chỉ hiện các mục bạn có quyền.</p>
 </div>
 
 <nav class="help-toc admin-help-toc" aria-label="Mục lục">
     <strong>Mục lục</strong>
     <ol>
-        <li><a href="#dang-nhap">Đăng nhập</a></li>
-        <li><a href="#don-hang">Đơn hàng</a></li>
-        <li><a href="#dat-lich">Đặt lịch dịch vụ</a></li>
-        <li><a href="#lien-he">Liên hệ (Inquiries)</a></li>
-        <li><a href="#dai-ly">Đại lý</a></li>
-        <li><a href="#ho-so">Hồ sơ ứng tuyển</a></li>
-        @if (isAdmin)
-        {
-            <li><a href="#catalog">Danh mục / Sản phẩm / Dịch vụ / Màu</a></li>
-            <li><a href="#posts">Tin tức &amp; tin tuyển dụng</a></li>
-            <li><a href="#cms">CMS &amp; media</a></li>
-            <li><a href="#cai-dat">Cài đặt (ship, email, ngân hàng, users)</a></li>
-        }
+        <li><a href="#dang-nhap">Đăng nhập &amp; phân quyền</a></li>
+        @if (showOrders) { <li><a href="#don-hang">Đơn hàng</a></li> }
+        @if (showInventory) { <li><a href="#kho">Kho</a></li> }
+        @if (showBookings) { <li><a href="#dat-lich">Đặt lịch dịch vụ</a></li> }
+        @if (showInquiries) { <li><a href="#lien-he">Liên hệ (Inquiries)</a></li> }
+        @if (showDealers) { <li><a href="#dai-ly">Đại lý</a></li> }
+        @if (showApplications) { <li><a href="#ho-so">Hồ sơ ứng tuyển</a></li> }
+        @if (showCatalog) { <li><a href="#catalog">Danh mục / Sản phẩm / Dịch vụ / Màu</a></li> }
+        @if (showPosts) { <li><a href="#posts">Tin tức &amp; tin tuyển dụng</a></li> }
+        @if (showCms) { <li><a href="#cms">CMS &amp; media</a></li> }
+        @if (showSettings) { <li><a href="#cai-dat">Cài đặt website</a></li> }
     </ol>
 </nav>
 
 <section id="dang-nhap" class="help-section admin-help-section">
-    <h2>Đăng nhập</h2>
+    <h2>Đăng nhập &amp; phân quyền</h2>
     <ol class="help-flow">
         <li>
             <span class="help-flow__num">1</span>
             <div>
                 <strong>Mở trang đăng nhập</strong>
-                <span>Truy cập <code>/admin/login</code> bằng tài khoản Staff hoặc Admin đã được cấp.</span>
+                <span>Truy cập <code>/admin/login</code> bằng tài khoản Super Admin đã cấp cho bạn.</span>
             </div>
         </li>
         <li>
             <span class="help-flow__num">2</span>
             <div>
                 <strong>Vào Dashboard</strong>
-                <span>Sau khi đăng nhập thành công bạn vào khu vực <code>/admin</code>. Menu <em>Vận hành</em> dùng chung; mục <em>Cài đặt website</em> chỉ Admin thấy.</span>
+                <span>Sau khi đăng nhập bạn vào <code>/admin</code>. Menu và Dashboard chỉ hiện các mục thuộc vai trò của bạn.</span>
             </div>
         </li>
     </ol>
     <div class="help-callout">
-        <strong>Phân quyền</strong>
+        <strong>Vai trò</strong>
         <ul>
-            <li><strong>Staff:</strong> Đơn hàng, Đặt lịch, Liên hệ, Đại lý, Hồ sơ ứng tuyển.</li>
-            <li><strong>Admin:</strong> toàn bộ Staff + catalog, CMS, cấu hình hệ thống.</li>
+            <li><strong>@AppRoles.Label(AppRoles.SuperAdmin):</strong> toàn quyền, gồm Users và cấu hình website.</li>
+            <li><strong>@AppRoles.Label(AppRoles.SalesManager):</strong> đơn hàng (gồm hủy đơn, export), catalog, đặt lịch, liên hệ, đại lý, xem kho, biểu đồ doanh thu.</li>
+            <li><strong>@AppRoles.Label(AppRoles.SalesStaff):</strong> tạo / xử lý đơn (không hủy, không export), đặt lịch, liên hệ, xem catalog và đại lý.</li>
+            <li><strong>@AppRoles.Label(AppRoles.WarehouseManager):</strong> toàn bộ kho (nhập, điều chỉnh, vị trí, cài đặt kho), giao đơn (Processing / Shipped / Delivered).</li>
+            <li><strong>@AppRoles.Label(AppRoles.WarehouseStaff):</strong> nhập kho, xem lô và lịch sử kho, giao đơn.</li>
+            <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> hồ sơ ứng tuyển, tin tức / tin tuyển dụng, trang nội dung, menu, slide.</li>
+            <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> như @AppRoles.Label(AppRoles.HrManager), trừ sửa meta trang và menu.</li>
         </ul>
+        <p class="muted" style="margin:0.5rem 0 0">Một người có thể có nhiều vai trò. Cần thêm quyền: liên hệ Super Admin. Thông báo (chuông) cũng chỉ hiện loại thuộc quyền của bạn.</p>
     </div>
 </section>
 
+@if (showOrders)
+{
 <section id="don-hang" class="help-section admin-help-section help-section--highlight">
-    <h2>Đơn hàng (ưu tiên vận hành)</h2>
-    <p>Menu <strong>Đơn hàng</strong> → <code>/admin/Orders</code>. Lọc theo trạng thái / phương thức thanh toán / ngày đặt, tìm theo mã đơn, tên, email, SĐT. Mở icon mắt ở cột Actions để xem <strong>Chi tiết</strong>.</p>
+    <h2>Đơn hàng</h2>
+    <p>Menu <strong>Đơn hàng</strong> → <code>/admin/Orders</code>. Lọc theo trạng thái / phương thức thanh toán / ngày đặt, tìm theo mã đơn, tên, email, SĐT. Mở icon mắt ở cột Actions để xem <strong>Chi tiết</strong>. Nút nào không có quyền sẽ không hiện.</p>
 
     <h3>Danh sách đơn</h3>
     <figure class="help-figure">
@@ -68,13 +87,12 @@
     <div class="help-callout">
         <ul>
             <li><strong>COD</strong>: đơn mới thường ở <code>AwaitingConfirmation</code> → gọi/email xác nhận → ghi <em>Ghi chú nội bộ</em> → nhấn <strong>Xác nhận COD</strong> → <code>Confirmed</code>.</li>
-            <li><strong>Chuyển khoản</strong>: đơn ở <code>PendingPayment</code> → đối chiếu đã nhận tiền → <strong>Xác nhận CK</strong> → <code>Confirmed</code>.</li>
+            <li><strong>Chuyển khoản</strong>: đơn ở <code>PendingPayment</code> → đối chiếu đã nhận tiền → <strong>Xác nhận CK</strong> → <code>Confirmed</code> (Super Admin / @AppRoles.Label(AppRoles.SalesManager)).</li>
         </ul>
-        <p class="muted" style="margin:0.5rem 0 0">Ảnh minh họa 2 nút “Xác nhận COD / Xác nhận CK” sẽ bổ sung khi có screenshot.</p>
     </div>
 
-    <h3>Sau khi đã Confirmed — luồng xử lý</h3>
-    <p><code>Confirmed</code> → ghi chú nội bộ nếu cần → nhấn <strong>Bắt đầu xử lý</strong> → <code>Processing</code>. Có thể <strong>Hủy đơn</strong> nếu cần.</p>
+    <h3>Sau khi đã Confirmed: luồng xử lý</h3>
+    <p><code>Confirmed</code> → ghi chú nội bộ nếu cần → nhấn <strong>Bắt đầu xử lý</strong> → <code>Processing</code>.</p>
     <figure class="help-figure">
         <img src="~/help/admin/annotated/02-order-confirmed.png" alt="Chi tiết đơn Confirmed với nút Bắt đầu xử lý" width="1024" height="810" loading="lazy" />
         <figcaption>① Status Confirmed · ② Ghi chú nội bộ · ③ Bắt đầu xử lý</figcaption>
@@ -86,17 +104,60 @@
         <figcaption>① Status Processing · ② Đã giao vận</figcaption>
     </figure>
 
-    <p>Khi đơn <code>Delivered</code>, không còn nút đổi trạng thái — dùng phần <strong>Lịch sử cập nhật</strong> để đối chiếu ai đã thao tác khi nào.</p>
+    <p>Khi đơn <code>Delivered</code>, không còn nút đổi trạng thái. Dùng phần <strong>Lịch sử cập nhật</strong> để đối chiếu ai đã thao tác khi nào.</p>
     <figure class="help-figure">
         <img src="~/help/admin/annotated/04-order-delivered.png" alt="Chi tiết đơn Delivered với lịch sử cập nhật" width="1024" height="802" loading="lazy" />
         <figcaption>① Status Delivered · ② Lịch sử cập nhật</figcaption>
     </figure>
 
-    <p><strong>Hủy đơn:</strong> khả dụng khi đơn còn ở AwaitingConfirmation / PendingPayment / Confirmed / Processing.</p>
-    <p class="muted">Đơn mới (web, tạo tay, import) bắt buộc <strong>CCCD</strong> (9 hoặc 12 chữ số) để xuất hóa đơn, và địa chỉ 3 trường: <strong>Tỉnh/Thành phố</strong> (mã <code>ProvinceCode</code> theo danh mục 34 tỉnh), <strong>Xã/Phường</strong> (<code>CommuneCode</code>), <strong>địa chỉ</strong> (số nhà, đường, 5–500 ký tự). File import Excel thêm cột <code>ProvinceCode</code> và <code>CommuneCode</code>. Đơn <strong>đại lý</strong> chỉ tạo tay: chọn loại khách Đại lý, prefill hồ sơ (kèm tỉnh/xã), chiết khấu % có thể sửa trên đơn (giảm tổng tiền).</p>
+    @if (User.HasPermission(Permissions.Orders.Cancel))
+    {
+        <p><strong>Hủy đơn:</strong> khả dụng khi đơn còn ở AwaitingConfirmation / PendingPayment / Confirmed / Processing. Chỉ Super Admin và @AppRoles.Label(AppRoles.SalesManager) được hủy.</p>
+    }
+    @if (User.HasPermission(Permissions.Orders.PreviewStockPick))
+    {
+        <p><strong>Gợi ý lấy hàng (FEFO):</strong> đơn <code>Confirmed</code> hiện vị trí / lô nên lấy (HSD gần nhất lấy trước). Lô đã quá hạn (HSD trước hôm nay) không bao giờ được chọn: số lượng trong lô quá hạn tính là thiếu hàng. Khi chuyển <code>Processing</code>, hệ thống trừ tồn theo gợi ý này; nếu thiếu, đơn vẫn chuyển trạng thái và hệ thống email cảnh báo thiếu hàng.</p>
+    }
+    @if (User.HasPermission(Permissions.Orders.Create))
+    {
+        <p class="muted">Đơn mới (web, tạo tay, import) bắt buộc <strong>CCCD</strong> (9 hoặc 12 chữ số) để xuất hóa đơn, và địa chỉ 3 trường: <strong>Tỉnh/Thành phố</strong> (mã <code>ProvinceCode</code> theo danh mục 34 tỉnh), <strong>Xã/Phường</strong> (<code>CommuneCode</code>), <strong>địa chỉ</strong> (số nhà, đường, 5-500 ký tự). File import Excel thêm cột <code>ProvinceCode</code> và <code>CommuneCode</code>. Đơn <strong>đại lý</strong> chỉ tạo tay: chọn loại khách Đại lý, prefill hồ sơ (kèm tỉnh/xã), chiết khấu % có thể sửa trên đơn (giảm tổng tiền).</p>
+    }
     <p class="muted">Gợi ý: luôn cập nhật <em>Ghi chú nội bộ</em> (đã gọi lúc nào, khách xác nhận gì) trước khi đổi trạng thái.</p>
 </section>
+}
 
+@if (showInventory)
+{
+<section id="kho" class="help-section admin-help-section">
+    <h2>Kho</h2>
+    <p>Menu <strong>Kho</strong> → <code>/admin/Inventory</code>. Đầu trang là các chỉ số: giá trị kho, lô sắp hết hạn, SKU tồn thấp, lô quá hạn. Lô quá hạn không được xuất cho đơn hàng; dùng <strong>Điều chỉnh</strong> để hủy số lượng sau khi xử lý.</p>
+    <ul>
+        @if (User.HasPermission(Permissions.Inventory.ViewLots))
+        {
+            <li><strong>Xem lô</strong>: bấm mũi tên ở đầu dòng vị trí để xem SKU, lô, HSD, số lượng tại vị trí đó.</li>
+        }
+        @if (User.HasPermission(Permissions.Inventory.Receive))
+        {
+            <li><strong>Nhập kho</strong>: nút <strong>+</strong> trên thanh công cụ, gõ tên / SKU để chọn biến thể, chọn vị trí, nhập mã lô (tuỳ chọn), HSD, giá vốn, số lượng.</li>
+        }
+        @if (User.HasPermission(Permissions.Inventory.Adjust))
+        {
+            <li><strong>Điều chỉnh</strong>: icon bút ở dòng lô, nhập số lượng còn lại và ghi chú lý do (kiểm kê, hỏng, …).</li>
+        }
+        @if (User.HasPermission(Permissions.Inventory.ViewHistory))
+        {
+            <li><strong>Lịch sử</strong>: các lần nhập / xuất kho, lọc theo loại (Nhập / Xuất) và khoảng ngày.</li>
+        }
+        @if (User.HasPermission(Permissions.Inventory.ManageSettings))
+        {
+            <li><strong>Cài đặt kho</strong> (<code>/admin/InventorySettings</code>): ngưỡng tồn thấp, số ngày cảnh báo sắp hết hạn, thêm / sửa vị trí kho.</li>
+        }
+    </ul>
+</section>
+}
+
+@if (showBookings)
+{
 <section id="dat-lich" class="help-section admin-help-section">
     <h2>Đặt lịch dịch vụ</h2>
     <p>Menu <strong>Đặt lịch</strong> → <code>/admin/ServiceBookings</code>. Lọc theo trạng thái, mở <strong>Chi tiết</strong>, cập nhật Status + <em>Ghi chú nội bộ</em>. Khi bấm <strong>Hoàn thành</strong>, bắt buộc nhập <strong>CCCD</strong> (9 hoặc 12 chữ số) và <strong>Thành tiền</strong>.</p>
@@ -107,7 +168,10 @@
         <li><code>Cancelled</code> - hủy</li>
     </ul>
 </section>
+}
 
+@if (showInquiries)
+{
 <section id="lien-he" class="help-section admin-help-section">
     <h2>Liên hệ (Inquiries)</h2>
     <p>Menu <strong>Liên hệ</strong> → <code>/admin/Inquiries</code>. Đây là tin nhắn từ trang Liên hệ của khách. Lọc theo trạng thái, tìm theo tên / email / SĐT.</p>
@@ -121,23 +185,37 @@
     <h3>Chi tiết &amp; xử lý</h3>
     <p>Mở icon mắt → đọc nội dung, đổi <strong>Status</strong>, ghi <em>Ghi chú</em> → nhấn <strong>Lưu</strong>.</p>
     <ul>
-        <li><code>New</code> — vừa nhận</li>
-        <li><code>InProgress</code> — đang xử lý / đã liên hệ</li>
-        <li><code>Resolved</code> — đã xử lý xong</li>
-        <li><code>Closed</code> — đóng</li>
+        <li><code>New</code> - vừa nhận</li>
+        <li><code>InProgress</code> - đang xử lý / đã liên hệ</li>
+        <li><code>Resolved</code> - đã xử lý xong</li>
+        <li><code>Closed</code> - đóng</li>
     </ul>
     <figure class="help-figure">
         <img src="~/help/admin/annotated/08-inquiries-detail.png" alt="Modal chi tiết inquiry với Status và Lưu" width="1024" height="639" loading="lazy" />
         <figcaption>① Nội dung tin nhắn · ② Đổi Status · ③ Ghi chú · ④ Lưu</figcaption>
     </figure>
 </section>
+}
 
+@if (showDealers)
+{
 <section id="dai-ly" class="help-section admin-help-section">
     <h2>Đại lý</h2>
-    <p>Menu <strong>Đại lý</strong> → <code>/admin/Dealers</code>. Khách đăng ký trên web ở trạng thái <code>Pending</code> (kèm CCCD). Staff/Admin mở chi tiết: kiểm tra/sửa CCCD, nhập <strong>% chiết khấu</strong> → <strong>Duyệt</strong>, hoặc <strong>Từ chối</strong>. Đại lý đã duyệt: sửa CCCD / % / ghi chú nội bộ. Nút <strong>Thêm</strong> tạo thẳng đại lý <code>Approved</code> (CCCD bắt buộc).</p>
+    <p>Menu <strong>Đại lý</strong> → <code>/admin/Dealers</code>. Khách đăng ký trên web ở trạng thái <code>Pending</code> (kèm CCCD).</p>
+    @if (User.HasPermission(Permissions.Dealers.Approve))
+    {
+        <p>Mở chi tiết: kiểm tra/sửa CCCD, nhập <strong>% chiết khấu</strong> → <strong>Duyệt</strong>, hoặc <strong>Từ chối</strong>. Đại lý đã duyệt: sửa CCCD / % / ghi chú nội bộ. Nút <strong>Thêm</strong> tạo thẳng đại lý <code>Approved</code> (CCCD bắt buộc).</p>
+    }
+    else
+    {
+        <p>Bạn xem được hồ sơ đại lý; duyệt / sửa chiết khấu do @AppRoles.Label(AppRoles.SalesManager) thực hiện.</p>
+    }
     <p>Đơn xuất đại lý: <strong>Đơn hàng → Thêm đơn</strong> → loại khách <em>Đại lý</em> → chọn hồ sơ đã duyệt (prefill tên/SĐT/email/địa chỉ/CCCD) → có thể đổi % trên đơn. Website không cho đại lý tự đặt hàng.</p>
 </section>
+}
 
+@if (showApplications)
+{
 <section id="ho-so" class="help-section admin-help-section">
     <h2>Hồ sơ ứng tuyển</h2>
     <p>Menu <strong>Hồ sơ ứng tuyển</strong> → <code>/admin/Applications</code> (tiêu đề trang: <em>Hồ sơ tuyển dụng</em>). Lọc theo trạng thái / tin tuyển dụng, tìm theo tên, email, SĐT.</p>
@@ -151,23 +229,24 @@
     <h3>Chi tiết &amp; xử lý</h3>
     <p>Trong modal: xem vị trí ứng tuyển, thông tin ứng viên, tải CV (nếu có). Đổi <strong>Status</strong>, ghi <em>Ghi chú</em>, rồi nhấn <strong>Lưu</strong>.</p>
     <ul>
-        <li><code>New</code> — vừa nhận</li>
-        <li><code>Reviewing</code> — đang xem xét</li>
-        <li><code>Accepted</code> — đạt / tiếp nhận</li>
-        <li><code>Rejected</code> — không phù hợp</li>
-        <li><code>Closed</code> — đóng hồ sơ</li>
+        <li><code>New</code> - vừa nhận</li>
+        <li><code>Reviewing</code> - đang xem xét</li>
+        <li><code>Accepted</code> - đạt / tiếp nhận</li>
+        <li><code>Rejected</code> - không phù hợp</li>
+        <li><code>Closed</code> - đóng hồ sơ</li>
     </ul>
     <figure class="help-figure">
         <img src="~/help/admin/annotated/06-applications-detail.png" alt="Modal chi tiết hồ sơ ứng tuyển với Status và Lưu" width="1024" height="639" loading="lazy" />
         <figcaption>① Thông tin ứng viên + CV · ② Đổi Status · ③ Ghi chú · ④ Lưu</figcaption>
     </figure>
 </section>
+}
 
-@if (isAdmin)
+@if (showCatalog)
 {
     <section id="catalog" class="help-section admin-help-section help-section--highlight">
         <h2>Danh mục / Sản phẩm / Dịch vụ / Màu sắc</h2>
-        <p>Chỉ <strong>Admin</strong>. Các màn danh sách dùng pattern modal: <em>Thêm</em> / <em>Sửa</em> mở form trong dialog, không sang trang Edit riêng.</p>
+        <p>Các màn danh sách dùng pattern modal: <em>Thêm</em> / <em>Sửa</em> mở form trong dialog, không sang trang Edit riêng. Nếu chỉ có quyền xem, danh sách không hiện nút Thêm / Sửa / Xóa / ↑↓.</p>
         <ul>
             <li><strong>Danh mục</strong> - nhóm sản phẩm/dịch vụ; thứ tự hiển thị bằng ↑/↓.</li>
             <li><strong>Sản phẩm</strong> - hàng hóa bán qua giỏ; bật/tắt biến thể size/màu theo từng sản phẩm; ảnh chính + ảnh theo SKU.</li>
@@ -176,7 +255,10 @@
         </ul>
         <p class="muted">Nội dung đa ngôn ngữ: ưu tiên VI; EN/JA có thể để trống (fallback VI).</p>
     </section>
+}
 
+@if (showPosts)
+{
     <section id="posts" class="help-section admin-help-section">
         <h2>Tin tức &amp; tin tuyển dụng</h2>
         <ul>
@@ -184,21 +266,36 @@
             <li><strong>Tin tuyển dụng</strong> - vị trí hiển thị tại <code>/careers</code>; khách ứng tuyển từ đây.</li>
         </ul>
     </section>
+}
 
+@if (showCms)
+{
     <section id="cms" class="help-section admin-help-section">
         <h2>CMS &amp; media</h2>
         <ul>
-            <li><strong>Trang nội dung</strong> - About, Company, Legal, Đại lý (<code>dealers/home</code>), khối nội dung trang chủ, …</li>
-            <li><strong>Menus / Slides</strong> - điều hướng và slide trang chủ; sắp xếp bằng ↑/↓.</li>
-            <li><strong>Media</strong> - thư viện ảnh/file dùng cho sản phẩm và CMS.</li>
+            @if (User.HasPermission(Permissions.CmsPages.View))
+            {
+                <li><strong>Trang nội dung</strong> - About, Company, Legal, Đại lý (<code>dealers/home</code>), khối nội dung trang chủ, …</li>
+            }
+            @if (User.HasPermission(Permissions.Menus.Manage) || User.HasPermission(Permissions.HomeSlides.Manage))
+            {
+                <li><strong>Menus / Slides</strong> - điều hướng và slide trang chủ; sắp xếp bằng ↑/↓.</li>
+            }
+            @if (User.HasPermission(Permissions.Media.Manage))
+            {
+                <li><strong>Media</strong> - thư viện ảnh/file dùng cho sản phẩm và CMS.</li>
+            }
         </ul>
     </section>
+}
 
+@if (showSettings)
+{
     <section id="cai-dat" class="help-section admin-help-section">
         <h2>Cài đặt website</h2>
         <ul>
             <li><strong>Phí ship</strong> - theo 34 tỉnh/thành (mã <code>idProvince</code>); miễn phí ship từ ngưỡng cấu hình (hiện 1.000.000đ trên site khách).</li>
-            <li><strong>Users</strong> - tạo/khóa tài khoản Admin/Staff.</li>
+            <li><strong>Users</strong> - tạo/khóa tài khoản, gán vai trò (một người có thể nhiều vai trò); đổi vai trò có hiệu lực trong khoảng 1 phút.</li>
             <li><strong>Thương hiệu &amp; logo</strong> - tên thương hiệu, logo header/footer.</li>
             <li><strong>Email &amp; thông báo</strong> / <strong>Mẫu email</strong> - SMTP và nội dung email đơn hàng, đặt lịch, …</li>
             <li><strong>Kho</strong> - ngưỡng tồn thấp / sắp hết hạn, quản lý vị trí kho.</li>
@@ -209,5 +306,4 @@
 
 <p class="muted admin-help-footnote">
     Hướng dẫn khách hàng (công khai): <a href="/help" target="_blank" rel="noopener">/help</a>.
-    @(isAdmin ? "" : "Một số mục cấu hình bị ẩn vì tài khoản của bạn là Staff - liên hệ Admin nếu cần.")
 </p>

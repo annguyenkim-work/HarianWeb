@@ -92,7 +92,7 @@
                 <div>@line.Sku - @line.ProductName × @line.RequestedQty
                     @if (line.ShortfallQty > 0)
                     {
-                        <span class="text-danger">(thiếu @line.ShortfallQty)</span>
+                        <span class="text-danger">(thiếu @line.ShortfallQty@(line.ExpiredQty > 0 ? $", {line.ExpiredQty} trong lô hết hạn không xuất" : ""))</span>
                     }
                 </div>
                 @if (line.Suggestions.Count == 0)
@@ -117,31 +117,34 @@
     <textarea name="internalNotes" class="form-control" rows="2">@Model.InternalNotes</textarea>
 </label>
 
+@{
+    var canUpdateStatus = User.HasPermission(Permissions.Orders.UpdateStatus);
+}
 <div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
-@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.AwaitingConfirmation && Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.COD)
+@if (OrderStatusPolicy.CanConfirmCod(Model.Status, Model.PaymentMethod)
+     && User.HasPermission(Permissions.Orders.ConfirmCod))
 {
     <button type="button" class="btn-primary" data-action="confirm-cod" data-id="@Model.Id">Xác nhận COD</button>
 }
-@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.PendingPayment && Model.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.BankTransfer)
+@if (OrderStatusPolicy.CanConfirmBankTransfer(Model.Status, Model.PaymentMethod)
+     && User.HasPermission(Permissions.Orders.ConfirmBankTransfer))
 {
     <button type="button" class="btn-primary" data-action="confirm-payment" data-id="@Model.Id">Xác nhận CK</button>
 }
-@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.Confirmed)
+@if (OrderStatusPolicy.CanTransition(Model.Status, NewHarian.Domain.Enums.OrderStatus.Processing) && canUpdateStatus)
 {
     <button type="button" class="btn-secondary" data-action="status" data-status="Processing" data-id="@Model.Id">Bắt đầu xử lý</button>
 }
-@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.Processing)
+@if (OrderStatusPolicy.CanTransition(Model.Status, NewHarian.Domain.Enums.OrderStatus.Shipped) && canUpdateStatus)
 {
     <button type="button" class="btn-secondary" data-action="status" data-status="Shipped" data-id="@Model.Id">Đã giao vận</button>
 }
-@if (Model.Status == NewHarian.Domain.Enums.OrderStatus.Shipped)
+@if (OrderStatusPolicy.CanTransition(Model.Status, NewHarian.Domain.Enums.OrderStatus.Delivered) && canUpdateStatus)
 {
     <button type="button" class="btn-secondary" data-action="status" data-status="Delivered" data-id="@Model.Id">Hoàn thành</button>
 }
-@if (Model.Status is NewHarian.Domain.Enums.OrderStatus.AwaitingConfirmation
-    or NewHarian.Domain.Enums.OrderStatus.PendingPayment
-    or NewHarian.Domain.Enums.OrderStatus.Confirmed
-    or NewHarian.Domain.Enums.OrderStatus.Processing)
+@if (OrderStatusPolicy.CanTransition(Model.Status, NewHarian.Domain.Enums.OrderStatus.Cancelled)
+    && canUpdateStatus && User.HasPermission(Permissions.Orders.Cancel))
 {
     <button type="button" class="btn-link" data-action="status" data-status="Cancelled" data-id="@Model.Id">Hủy đơn</button>
 }
@@ -154,6 +157,9 @@
 <partial name="_StatusHistory" model="histories" />
 
 <div class="modal__actions">
-    <a class="btn-secondary" href="@Url.Action("Print", new { id = Model.Id })" target="_blank" rel="noopener">In phiếu</a>
+    @if (User.HasPermission(Permissions.Orders.Print))
+    {
+        <a class="btn-secondary" href="@Url.Action("Print", new { id = Model.Id })" target="_blank" rel="noopener">In phiếu</a>
+    }
     <button type="button" class="btn-secondary" data-close>Đóng</button>
 </div>

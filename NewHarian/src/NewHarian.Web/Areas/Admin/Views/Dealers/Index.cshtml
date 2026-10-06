@@ -11,7 +11,10 @@
 <div class="admin-toolbar">
     <h1>Đại lý</h1>
     <div class="admin-toolbar__actions">
-        <button type="button" class="btn-icon btn-primary" id="btn-add-dealer" title="Thêm đại lý" aria-label="Thêm đại lý"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+        @if (User.HasPermission(Permissions.Dealers.Create))
+        {
+            <button type="button" class="btn-icon btn-primary" id="btn-add-dealer" title="Thêm đại lý" aria-label="Thêm đại lý"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+        }
     </div>
 </div>
 

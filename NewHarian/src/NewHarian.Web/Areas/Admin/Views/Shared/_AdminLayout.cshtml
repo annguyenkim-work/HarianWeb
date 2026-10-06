@@ -7,6 +7,7 @@
     var companyName = brandMap.GetValueOrDefault("company.name");
     if (string.IsNullOrWhiteSpace(companyName)) companyName = brandName;
     var logoUrl = brandMap.GetValueOrDefault("company.logo") ?? "";
+    var navGroups = AdminNavigation.For(User);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -34,46 +35,15 @@
         @if (User.Identity?.IsAuthenticated == true)
         {
             <nav class="admin-nav" aria-label="Admin">
-                <div class="admin-nav__group">
-                    <button type="button" class="admin-nav__toggle" aria-expanded="false" aria-haspopup="true">Vận hành</button>
-                    <div class="admin-nav__dropdown" role="menu">
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a role="menuitem" asp-area="Admin" asp-controller="Categories" asp-action="Index">Danh mục</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Products" asp-action="Index">Sản phẩm</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="ServiceProducts" asp-action="Index">Dịch vụ</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Colors" asp-action="Index">Màu sắc</a>
-                        }
-                        <a role="menuitem" asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index">Đặt lịch</a>
-                        <a role="menuitem" asp-area="Admin" asp-controller="Orders" asp-action="Index">Đơn hàng</a>
-                        <a role="menuitem" asp-area="Admin" asp-controller="Inventory" asp-action="Index">Kho</a>
-                        <a role="menuitem" asp-area="Admin" asp-controller="Inquiries" asp-action="Index">Liên hệ</a>
-                        <a role="menuitem" asp-area="Admin" asp-controller="Dealers" asp-action="Index">Đại lý</a>
-                        <a role="menuitem" asp-area="Admin" asp-controller="Applications" asp-action="Index">Hồ sơ ứng tuyển</a>
-                        <a role="menuitem" asp-area="Admin" asp-controller="Help" asp-action="Index">Hướng dẫn</a>
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a role="menuitem" asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="News">Tin tức</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="Job">Tin tuyển dụng</a>
-                        }
-                    </div>
-                </div>
-                @if (User.IsInRole("Admin"))
+                @foreach (var group in navGroups)
                 {
                     <div class="admin-nav__group">
-                        <button type="button" class="admin-nav__toggle" aria-expanded="false" aria-haspopup="true">Cài đặt website</button>
+                        <button type="button" class="admin-nav__toggle" aria-expanded="false" aria-haspopup="true">@group.Title</button>
                         <div class="admin-nav__dropdown" role="menu">
-                    <a role="menuitem" asp-area="Admin" asp-controller="Pages" asp-action="Index">Trang nội dung</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Menus" asp-action="Index">Menus</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="HomeSlides" asp-action="Index">Slides</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Media" asp-action="Index">Media</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Shipping" asp-action="Index">Phí ship</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Users" asp-action="Index">Users</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Settings" asp-action="Brand">Thương hiệu &amp; logo</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Settings" asp-action="Email">Email &amp; thông báo</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="EmailTemplates" asp-action="Index">Mẫu email</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Settings" asp-action="Inventory">Kho</a>
-                            <a role="menuitem" asp-area="Admin" asp-controller="Settings" asp-action="Index">Ngân hàng / QR</a>
+                            @foreach (var item in group.Items)
+                            {
+                                <a role="menuitem" asp-area="Admin" asp-controller="@item.Controller" asp-action="@item.Action" asp-all-route-data="item.RouteValues">@item.Label</a>
+                            }
                         </div>
                     </div>
                 }
@@ -118,43 +88,14 @@
                 </a>
                 <p class="admin-sidebar__title">Menu nhanh</p>
                 <nav class="admin-sidebar__nav">
-                    <div class="admin-sidebar__section">
-                        <p class="admin-sidebar__heading">Vận hành</p>
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-area="Admin" asp-controller="Categories" asp-action="Index">Danh mục</a>
-                            <a asp-area="Admin" asp-controller="Products" asp-action="Index">Sản phẩm</a>
-                            <a asp-area="Admin" asp-controller="ServiceProducts" asp-action="Index">Dịch vụ</a>
-                            <a asp-area="Admin" asp-controller="Colors" asp-action="Index">Màu sắc</a>
-                        }
-                        <a asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index">Đặt lịch</a>
-                        <a asp-area="Admin" asp-controller="Orders" asp-action="Index">Đơn hàng</a>
-                        <a asp-area="Admin" asp-controller="Inventory" asp-action="Index">Kho</a>
-                        <a asp-area="Admin" asp-controller="Inquiries" asp-action="Index">Liên hệ</a>
-                        <a asp-area="Admin" asp-controller="Dealers" asp-action="Index">Đại lý</a>
-                        <a asp-area="Admin" asp-controller="Applications" asp-action="Index">Hồ sơ ứng tuyển</a>
-                        <a asp-area="Admin" asp-controller="Help" asp-action="Index">Hướng dẫn</a>
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="News">Tin tức</a>
-                            <a asp-area="Admin" asp-controller="Posts" asp-action="Index" asp-route-kind="Job">Tin tuyển dụng</a>
-                        }
-                    </div>
-                    @if (User.IsInRole("Admin"))
+                    @foreach (var group in navGroups)
                     {
                         <div class="admin-sidebar__section">
-                            <p class="admin-sidebar__heading">Cài đặt website</p>
-                            <a asp-area="Admin" asp-controller="Pages" asp-action="Index">Trang nội dung</a>
-                            <a asp-area="Admin" asp-controller="Menus" asp-action="Index">Menus</a>
-                            <a asp-area="Admin" asp-controller="HomeSlides" asp-action="Index">Slides</a>
-                            <a asp-area="Admin" asp-controller="Media" asp-action="Index">Media</a>
-                            <a asp-area="Admin" asp-controller="Shipping" asp-action="Index">Phí ship</a>
-                            <a asp-area="Admin" asp-controller="Users" asp-action="Index">Users</a>
-                            <a asp-area="Admin" asp-controller="Settings" asp-action="Brand">Thương hiệu &amp; logo</a>
-                            <a asp-area="Admin" asp-controller="Settings" asp-action="Email">Email &amp; thông báo</a>
-                            <a asp-area="Admin" asp-controller="EmailTemplates" asp-action="Index">Mẫu email</a>
-                            <a asp-area="Admin" asp-controller="Settings" asp-action="Inventory">Kho</a>
-                            <a asp-area="Admin" asp-controller="Settings" asp-action="Index">Ngân hàng / QR</a>
+                            <p class="admin-sidebar__heading">@group.Title</p>
+                            @foreach (var item in group.Items)
+                            {
+                                <a asp-area="Admin" asp-controller="@item.Controller" asp-action="@item.Action" asp-all-route-data="item.RouteValues">@item.Label</a>
+                            }
                         </div>
                     }
                 </nav>
@@ -165,6 +106,7 @@
     <main class="admin-main">
         @RenderBody()
     </main>
+    <script src="~/js/admin-fetch-guard.js" asp-append-version="true"></script>
     <script src="~/lib/microsoft/signalr/signalr.min.js" asp-append-version="true"></script>
     <script>
     (() => {

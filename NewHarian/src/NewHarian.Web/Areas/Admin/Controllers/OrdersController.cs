@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
@@ -7,11 +6,11 @@ using NewHarian.Application.Dealers;
 using NewHarian.Application.Inventory;
 using NewHarian.Application.Orders;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOrStaff)]
 public class OrdersController(
     IOrderAdminService orders,
     IOrderImportExportService importExport,
@@ -27,6 +26,7 @@ public class OrdersController(
     private string? ActorUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
     private string? ActorName() => User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Email);
 
+    [HasPermission(Permissions.Orders.View)]
     public async Task<IActionResult> Index(
         OrderStatus? status,
         PaymentMethod? payment,
@@ -58,6 +58,7 @@ public class OrdersController(
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Orders.Export)]
     public async Task<IActionResult> Export(
         OrderStatus? status,
         PaymentMethod? payment,
@@ -81,18 +82,42 @@ public class OrdersController(
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Orders.View)]
     public async Task<IActionResult> Detail(int id, CancellationToken ct)
     {
         var item = await orders.AdminGetAsync(id, ct);
         if (item is null) return NotFound();
         ViewBag.Histories = await history.ListForOrderAsync(id, ct);
-        ViewBag.StockPick = item.Status is OrderStatus.Confirmed
-            ? await orderStock.PreviewPickPlanAsync(id, ct)
-            : await orderStock.GetAllocationsAsync(id, ct);
+        ViewBag.StockPick = await LoadStockPickAsync(id, item.Status, ct);
         return PartialView("_DetailModal", item);
     }
 
+    /// <summary>
+    /// Hidden for Cancelled/Refunded. Non-deducted FEFO preview needs PreviewStockPick; actual allocations of a deducted
+    /// order need ViewAllocations.
+    /// </summary>
+    private async Task<OrderStockPickPlanDto?> LoadStockPickAsync(int id, OrderStatus status, CancellationToken ct)
+    {
+        if (!OrderStatusPolicy.NeedsStockPick(status))
+            return null;
+
+        var canPreview = User.HasPermission(Permissions.Orders.PreviewStockPick);
+        var canViewAllocations = User.HasPermission(Permissions.Orders.ViewAllocations);
+
+        if (status is OrderStatus.Confirmed)
+            return canPreview ? await orderStock.PreviewPickPlanAsync(id, ct) : null;
+
+        var mayBeDeducted = OrderStatusPolicy.RequiresStockDeduction(status);
+        if (!canPreview && !(canViewAllocations && mayBeDeducted))
+            return null;
+
+        var plan = await orderStock.GetAllocationsAsync(id, ct);
+        if (plan is null) return null;
+        return (plan.AlreadyDeducted ? canViewAllocations : canPreview) ? plan : null;
+    }
+
     [HttpGet]
+    [HasPermission(Permissions.Orders.Print)]
     public async Task<IActionResult> Print(int id, CancellationToken ct)
     {
         var item = await orders.AdminGetAsync(id, ct);
@@ -101,6 +126,7 @@ public class OrdersController(
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Orders.Create)]
     public async Task<IActionResult> Create(CancellationToken ct)
     {
         ViewBag.Dealers = await dealers.ListApprovedOptionsAsync(ct);
@@ -110,6 +136,7 @@ public class OrdersController(
     /// <summary>FEFO gợi ý vị trí/lô theo SKU trên form Thêm đơn (trước khi lưu).</summary>
     [HttpPost]
     [IgnoreAntiforgeryToken]
+    [HasPermission(Permissions.Orders.PreviewStockPick)]
     public async Task<IActionResult> PreviewStockPick([FromBody] List<StockPickSkuLineRequest>? lines, CancellationToken ct)
     {
         var plan = await orderStock.PreviewPickBySkusAsync(lines ?? [], ct);
@@ -118,6 +145,7 @@ public class OrdersController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Orders.Create)]
     public async Task<IActionResult> Create(ManualOrderCreateRequest model, CancellationToken ct)
     {
         var (ok, error, orderNumber) = await orders.CreateManualOrderAsync(model, ActorUserId(), ActorName(), ct);
@@ -137,12 +165,14 @@ public class OrdersController(
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Orders.Import)]
     public IActionResult Import()
     {
         return PartialView("_ImportOrdersForm");
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Orders.Import)]
     public IActionResult ImportTemplate()
     {
         var bytes = importExport.BuildOrderImportTemplate();
@@ -154,6 +184,7 @@ public class OrdersController(
     [HttpPost]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(10 * 1024 * 1024)]
+    [HasPermission(Permissions.Orders.Import)]
     public async Task<IActionResult> Import(IFormFile? file, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
@@ -176,6 +207,7 @@ public class OrdersController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Orders.ConfirmCod)]
     public async Task<IActionResult> ConfirmCod(int id, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await orders.ConfirmCodAsync(id, internalNotes, ct);
@@ -184,6 +216,7 @@ public class OrdersController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Orders.ConfirmBankTransfer)]
     public async Task<IActionResult> ConfirmPayment(int id, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await orders.ConfirmBankTransferAsync(id, internalNotes, ct);
@@ -192,8 +225,12 @@ public class OrdersController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Orders.UpdateStatus)]
     public async Task<IActionResult> UpdateStatus(int id, OrderStatus status, string? internalNotes, CancellationToken ct)
     {
+        if (status == OrderStatus.Cancelled && !User.HasPermission(Permissions.Orders.Cancel))
+            return Json(new { ok = false, error = "Bạn không có quyền hủy đơn." });
+
         var (ok, error) = await orders.AdminUpdateStatusAsync(id, status, internalNotes, ActorUserId(), ActorName(), ct);
         return Json(new { ok, error, status = status.ToString() });
     }

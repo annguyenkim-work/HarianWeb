@@ -24,13 +24,14 @@ public static class DbSeeder
         await db.Database.MigrateAsync();
 
         var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
-        foreach (var role in new[] { AppRoles.Admin, AppRoles.Staff })
+        foreach (var role in AppRoles.Assignable)
         {
             if (!await roleManager.RoleExistsAsync(role))
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
 
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        await MigrateLegacyAdminsAsync(roleManager, userManager, logger);
         const string adminEmail = "admin@harian.local";
         var admin = await userManager.FindByEmailAsync(adminEmail);
         if (admin is null)
@@ -46,7 +47,7 @@ public static class DbSeeder
             };
             var result = await userManager.CreateAsync(admin, "Admin@12345");
             if (result.Succeeded)
-                await userManager.AddToRoleAsync(admin, AppRoles.Admin);
+                await userManager.AddToRoleAsync(admin, AppRoles.SuperAdmin);
             else
                 logger.LogError("Failed to create admin: {Errors}", string.Join("; ", result.Errors.Select(e => e.Description)));
         }
@@ -174,6 +175,26 @@ public static class DbSeeder
         await SeedCatalogAsync(db, logger);
 
         logger.LogInformation("Database seed completed.");
+    }
+
+    /// <summary>Pre-RBAC "Admin" users become SuperAdmin; the empty legacy role is then deleted. Legacy "Staff" is left for manual reassignment.</summary>
+    private static async Task MigrateLegacyAdminsAsync(
+        RoleManager<IdentityRole> roleManager,
+        UserManager<ApplicationUser> userManager,
+        ILogger logger)
+    {
+        var legacy = await roleManager.FindByNameAsync(AppRoles.LegacyAdmin);
+        if (legacy is null) return;
+
+        foreach (var user in await userManager.GetUsersInRoleAsync(AppRoles.LegacyAdmin))
+        {
+            if (!await userManager.IsInRoleAsync(user, AppRoles.SuperAdmin))
+                await userManager.AddToRoleAsync(user, AppRoles.SuperAdmin);
+            await userManager.RemoveFromRoleAsync(user, AppRoles.LegacyAdmin);
+            logger.LogInformation("Migrated legacy Admin to SuperAdmin UserId={UserId}", user.Id);
+        }
+
+        await roleManager.DeleteAsync(legacy);
     }
 
     private static async Task SeedCmsContentAsync(AppDbContext db)

@@ -147,8 +147,8 @@ public sealed class InventoryService(
         if (expiringSoon == true)
         {
             var invSettings = await siteSettings.GetInventoryAsync(ct);
-            var until = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(invSettings.ExpiringWithinDays);
-            var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var today = StockExpiry.TodayUtc();
+            var until = today.AddDays(invSettings.ExpiringWithinDays);
             query = query.Where(l => l.ExpiryDate >= today && l.ExpiryDate <= until && l.QuantityOnHand > 0);
         }
 
@@ -433,6 +433,7 @@ public sealed class InventoryService(
             .GroupBy(v => v.Sku, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
+        var today = StockExpiry.TodayUtc();
         var lineIndex = 0;
         foreach (var (sku, qty) in normalized)
         {
@@ -449,28 +450,16 @@ public sealed class InventoryService(
                 .Select(t => t.Name)
                 .FirstOrDefault() ?? variant.Product.Slug;
 
-            var remaining = qty;
             var lots = await db.StockLots.AsNoTracking()
                 .Include(l => l.WarehouseLocation)
                 .Where(l => l.ProductVariantId == variant.Id && l.QuantityOnHand > 0)
                 .OrderBy(l => l.ExpiryDate).ThenBy(l => l.ReceivedAt)
                 .ToListAsync(ct);
 
-            var suggestions = new List<StockLotPickSuggestionDto>();
-            foreach (var lot in lots)
-            {
-                if (remaining <= 0) break;
-                var take = Math.Min(lot.QuantityOnHand, remaining);
-                if (take <= 0) continue;
-                suggestions.Add(new StockLotPickSuggestionDto(
-                    lot.Id, lot.LotCode, lot.WarehouseLocation.Code, lot.WarehouseLocation.Name,
-                    lot.ExpiryDate, lot.QuantityOnHand, take));
-                remaining -= take;
-            }
-
+            var plan = FefoAllocator.Plan(lots, qty, today);
             result.Add(new OrderItemPickPlanDto(
                 lineIndex, variant.Sku, name, variant.VariantLabel,
-                qty, qty - remaining, remaining, suggestions));
+                qty, plan.Allocated, plan.Shortfall, ToSuggestions(plan), plan.ExpiredOnHand));
         }
 
         return new OrderStockPickPlanDto(0, "", false, result);
@@ -500,24 +489,20 @@ public sealed class InventoryService(
                 return (true, null, false);
             }
 
+            var today = StockExpiry.TodayUtc();
             var shortfallLines = new List<string>();
             foreach (var item in order.Items)
             {
-                var remaining = item.Quantity;
                 var lots = await db.StockLots
                     .Include(l => l.WarehouseLocation)
                     .Where(l => l.ProductVariantId == item.ProductVariantId && l.QuantityOnHand > 0)
                     .OrderBy(l => l.ExpiryDate).ThenBy(l => l.ReceivedAt)
                     .ToListAsync(ct);
 
-                foreach (var lot in lots)
+                var plan = FefoAllocator.Plan(lots, item.Quantity, today);
+                foreach (var (lot, take) in plan.Allocations)
                 {
-                    if (remaining <= 0) break;
-                    var take = Math.Min(lot.QuantityOnHand, remaining);
-                    if (take <= 0) continue;
-
                     lot.QuantityOnHand -= take;
-                    remaining -= take;
 
                     db.OrderItemLotAllocations.Add(new OrderItemLotAllocation
                     {
@@ -542,8 +527,8 @@ public sealed class InventoryService(
                 var variant = await db.ProductVariants.FirstAsync(v => v.Id == item.ProductVariantId, ct);
                 variant.StockQuantity -= item.Quantity;
 
-                if (remaining > 0)
-                    shortfallLines.Add($"{item.Sku}: thiếu {remaining}/{item.Quantity}");
+                if (plan.Shortfall > 0)
+                    shortfallLines.Add(FormatShortfallLine(item.Sku, item.Quantity, plan));
             }
 
             order.StockDeductedAt = DateTime.UtcNow;
@@ -613,6 +598,7 @@ public sealed class InventoryService(
                     OrderItemId = alloc.OrderItemId,
                     ActorUserId = actorUserId,
                     ActorName = actorName,
+                    Notes = $"Hoàn kho do hủy đơn hàng {order.OrderNumber}",
                     CreatedAt = DateTime.UtcNow
                 });
             }
@@ -645,7 +631,7 @@ public sealed class InventoryService(
 
     public async Task<InventorySummaryDto> GetSummaryAsync(CancellationToken ct = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        var today = StockExpiry.TodayUtc();
 
         var totalValue = await db.StockLots.AsNoTracking()
             .Where(l => l.QuantityOnHand > 0)
@@ -708,35 +694,37 @@ public sealed class InventoryService(
         }
         else
         {
+            var today = StockExpiry.TodayUtc();
             foreach (var item in order.Items)
             {
-                var remaining = item.Quantity;
                 var lots = await db.StockLots.AsNoTracking()
                     .Include(l => l.WarehouseLocation)
                     .Where(l => l.ProductVariantId == item.ProductVariantId && l.QuantityOnHand > 0)
                     .OrderBy(l => l.ExpiryDate).ThenBy(l => l.ReceivedAt)
                     .ToListAsync(ct);
 
-                var suggestions = new List<StockLotPickSuggestionDto>();
-                foreach (var lot in lots)
-                {
-                    if (remaining <= 0) break;
-                    var take = Math.Min(lot.QuantityOnHand, remaining);
-                    if (take <= 0) continue;
-                    suggestions.Add(new StockLotPickSuggestionDto(
-                        lot.Id, lot.LotCode, lot.WarehouseLocation.Code, lot.WarehouseLocation.Name,
-                        lot.ExpiryDate, lot.QuantityOnHand, take));
-                    remaining -= take;
-                }
-
+                var plan = FefoAllocator.Plan(lots, item.Quantity, today);
                 lines.Add(new OrderItemPickPlanDto(
                     item.Id, item.Sku, item.ProductName, item.VariantLabel,
-                    item.Quantity, item.Quantity - remaining, remaining, suggestions));
+                    item.Quantity, plan.Allocated, plan.Shortfall, ToSuggestions(plan), plan.ExpiredOnHand));
             }
         }
 
         return new OrderStockPickPlanDto(order.Id, order.OrderNumber, order.StockDeductedAt is not null, lines);
     }
+
+    internal static string FormatShortfallLine(string sku, int requested, FefoPlan plan)
+    {
+        var line = $"{sku}: thiếu {plan.Shortfall}/{requested}";
+        return plan.ExpiredOnHand > 0
+            ? $"{line} (còn {plan.ExpiredOnHand} trong lô hết hạn, không xuất)"
+            : line;
+    }
+
+    private static List<StockLotPickSuggestionDto> ToSuggestions(FefoPlan plan)
+        => plan.Allocations.Select(a => new StockLotPickSuggestionDto(
+            a.Lot.Id, a.Lot.LotCode, a.Lot.WarehouseLocation.Code, a.Lot.WarehouseLocation.Name,
+            a.Lot.ExpiryDate, a.Lot.QuantityOnHand, a.Quantity)).ToList();
 
     private async Task NotifyShortfallAsync(Order order, IReadOnlyList<string> shortfallLines, CancellationToken ct)
     {

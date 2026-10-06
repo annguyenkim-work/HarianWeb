@@ -1,15 +1,15 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Catalog;
+using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
 public class CategoriesController(IAdminCategoryService categories, IMediaStorage media) : Controller
 {
+    [HasPermission(Permissions.Categories.View)]
     public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
     {
         var (items, pager) = AdminPaging.Apply(await categories.ListCategoriesAsync(ct), page);
@@ -18,6 +18,7 @@ public class CategoriesController(IAdminCategoryService categories, IMediaStorag
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Categories.Edit)]
     public async Task<IActionResult> Edit(int? id, CancellationToken ct)
     {
         if (id is null)
@@ -46,6 +47,7 @@ public class CategoriesController(IAdminCategoryService categories, IMediaStorag
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Categories.Edit)]
     public async Task<IActionResult> Save(CategorySaveRequest model, IFormFile? imageFile, CancellationToken ct)
     {
         if (imageFile is { Length: > 0 })
@@ -66,6 +68,7 @@ public class CategoriesController(IAdminCategoryService categories, IMediaStorag
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Categories.Reorder)]
     public async Task<IActionResult> Move(int id, int direction, CancellationToken ct)
     {
         await categories.MoveCategoryAsync(id, direction, ct);
@@ -74,6 +77,7 @@ public class CategoriesController(IAdminCategoryService categories, IMediaStorag
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [HasPermission(Permissions.Categories.Edit)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         var (ok, error) = await categories.DeleteCategoryAsync(id, ct);

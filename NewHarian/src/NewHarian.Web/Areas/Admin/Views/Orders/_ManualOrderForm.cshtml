@@ -143,10 +143,13 @@
     </div>
     <p class="manual-order-form__hint muted">Gõ để tìm sản phẩm theo tên hoặc SKU. Mặc định trạng thái <strong>Hoàn thành</strong> (đã thanh toán Offline); có thể đổi trước khi tạo.</p>
     <button type="button" class="btn-secondary" id="btn-add-line">+ Thêm dòng</button>
-    <button type="button" class="btn-secondary" id="btn-preview-stock-pick" style="margin-left:0.35rem">Xem gợi ý lấy hàng</button>
+    @if (User.HasPermission(Permissions.Orders.PreviewStockPick))
+    {
+        <button type="button" class="btn-secondary" id="btn-preview-stock-pick" style="margin-left:0.35rem">Xem gợi ý lấy hàng</button>
 
-    <div id="manual-order-stock-pick" class="order-stock-pick" hidden
-         style="margin:0.75rem 0;padding:0.75rem;border:1px solid #ddd;border-radius:6px"></div>
+        <div id="manual-order-stock-pick" class="order-stock-pick" hidden
+             style="margin:0.75rem 0;padding:0.75rem;border:1px solid #ddd;border-radius:6px"></div>
+    }
 
     <div class="modal__actions">
         <button type="button" class="btn-secondary" data-close>Hủy</button>
