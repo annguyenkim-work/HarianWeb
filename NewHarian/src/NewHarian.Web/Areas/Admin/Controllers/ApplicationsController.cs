@@ -68,7 +68,7 @@ public class ApplicationsController(
     public async Task<IActionResult> UpdateStatus(int id, ApplicationStatus status, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await apps.UpdateStatusAsync(id, status, internalNotes, User.Identity?.Name, ct);
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã cập nhật." : error;
+        this.FlashResult(ok, "Đã cập nhật hồ sơ ứng tuyển.", error);
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }

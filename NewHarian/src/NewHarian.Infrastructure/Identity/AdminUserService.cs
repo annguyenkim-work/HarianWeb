@@ -27,13 +27,15 @@ public sealed class AdminUserService(
     {
         var user = await users.FindByIdAsync(id);
         if (user is null) return null;
+        var roles = OrderRoles(await users.GetRolesAsync(user));
         return new AdminUserSaveRequest
         {
             Id = user.Id,
             Email = user.Email ?? "",
             FullName = user.FullName,
             IsActive = user.IsActive,
-            Roles = OrderRoles(await users.GetRolesAsync(user)).ToList()
+            Role = UserRolePolicy.PreselectedRole(roles),
+            CurrentRoles = roles.ToList()
         };
     }
 
@@ -53,8 +55,8 @@ public sealed class AdminUserService(
                 return (false, error, null);
             }
 
-            logger.LogInformation("SaveUser Done Id={Id} Roles={Roles} IsActive={IsActive}",
-                id, string.Join(",", request.Roles), request.IsActive);
+            logger.LogInformation("SaveUser Done Id={Id} Role={Role} IsActive={IsActive}",
+                id, request.Role, request.IsActive);
             return (true, null, id);
         }
         catch (Exception ex)
@@ -69,9 +71,10 @@ public sealed class AdminUserService(
         var email = request.Email.Trim();
         if (string.IsNullOrWhiteSpace(email)) return (false, "Email bắt buộc.", null);
         if (string.IsNullOrWhiteSpace(request.Password)) return (false, "Mật khẩu bắt buộc khi tạo user.", null);
+        if (await users.FindByEmailAsync(email) is not null) return (false, "Email đã được dùng cho user khác.", null);
 
-        var roles = NormalizeRoles(request.Roles, currentRoles: []);
-        if (roles.Count == 0) return (false, "Chọn ít nhất một role.", null);
+        var (role, roleError) = UserRolePolicy.Validate(request.Role, currentRoles: []);
+        if (role is null) return (false, roleError, null);
 
         var user = new ApplicationUser
         {
@@ -85,11 +88,11 @@ public sealed class AdminUserService(
         var created = await users.CreateAsync(user, request.Password);
         if (!created.Succeeded) return (false, Describe(created), null);
 
-        var added = await users.AddToRolesAsync(user, roles);
+        var added = await users.AddToRoleAsync(user, role);
         if (!added.Succeeded) return (false, Describe(added), null);
 
         await audit.WriteAsync("User.Created", "User", user.Id, null,
-            new { user.Email, Roles = roles, user.IsActive });
+            new { user.Email, Role = role, user.IsActive });
         return (true, null, user.Id);
     }
 
@@ -99,13 +102,14 @@ public sealed class AdminUserService(
         if (user is null) return (false, "Không tìm thấy user.", null);
 
         var currentRoles = (await users.GetRolesAsync(user)).ToList();
-        var roles = NormalizeRoles(request.Roles, currentRoles);
-        if (roles.Count == 0) return (false, "Chọn ít nhất một role.", null);
+        var (role, roleError) = UserRolePolicy.Validate(request.Role, currentRoles);
+        if (role is null) return (false, roleError, null);
+        List<string> roles = [role];
 
         var isSelf = user.Id == actorUserId;
-        var willBeSuperAdmin = roles.Contains(AppRoles.SuperAdmin) && request.IsActive;
+        var willBeSuperAdmin = role == AppRoles.SuperAdmin && request.IsActive;
         if (isSelf && !request.IsActive) return (false, "Không thể tự khóa tài khoản của chính mình.", null);
-        if (isSelf && currentRoles.Contains(AppRoles.SuperAdmin) && !roles.Contains(AppRoles.SuperAdmin))
+        if (isSelf && currentRoles.Contains(AppRoles.SuperAdmin) && role != AppRoles.SuperAdmin)
             return (false, "Không thể tự gỡ role Super Admin của chính mình.", null);
         if (currentRoles.Contains(AppRoles.SuperAdmin) && user.IsActive && !willBeSuperAdmin
             && !await HasOtherActiveSuperAdminAsync(user.Id))
@@ -143,23 +147,12 @@ public sealed class AdminUserService(
             await users.UpdateSecurityStampAsync(user);
 
         await audit.WriteAsync("User.Updated", "User", user.Id, before,
-            new { Roles = roles, user.IsActive, user.FullName, PasswordReset = passwordChanged });
+            new { Role = role, user.IsActive, user.FullName, PasswordReset = passwordChanged });
         return (true, null, user.Id);
     }
 
     private async Task<bool> HasOtherActiveSuperAdminAsync(string userId)
         => (await users.GetUsersInRoleAsync(AppRoles.SuperAdmin)).Any(u => u.Id != userId && u.IsActive);
-
-    /// <summary>Only assignable roles; legacy Staff survives only if the user already has it and it stays ticked.</summary>
-    private static List<string> NormalizeRoles(IEnumerable<string> requested, IReadOnlyCollection<string> currentRoles)
-    {
-        var set = requested.Where(r => !string.IsNullOrWhiteSpace(r)).ToHashSet(StringComparer.Ordinal);
-        return AppRoles.Assignable
-            .Append(AppRoles.LegacyStaff)
-            .Where(set.Contains)
-            .Where(r => r != AppRoles.LegacyStaff || currentRoles.Contains(AppRoles.LegacyStaff))
-            .ToList();
-    }
 
     private static IReadOnlyList<string> OrderRoles(IEnumerable<string> roles)
     {

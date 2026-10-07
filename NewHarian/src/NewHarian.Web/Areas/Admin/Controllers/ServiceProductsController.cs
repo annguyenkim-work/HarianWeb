@@ -98,7 +98,12 @@ public class ServiceProductsController(
             ModelState.AddModelError(string.Empty, error ?? "Lỗi lưu.");
             return PartialView(SharedForm, model);
         }
-        return Json(new { ok = true, redirect = Url.Action(nameof(Index), new { area = "Admin" }) });
+        return Json(new
+        {
+            ok = true,
+            message = model.Id is null ? "Đã thêm dịch vụ." : "Đã cập nhật dịch vụ.",
+            redirect = Url.Action(nameof(Index), new { area = "Admin" })
+        });
     }
 
     [HttpPost]
@@ -166,6 +171,7 @@ public class ServiceProductsController(
         var p = await services.GetServiceAsync(id, ct);
         if (p is null) return NotFound();
         await services.MoveServiceAsync(id, direction, ct);
+        this.FlashSuccess("Đã đổi thứ tự dịch vụ.");
         return AdminListRedirect.ToRefererOrIndex(this, new { area = "Admin", categoryId });
     }
 
@@ -176,8 +182,8 @@ public class ServiceProductsController(
     {
         var p = await services.GetServiceAsync(id, ct);
         if (p is null)
-            return Json(new { ok = false, error = "Không tìm thấy." });
+            return this.JsonFail("Không tìm thấy dịch vụ.");
         var (ok, error) = await services.DeleteServiceAsync(id, ct);
-        return Json(new { ok, error });
+        return ok ? Json(new { ok = true, message = "Đã lưu trữ dịch vụ." }) : this.JsonFail(error);
     }
 }

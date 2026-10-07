@@ -1,0 +1,119 @@
+@model IReadOnlyList<NewHarian.Application.Hr.EmployeeListItemDto>
+@using NewHarian.Application.Hr
+@using NewHarian.Domain.Enums
+@{
+    ViewData["Title"] = "Nhân viên";
+    Layout = "_AdminLayout";
+    var canManage = User.HasPermission(Permissions.Employees.Manage);
+    var currentStatus = ViewBag.Status as EmployeeStatus?;
+}
+
+<div class="admin-toolbar">
+    <h1>Nhân viên</h1>
+</div>
+
+<form method="get" class="filter-bar filter-bar--row">
+    <select name="status" aria-label="Trạng thái">
+        <option value="">Tất cả</option>
+        @foreach (var s in EmployeeProfilePolicy.Statuses)
+        {
+            <option value="@s" selected="@(currentStatus == s)">@EmployeeProfilePolicy.StatusLabel(s)</option>
+        }
+    </select>
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm mã NV / họ tên / email / SĐT / role" class="form-control filter-bar__search" />
+    <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
+</form>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Mã NV</th>
+            <th>Họ tên</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Trạng thái</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var e in Model)
+    {
+        <tr data-employee-row="@e.Email">
+            <td>@(e.EmployeeCode ?? "-")</td>
+            <td>
+                @(string.IsNullOrWhiteSpace(e.FullName) ? "-" : e.FullName)
+                @if (!e.IsPersonalComplete)
+                {
+                    <span class="badge badge--warning" data-profile-incomplete>Chưa bổ sung hồ sơ</span>
+                }
+            </td>
+            <td>@e.Email</td>
+            <td>@(e.Roles.Count == 0 ? "-" : string.Join(", ", e.Roles.Select(AppRoles.Label)))</td>
+            <td>
+                @(e.Status is { } st ? EmployeeProfilePolicy.StatusLabel(st) : "-")
+                @if (!e.IsActive)
+                {
+                    <span class="badge">Tài khoản đã khóa</span>
+                }
+            </td>
+            <td class="actions">
+                @if (canManage)
+                {
+                    <button type="button" class="btn-icon btn-open-employee" data-id="@e.UserId" title="Sửa" aria-label="Sửa"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                }
+                else
+                {
+                    <button type="button" class="btn-icon btn-open-employee" data-id="@e.UserId" title="Xem" aria-label="Xem"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
+                }
+            </td>
+        </tr>
+    }
+    @if (Model.Count == 0)
+    {
+        <tr><td colspan="6" class="muted">Không có nhân viên phù hợp.</td></tr>
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />
+
+<dialog id="employee-modal" class="modal">
+    <div class="modal__box modal__box--wide" id="employee-modal-body"></div>
+</dialog>
+
+@section Scripts {
+<script>
+(() => {
+  const modal = document.getElementById('employee-modal');
+  const body = document.getElementById('employee-modal-body');
+
+  async function openForm(id) {
+    body.innerHTML = await (await fetch(`/admin/Employees/Edit/${encodeURIComponent(id)}`)).text();
+    modal.showModal();
+    bindForm();
+  }
+
+  function bindForm() {
+    body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
+    const form = body.querySelector('form');
+    if (!form || !form.querySelector('[type="submit"]')) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) { adminToast.reloadWith(data.message); return; }
+        adminToast.jsonError(data);
+      } else {
+        body.innerHTML = await res.text();
+        bindForm();
+        adminToast.formErrors(body);
+      }
+    });
+  }
+
+  document.querySelectorAll('.btn-open-employee').forEach(b => b.addEventListener('click', () => openForm(b.dataset.id)));
+})();
+</script>
+}

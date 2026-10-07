@@ -1,0 +1,95 @@
+@model NewHarian.Application.Hr.EmployeeProfileForm
+@using NewHarian.Application.Hr
+@{
+    var personalEditable = ViewData["PersonalEditable"] as bool? ?? false;
+    var hrEditable = ViewData["HrEditable"] as bool? ?? false;
+    var showHrNotes = ViewData["ShowHrNotes"] as bool? ?? false;
+}
+
+<div class="profile-meta" data-profile-meta>
+    <span>Mã NV: <strong data-employee-code>@(Model.EmployeeCode ?? "Chưa cấp")</strong></span>
+    <span>Email đăng nhập: <strong>@Model.Email</strong></span>
+</div>
+
+<fieldset class="form-section" data-section="personal" disabled="@(!personalEditable)">
+    <legend>Thông tin cá nhân</legend>
+    <div class="form-grid form-grid--2">
+        <label>
+            Họ tên *
+            <input asp-for="FullName" class="form-control" required maxlength="200" />
+        </label>
+        <label>
+            Ngày sinh
+            <input asp-for="DateOfBirth" type="date" class="form-control" />
+        </label>
+        <label>
+            Giới tính
+            <select asp-for="Gender" class="form-control">
+                <option value="">Chọn</option>
+                @foreach (var g in EmployeeProfilePolicy.Genders)
+                {
+                    <option value="@g" selected="@(Model.Gender == g)">@EmployeeProfilePolicy.GenderLabel(g)</option>
+                }
+            </select>
+        </label>
+        <label>
+            Số điện thoại
+            <input asp-for="Phone" type="tel" class="form-control" maxlength="20" />
+        </label>
+        <label>
+            Email cá nhân
+            <input asp-for="PersonalEmail" type="email" class="form-control" maxlength="200" />
+        </label>
+        <label>
+            CCCD
+            <input asp-for="CitizenId" class="form-control" inputmode="numeric" maxlength="20" />
+        </label>
+        <label class="full">
+            Địa chỉ
+            <input asp-for="Address" class="form-control" maxlength="500" />
+        </label>
+        <label>
+            Người liên hệ khẩn cấp
+            <input asp-for="EmergencyContactName" class="form-control" maxlength="200" />
+        </label>
+        <label>
+            SĐT người liên hệ khẩn cấp
+            <input asp-for="EmergencyContactPhone" type="tel" class="form-control" maxlength="20" />
+        </label>
+    </div>
+</fieldset>
+
+<fieldset class="form-section" data-section="hr" disabled="@(!hrEditable)">
+    <legend>Thông tin công việc</legend>
+    <div class="form-grid form-grid--2">
+        <label>
+            Role
+            <input class="form-control" value="@(Model.Roles.Count == 0 ? "-" : string.Join(", ", Model.Roles.Select(AppRoles.Label)))" readonly tabindex="-1" data-employee-role />
+            <small class="form-hint">Đổi role tại trang Users.</small>
+        </label>
+        <label>
+            Trạng thái
+            <select asp-for="Status" class="form-control">
+                @foreach (var s in EmployeeProfilePolicy.Statuses)
+                {
+                    <option value="@s" selected="@(Model.Status == s)">@EmployeeProfilePolicy.StatusLabel(s)</option>
+                }
+            </select>
+        </label>
+        <label>
+            Ngày vào làm
+            <input asp-for="HireDate" type="date" class="form-control" />
+        </label>
+        <label>
+            Ngày nghỉ việc
+            <input asp-for="TerminationDate" type="date" class="form-control" />
+        </label>
+        @if (showHrNotes)
+        {
+            <label class="full">
+                Ghi chú nhân sự
+                <textarea asp-for="HrNotes" class="form-control" rows="3" maxlength="2000"></textarea>
+            </label>
+        }
+    </div>
+</fieldset>

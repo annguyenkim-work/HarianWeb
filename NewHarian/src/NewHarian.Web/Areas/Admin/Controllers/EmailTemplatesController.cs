@@ -40,7 +40,7 @@ public class EmailTemplatesController(IEmailTemplateService templates) : Control
                 model.SubjectTemplate, model.BodyHtml));
         }
 
-        TempData["Success"] = "Đã lưu mẫu email.";
+        this.FlashSuccess("Đã lưu mẫu email.");
         return RedirectToAction(nameof(Index), new { area = "Admin" });
     }
 }

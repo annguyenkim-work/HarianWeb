@@ -114,3 +114,18 @@ public enum DealerStatus
     Approved = 1,
     Rejected = 2
 }
+
+public enum EmployeeStatus
+{
+    Probation = 0,
+    Active = 1,
+    OnLeave = 2,
+    Resigned = 3
+}
+
+public enum EmployeeGender
+{
+    Male = 0,
+    Female = 1,
+    Other = 2
+}

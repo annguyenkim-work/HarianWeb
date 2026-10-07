@@ -52,7 +52,7 @@ public class InquiriesController(IInquiryService inquiries) : Controller
     public async Task<IActionResult> UpdateStatus(int id, InquiryStatus status, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await inquiries.UpdateStatusAsync(id, status, internalNotes, User.Identity?.Name, ct);
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã cập nhật." : error;
+        this.FlashResult(ok, "Đã cập nhật liên hệ.", error);
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }

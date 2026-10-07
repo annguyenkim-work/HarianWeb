@@ -31,6 +31,10 @@ public static class AdminNavigation
             new("Tin tức", "Posts", "Index", Permissions.Posts.Manage, new Dictionary<string, string> { ["kind"] = "News" }),
             new("Tin tuyển dụng", "Posts", "Index", Permissions.Posts.Manage, new Dictionary<string, string> { ["kind"] = "Job" }),
         ]),
+        new("Nhân sự",
+        [
+            new("Nhân viên", "Employees", "Index", Permissions.Employees.View),
+        ]),
         new("Cài đặt website",
         [
             new("Trang nội dung", "Pages", "Index", Permissions.CmsPages.View),

@@ -7,10 +7,6 @@
     <button type="button" class="btn-icon btn-primary" id="btn-add-user" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
 </div>
 
-@if (TempData["Success"] is string ok)
-{
-    <p class="text-success">@ok</p>
-}
 
 <table class="data-table">
     <thead>
@@ -28,10 +24,20 @@
         <tr>
             <td>@u.Email</td>
             <td>@(string.IsNullOrWhiteSpace(u.FullName) ? "-" : u.FullName)</td>
-            <td>@(u.Roles.Count == 0 ? "-" : string.Join(", ", u.Roles.Select(AppRoles.Label)))</td>
+            <td>
+                @(u.Roles.Count == 0 ? "-" : string.Join(", ", u.Roles.Select(AppRoles.Label)))
+                @if (UserRolePolicy.NeedsRoleReview(u.Roles))
+                {
+                    <span class="badge badge--warning" data-role-review>Cần chọn lại role</span>
+                }
+            </td>
             <td>@(u.IsActive ? "Đang hoạt động" : "Đã khóa")</td>
             <td class="actions">
                 <button type="button" class="btn-icon btn-edit-user" data-id="@u.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                @if (User.HasPermission(Permissions.Employees.View))
+                {
+                    <a class="btn-icon" asp-controller="Employees" asp-action="Index" asp-route-q="@u.Email" title="Hồ sơ nhân viên" aria-label="Hồ sơ nhân viên" data-employee-link><i class="fa-solid fa-id-card" aria-hidden="true"></i></a>
+                }
             </td>
         </tr>
     }
@@ -66,10 +72,12 @@
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('application/json')) {
         const data = await res.json();
-        if (data.ok) { location.reload(); return; }
+        if (data.ok) { adminToast.reloadWith(data.message); return; }
+        adminToast.jsonError(data);
       } else {
         body.innerHTML = await res.text();
         bindForm();
+        adminToast.formErrors(body);
       }
     });
     body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());

@@ -96,7 +96,12 @@ public class ProductsController(
             ModelState.AddModelError(string.Empty, error ?? "Lỗi lưu.");
             return PartialView("_ProductForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action(nameof(Index), new { area = "Admin" }) });
+        return Json(new
+        {
+            ok = true,
+            message = model.Id is null ? "Đã thêm sản phẩm." : "Đã cập nhật sản phẩm.",
+            redirect = Url.Action(nameof(Index), new { area = "Admin" })
+        });
     }
 
     [HttpPost]
@@ -165,6 +170,7 @@ public class ProductsController(
         var p = await products.GetProductAsync(id, ct);
         if (p is null) return NotFound();
         await products.MoveProductAsync(id, direction, ct);
+        this.FlashSuccess("Đã đổi thứ tự sản phẩm.");
         return AdminListRedirect.ToRefererOrIndex(this, new { area = "Admin", categoryId });
     }
 
@@ -175,8 +181,8 @@ public class ProductsController(
     {
         var p = await products.GetProductAsync(id, ct);
         if (p is null)
-            return Json(new { ok = false, error = "Không tìm thấy." });
+            return this.JsonFail("Không tìm thấy sản phẩm.");
         var (ok, error) = await products.DeleteProductAsync(id, ct);
-        return Json(new { ok, error });
+        return ok ? Json(new { ok = true, message = "Đã lưu trữ sản phẩm." }) : this.JsonFail(error);
     }
 }

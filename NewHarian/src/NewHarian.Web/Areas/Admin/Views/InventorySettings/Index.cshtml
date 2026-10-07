@@ -10,10 +10,6 @@
     <h1>Cài đặt kho</h1>
 </div>
 
-@if (TempData["Success"] is string ok)
-{
-    <p class="text-success">@ok</p>
-}
 
 <section class="admin-card" style="margin-bottom:1.5rem;max-width:520px">
     <h2>Ngưỡng cảnh báo</h2>
@@ -118,10 +114,13 @@
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('application/json')) {
         const data = await res.json();
-        if (data.ok) { location.href = data.redirect || location.href; return; }
+        if (data.ok) { adminToast.reloadWith(data.message, data.redirect || location.href); return; }
+        adminToast.jsonError(data);
+        return;
       }
       body.innerHTML = await res.text();
       bindForm();
+      adminToast.formErrors(body);
     });
   }
 

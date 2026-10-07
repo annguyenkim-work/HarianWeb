@@ -182,8 +182,8 @@
     } else return;
     const res = await fetch(url, { method: 'POST', body: fd });
     const json = await res.json();
-    if (json.ok) location.reload();
-    else alert(json.error || 'Lỗi');
+    if (json.ok) adminToast.reloadWith(json.message);
+    else adminToast.jsonError(json);
   });
 
   function reindexLines(root) {
@@ -262,7 +262,7 @@
       try {
         const res = await fetch(pickUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Silent': '1' },
           body: JSON.stringify(lines)
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -350,12 +350,14 @@
       if (ct.includes('application/json')) {
         const data = await res.json();
         if (data.ok) {
-          location.href = data.redirect || location.pathname;
+          adminToast.reloadWith(data.message, data.redirect || location.pathname);
           return;
         }
+        adminToast.jsonError(data);
       } else {
         createBody.innerHTML = await res.text();
         bindCreateForm();
+        adminToast.formErrors(createBody);
       }
     });
 
@@ -376,6 +378,12 @@
         const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
         importBody.innerHTML = await res.text();
         bindImportForm();
+        const result = importBody.querySelector('.import-orders-result');
+        if (!result) { adminToast.formErrors(importBody); return; }
+        const created = Number(result.dataset.created || 0);
+        const errors = Number(result.dataset.errors || 0);
+        if (errors > 0) adminToast.error(`Import xong: tạo ${created} đơn, ${errors} lỗi. Xem chi tiết trong bảng kết quả.`);
+        else adminToast.success(`Đã import ${created} đơn.`);
       });
     }
     importBody.querySelectorAll('[data-close]').forEach(btn => {

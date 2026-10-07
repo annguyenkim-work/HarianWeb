@@ -79,10 +79,10 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
         var (ok, error, _) = await posts.SaveAsync(model, ct);
         if (!ok)
         {
-            TempData["Error"] = error;
+            this.FlashError(error);
             return View(model);
         }
-        TempData["Success"] = "Đã lưu.";
+        this.FlashSuccess(model.Kind == PostKind.Job ? "Đã lưu tin tuyển dụng." : "Đã lưu tin tức.");
         return RedirectToAction(nameof(Index), new { kind = model.Kind, area = "Admin" });
     }
 
@@ -113,6 +113,7 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
     public async Task<IActionResult> Move(int id, int direction, PostKind kind, CancellationToken ct)
     {
         await posts.MoveAsync(id, direction, ct);
+        this.FlashSuccess("Đã đổi thứ tự bài viết.");
         return AdminListRedirect.ToRefererOrIndex(this, new { kind, area = "Admin" });
     }
 
@@ -122,7 +123,7 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
     public async Task<IActionResult> Delete(int id, PostKind kind, CancellationToken ct)
     {
         var (ok, error) = await posts.DeleteAsync(id, ct);
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã xóa." : error;
+        this.FlashResult(ok, "Đã xóa bài viết.", error);
         return AdminListRedirect.ToRefererOrIndex(this, new { kind, area = "Admin" });
     }
 }

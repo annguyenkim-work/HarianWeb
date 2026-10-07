@@ -63,6 +63,10 @@
                         <p class="admin-notify__empty muted" id="admin-notify-empty" hidden>No notifications</p>
                     </div>
                 </div>
+                @if (User.HasPermission(Permissions.MyProfile.Edit))
+                {
+                    <a class="btn-link" asp-area="Admin" asp-controller="MyProfile" asp-action="Index" id="admin-my-profile">Hồ sơ của tôi</a>
+                }
                 <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" class="inline">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn-link">Đăng xuất</button>
@@ -106,6 +110,8 @@
     <main class="admin-main">
         @RenderBody()
     </main>
+    <partial name="_AdminToasts" />
+    <script src="~/js/admin-toast.js" asp-append-version="true"></script>
     <script src="~/js/admin-fetch-guard.js" asp-append-version="true"></script>
     <script src="~/lib/microsoft/signalr/signalr.min.js" asp-append-version="true"></script>
     <script>
@@ -142,6 +148,8 @@
       const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value
         || document.querySelector('#admin-notify ~ form input[name="__RequestVerificationToken"]')?.value
         || document.querySelector('.admin-header__end input[name="__RequestVerificationToken"]')?.value;
+
+      const silent = { 'X-Admin-Silent': '1' };
 
       function antiForgeryFormData() {
         const fd = new FormData();
@@ -186,7 +194,7 @@
 
       async function refreshCount() {
         try {
-          const res = await fetch('/admin/Notifications/UnreadCount');
+          const res = await fetch('/admin/Notifications/UnreadCount', { headers: silent });
           if (!res.ok) return;
           const data = await res.json();
           setBadge(data.count || 0);
@@ -195,7 +203,7 @@
 
       async function refreshList() {
         try {
-          const res = await fetch('/admin/Notifications?take=20');
+          const res = await fetch('/admin/Notifications?take=20', { headers: silent });
           if (!res.ok) return;
           const items = await res.json();
           renderItems(items);
@@ -223,7 +231,7 @@
         const fd = antiForgeryFormData();
         fd.append('id', id);
         try {
-          await fetch('/admin/Notifications/MarkRead', { method: 'POST', body: fd });
+          await fetch('/admin/Notifications/MarkRead', { method: 'POST', body: fd, headers: silent });
         } catch { /* ignore */ }
         location.href = a.getAttribute('href');
       });

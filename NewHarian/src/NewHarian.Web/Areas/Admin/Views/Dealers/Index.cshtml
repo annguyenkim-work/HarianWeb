@@ -18,8 +18,6 @@
     </div>
 </div>
 
-@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
-@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 
 <form method="get" class="filter-bar filter-bar--row">
     <input type="hidden" name="sort" value="@sort" />
@@ -123,8 +121,8 @@
     } else return;
     const res = await fetch(url, { method: 'POST', body: fd });
     const json = await res.json();
-    if (json.ok) location.reload();
-    else alert(json.error || 'Lỗi');
+    if (json.ok) adminToast.reloadWith(json.message);
+    else adminToast.jsonError(json);
   });
   body?.addEventListener('submit', async e => {
     const form = e.target.closest('#dealer-create-form');
@@ -132,8 +130,8 @@
     e.preventDefault();
     const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'Accept': 'application/json' } });
     const json = await res.json();
-    if (json.ok) location.reload();
-    else alert(json.error || 'Lỗi');
+    if (json.ok) adminToast.reloadWith(json.message);
+    else adminToast.jsonError(json);
   });
 })();
 </script>

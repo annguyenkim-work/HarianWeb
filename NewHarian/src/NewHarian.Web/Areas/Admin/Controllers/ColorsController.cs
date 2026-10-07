@@ -40,7 +40,12 @@ public class ColorsController(IAdminColorService colors) : Controller
             ModelState.AddModelError(string.Empty, error ?? "Lỗi lưu.");
             return PartialView("_ColorForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action(nameof(Index), new { area = "Admin" }) });
+        return Json(new
+        {
+            ok = true,
+            message = model.Id is null ? "Đã thêm màu." : "Đã cập nhật màu.",
+            redirect = Url.Action(nameof(Index), new { area = "Admin" })
+        });
     }
 
     [HttpPost]
@@ -49,8 +54,7 @@ public class ColorsController(IAdminColorService colors) : Controller
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         var (ok, error) = await colors.DeleteAsync(id, ct);
-        if (!ok)
-            TempData["Error"] = error;
+        this.FlashResult(ok, "Đã xóa màu.", error);
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }

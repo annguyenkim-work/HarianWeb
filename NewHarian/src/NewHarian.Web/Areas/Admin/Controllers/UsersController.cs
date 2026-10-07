@@ -39,6 +39,11 @@ public class UsersController(IAdminUserService users) : Controller
             model.Password = null;
             return PartialView("_UserForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action(nameof(Index), new { area = "Admin" }) });
+        return Json(new
+        {
+            ok = true,
+            message = model.Id is null ? "Đã thêm user." : "Đã cập nhật user.",
+            redirect = Url.Action(nameof(Index), new { area = "Admin" })
+        });
     }
 }

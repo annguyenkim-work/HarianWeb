@@ -13,6 +13,7 @@ public static class RolePermissionMap
         Permissions.Dashboard.View,
         Permissions.Help.View,
         Permissions.Notifications.View,
+        Permissions.MyProfile.Edit,
     ];
 
     private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> Map =
@@ -125,7 +126,9 @@ public static class RolePermissionMap
                 Permissions.CmsPages.EditMeta,
                 Permissions.CmsPages.ManageBlocks,
                 Permissions.Menus.Manage,
-                Permissions.HomeSlides.Manage),
+                Permissions.HomeSlides.Manage,
+                Permissions.Employees.View,
+                Permissions.Employees.Manage),
 
             [AppRoles.HrStaff] = Set(
                 Permissions.Products.View,
@@ -136,7 +139,8 @@ public static class RolePermissionMap
                 Permissions.Posts.UploadImage,
                 Permissions.CmsPages.View,
                 Permissions.CmsPages.ManageBlocks,
-                Permissions.HomeSlides.Manage),
+                Permissions.HomeSlides.Manage,
+                Permissions.Employees.View),
 
             // Pre-RBAC Staff: unchanged access until reassigned.
             [AppRoles.LegacyStaff] = Set(

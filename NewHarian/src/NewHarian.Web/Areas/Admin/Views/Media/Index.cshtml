@@ -1,8 +1,6 @@
 @model IReadOnlyList<NewHarian.Domain.Entities.MediaFile>
 @{ ViewData["Title"] = "Media"; Layout = "_AdminLayout"; }
 <div class="admin-toolbar"><h1>Media library</h1></div>
-@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
-@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 <p class="img-size-hint" style="max-width:720px;margin-bottom:1rem">
     <strong>Kích thước đề xuất theo nơi dùng:</strong>
     Sản phẩm / SKU <strong>800×800</strong> · Danh mục <strong>600×400</strong> · Slide home <strong>1920×600</strong> ·

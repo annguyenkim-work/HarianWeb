@@ -21,6 +21,19 @@ public sealed class AdminShell(IPage page)
     }
 }
 
+/// <summary>Success / failure toasts (admin-toast.js). Toasts raised while a dialog is open live inside it.</summary>
+public sealed class AdminToasts(IPage page)
+{
+    public ILocator Success => page.Locator(".admin-toast--success");
+    public ILocator Error => page.Locator(".admin-toast--error");
+
+    public async Task ExpectSuccessAsync(string text)
+        => await Expect(Success.Filter(new() { HasText = text })).ToHaveCountAsync(1);
+
+    public async Task ExpectErrorAsync(string text)
+        => await Expect(Error.Filter(new() { HasText = text }).First).ToBeVisibleAsync();
+}
+
 /// <summary>
 /// Admin list with a detail modal whose status buttons POST and then <c>location.reload()</c> (Orders, Service bookings).
 /// </summary>
@@ -29,8 +42,6 @@ public abstract class AdminStatusListPage
     private readonly string _listPath;
     private readonly string _detailButtonSelector;
     private readonly string _postPathPrefix;
-    private string? _lastDialog;
-    private TaskCompletionSource<string>? _dialogWaiter;
 
     protected AdminStatusListPage(IPage page, string listPath, string modalBodySelector, string detailButtonSelector, string postPathPrefix)
     {
@@ -39,17 +50,12 @@ public abstract class AdminStatusListPage
         _detailButtonSelector = detailButtonSelector;
         _postPathPrefix = postPathPrefix;
         Modal = page.Locator(modalBodySelector);
-        // Rejected actions surface as alert(json.error); keep the text for the failure message.
-        page.Dialog += async (_, d) =>
-        {
-            _lastDialog = d.Message;
-            _dialogWaiter?.TrySetResult(d.Message);
-            await d.DismissAsync();
-        };
+        Toasts = new AdminToasts(page);
     }
 
     protected IPage Page { get; }
     public ILocator Modal { get; }
+    public AdminToasts Toasts { get; }
     public ILocator HistoryMessages => Modal.Locator(".status-history__message");
 
     public ILocator Row(string number) => Page.Locator("tbody tr[data-id]").Filter(new() { HasText = number });
@@ -78,7 +84,6 @@ public abstract class AdminStatusListPage
     /// </summary>
     public async Task RunActionAsync(string number, string buttonLabel, string expectedStatus)
     {
-        _lastDialog = null;
         var response = await Page.RunAndWaitForResponseAsync(
             () => ActionButton(buttonLabel).ClickAsync(),
             r => r.Request.Method == "POST" && r.Url.Contains(_postPathPrefix, StringComparison.OrdinalIgnoreCase));
@@ -86,31 +91,26 @@ public abstract class AdminStatusListPage
 
         try
         {
-            // Old DOM keeps the previous status until location.reload() lands, so this waits for the reload.
+            // Old DOM keeps the previous status until the reload lands, so this waits for the reload.
             await ExpectStatusAsync(number, expectedStatus);
         }
-        catch (PlaywrightException ex) when (_lastDialog is not null)
+        catch (PlaywrightException ex)
         {
-            throw new InvalidOperationException($"{buttonLabel} rejected by the app: {_lastDialog}", ex);
+            if (await Toasts.Error.CountAsync() == 0) throw;
+            throw new InvalidOperationException(
+                $"{buttonLabel} rejected by the app: {await Toasts.Error.Last.InnerTextAsync()}", ex);
         }
         await Page.WaitForLoadStateAsync(LoadState.Load);
         await OpenDetailAsync(number);
     }
 
-    /// <summary>Clicks an action that must be blocked by an alert; returns the alert text.</summary>
-    public async Task<string> ClickExpectingAlertAsync(string buttonLabel)
+    /// <summary>Clicks an action that must be blocked with an error toast; returns the toast text.</summary>
+    public async Task<string> ClickExpectingErrorToastAsync(string buttonLabel)
     {
-        var waiter = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _dialogWaiter = waiter;
-        try
-        {
-            await ActionButton(buttonLabel).ClickAsync();
-            return await waiter.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        }
-        finally
-        {
-            _dialogWaiter = null;
-        }
+        var before = await Toasts.Error.CountAsync();
+        await ActionButton(buttonLabel).ClickAsync();
+        await Expect(Toasts.Error).ToHaveCountAsync(before + 1);
+        return await Toasts.Error.Last.InnerTextAsync();
     }
 }
 

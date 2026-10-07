@@ -1,0 +1,23 @@
+@{
+    var modelState = ViewContext.ViewData.ModelState;
+    var isPostWithInvalidForm = HttpMethods.IsPost(Context.Request.Method) && !modelState.IsValid;
+    var formErrors = modelState.TryGetValue(string.Empty, out var formEntry)
+        ? formEntry.Errors.Select(e => e.ErrorMessage)
+        : null;
+    var toasts = AdminToast.Resolve(
+        TempData[AdminFeedback.SuccessKey] as string,
+        TempData[AdminFeedback.ErrorKey] as string,
+        isPostWithInvalidForm,
+        formErrors);
+}
+<div id="admin-toasts" class="admin-toasts" aria-live="polite">
+    @foreach (var t in toasts)
+    {
+        var isError = t.Kind == AdminToastKind.Error;
+        <div class="admin-toast admin-toast--@(isError ? "error" : "success")" role="@(isError ? "alert" : "status")" data-server-toast>
+            <i class="fa-solid @(isError ? "fa-circle-exclamation" : "fa-circle-check")" aria-hidden="true"></i>
+            <span class="admin-toast__text">@t.Text</span>
+            <button type="button" class="admin-toast__close" aria-label="Đóng">&times;</button>
+        </div>
+    }
+</div>

@@ -43,8 +43,6 @@
     </select>
 </form>
 
-@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
-@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 @if (hasReorder && !canReorder)
 {
     <p class="muted">Chọn một danh mục để sắp xếp thứ tự hiển thị bằng ↑/↓. Mục mới tự động xếp cuối trong danh mục (theo loại).</p>
@@ -433,6 +431,7 @@
         if (status) status.textContent = 'Đã tải lên.';
       } catch (err) {
         if (status) status.textContent = isCropCancelled(err) ? '' : (err.message || 'Upload lỗi');
+        if (!isCropCancelled(err)) adminToast.error(err.message || 'Upload lỗi');
       } finally {
         if (input) input.value = '';
       }
@@ -459,7 +458,7 @@
           const data = await uploadProductImage(form, cropped);
           setVariantImageCell(cell, data);
         } catch (err) {
-          if (!isCropCancelled(err)) alert(err.message || 'Upload lỗi');
+          if (!isCropCancelled(err)) adminToast.error(err.message || 'Upload lỗi');
           e.target.value = '';
         }
       }
@@ -557,7 +556,7 @@
       const res = await fetch(`${editBase}/Preview`, { method: 'POST', body: fd });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) {
-        alert(data?.error || 'Không tạo được bản xem trước.');
+        adminToast.jsonError(data, 'Không tạo được bản xem trước.');
         return;
       }
       window.open(data.url, '_blank');
@@ -571,12 +570,14 @@
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('application/json')) {
         const data = await res.json();
-        if (data.ok) { location.reload(); return; }
+        if (data.ok) { adminToast.reloadWith(data.message); return; }
+        adminToast.jsonError(data);
       } else {
         destroyEditors();
         body.innerHTML = await res.text();
         bindForm();
         initEditors();
+        adminToast.formErrors(body);
       }
     });
 
@@ -603,8 +604,8 @@
       if (!confirm('Archive sản phẩm này? (không xóa dữ liệu)')) return;
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
       const data = await res.json().catch(() => null);
-      if (data?.ok) { location.reload(); return; }
-      alert(data?.error || 'Không archive được.');
+      if (data?.ok) { adminToast.reloadWith(data.message); return; }
+      adminToast.jsonError(data, 'Không archive được.');
     });
   });
 })();

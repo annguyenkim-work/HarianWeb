@@ -29,7 +29,7 @@ public class InventorySettingsController(ISiteSettingsService settings, IInvento
             return View(model);
         }
 
-        TempData["Success"] = "Đã lưu cài đặt kho.";
+        this.FlashSuccess("Đã lưu cài đặt kho.");
         return RedirectToAction(nameof(Index), new { area = "Admin" });
     }
 }
