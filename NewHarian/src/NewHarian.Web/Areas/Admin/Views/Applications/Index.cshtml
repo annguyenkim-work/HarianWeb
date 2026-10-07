@@ -11,8 +11,6 @@
     var dir = (string)(ViewBag.Dir ?? "desc");
 }
 <div class="admin-toolbar"><h1>Hồ sơ tuyển dụng</h1></div>
-@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
-@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 <form method="get" class="filter-bar filter-bar--row">
     <input type="hidden" name="sort" value="@sort" />
     <input type="hidden" name="dir" value="@dir" />

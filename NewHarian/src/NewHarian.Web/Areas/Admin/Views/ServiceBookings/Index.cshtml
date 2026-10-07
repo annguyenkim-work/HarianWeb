@@ -109,11 +109,11 @@
     if (btn.dataset.status === 'Completed') {
       const digits = citizenId.replace(/\D/g, '');
       if (digits.length !== 9 && digits.length !== 12) {
-        alert('Vui lòng nhập CCCD / CMND (9 hoặc 12 chữ số) khi hoàn thành dịch vụ.');
+        adminToast.error('Vui lòng nhập CCCD / CMND (9 hoặc 12 chữ số) khi hoàn thành dịch vụ.');
         return;
       }
       if (amount === '') {
-        alert('Vui lòng nhập thành tiền khi hoàn thành dịch vụ.');
+        adminToast.error('Vui lòng nhập thành tiền khi hoàn thành dịch vụ.');
         return;
       }
     }
@@ -126,8 +126,8 @@
     fd.append('amount', amount);
     const res = await fetch('@Url.Action("UpdateStatus")', { method: 'POST', body: fd });
     const json = await res.json();
-    if (json.ok) location.reload();
-    else alert(json.error || 'Lỗi');
+    if (json.ok) adminToast.reloadWith(json.message);
+    else adminToast.jsonError(json);
   });
 })();
 </script>

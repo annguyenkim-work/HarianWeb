@@ -63,7 +63,12 @@ public class CategoriesController(IAdminCategoryService categories, IMediaStorag
             ModelState.AddModelError(string.Empty, error ?? "Lỗi lưu.");
             return PartialView("_CategoryForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action(nameof(Index), new { area = "Admin" }) });
+        return Json(new
+        {
+            ok = true,
+            message = model.Id is null ? "Đã thêm danh mục." : "Đã cập nhật danh mục.",
+            redirect = Url.Action(nameof(Index), new { area = "Admin" })
+        });
     }
 
     [HttpPost]
@@ -72,6 +77,7 @@ public class CategoriesController(IAdminCategoryService categories, IMediaStorag
     public async Task<IActionResult> Move(int id, int direction, CancellationToken ct)
     {
         await categories.MoveCategoryAsync(id, direction, ct);
+        this.FlashSuccess("Đã đổi thứ tự danh mục.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 
@@ -81,7 +87,7 @@ public class CategoriesController(IAdminCategoryService categories, IMediaStorag
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         var (ok, error) = await categories.DeleteCategoryAsync(id, ct);
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã vô hiệu hóa danh mục." : error;
+        this.FlashResult(ok, "Đã vô hiệu hóa danh mục.", error);
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }

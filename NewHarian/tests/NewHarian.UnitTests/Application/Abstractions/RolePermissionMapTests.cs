@@ -19,7 +19,7 @@ public class RolePermissionMapTests
     }
 
     [Fact]
-    public void Every_internal_role_can_open_dashboard_help_and_notifications()
+    public void Every_internal_role_can_open_dashboard_help_notifications_and_own_profile()
     {
         foreach (var role in RolePermissionMap.InternalRoles)
         {
@@ -27,6 +27,7 @@ public class RolePermissionMapTests
             Assert.Contains(Permissions.Dashboard.View, set);
             Assert.Contains(Permissions.Help.View, set);
             Assert.Contains(Permissions.Notifications.View, set);
+            Assert.Contains(Permissions.MyProfile.Edit, set);
         }
     }
 
@@ -59,6 +60,8 @@ public class RolePermissionMapTests
     [InlineData(Permissions.Menus.Manage, new[] { AppRoles.SuperAdmin, AppRoles.HrManager })]
     [InlineData(Permissions.Dashboard.ViewRevenue, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager })]
     [InlineData(Permissions.Users.Manage, new[] { AppRoles.SuperAdmin })]
+    [InlineData(Permissions.Employees.View, new[] { AppRoles.SuperAdmin, AppRoles.HrManager, AppRoles.HrStaff })]
+    [InlineData(Permissions.Employees.Manage, new[] { AppRoles.SuperAdmin, AppRoles.HrManager })]
     [InlineData(Permissions.Products.SuggestVariants, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager, AppRoles.SalesStaff, AppRoles.WarehouseManager, AppRoles.WarehouseStaff, AppRoles.LegacyStaff })]
     public void Sensitive_permissions_match_role_matrix(string permission, string[] expectedRoles)
     {

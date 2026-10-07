@@ -2,17 +2,22 @@
 @using NewHarian.Application.Abstractions
 @{
     var isNew = Model.Id is null;
-    var hasLegacyStaff = Model.Roles.Contains(AppRoles.LegacyStaff);
-    var roleOptions = hasLegacyStaff ? AppRoles.Assignable.Append(AppRoles.LegacyStaff) : AppRoles.Assignable;
+    var roleOptions = UserRolePolicy.Options(Model.CurrentRoles);
+    var needsReview = UserRolePolicy.NeedsRoleReview(Model.CurrentRoles);
+    var isLegacyOnly = !needsReview && Model.CurrentRoles.Contains(AppRoles.LegacyStaff);
 }
 
 <form asp-area="Admin" asp-controller="Users" asp-action="Save" method="post" id="user-edit-form">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
+    @foreach (var r in Model.CurrentRoles)
+    {
+        <input type="hidden" name="CurrentRoles" value="@r" />
+    }
     <h2>@(isNew ? "Thêm user" : "Sửa user")</h2>
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <div class="form-grid">
+    <div class="form-grid form-grid--2 user-form">
         <label>
             Email *
             @if (isNew)
@@ -21,7 +26,7 @@
             }
             else
             {
-                <input asp-for="Email" class="form-control" readonly />
+                <input asp-for="Email" class="form-control" readonly tabindex="-1" />
             }
         </label>
         <label>
@@ -29,22 +34,36 @@
             <input asp-for="FullName" class="form-control" />
         </label>
         <label>
-            @(isNew ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu không đổi)")
+            @(isNew ? "Mật khẩu *" : "Mật khẩu mới")
             <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" required="@(isNew)" />
+            @if (!isNew)
+            {
+                <small class="form-hint">Để trống nếu không đổi.</small>
+            }
         </label>
-        <label><input asp-for="IsActive" /> Đang hoạt động</label>
+        <label>
+            Role *
+            <select asp-for="Role" class="form-control" required>
+                <option value="">Chọn</option>
+                @foreach (var role in roleOptions)
+                {
+                    <option value="@role" selected="@(Model.Role == role)">@AppRoles.Label(role)</option>
+                }
+            </select>
+        </label>
+        <label class="full"><input asp-for="IsActive" /> Đang hoạt động</label>
 
-        <fieldset class="full">
-            <legend>Role *</legend>
-            @foreach (var role in roleOptions)
-            {
-                <label><input type="checkbox" name="Roles" value="@role" checked="@Model.Roles.Contains(role)" /> @AppRoles.Label(role)</label>
-            }
-            @if (hasLegacyStaff)
-            {
-                <p class="muted">Staff (cũ) giữ quyền như trước khi phân quyền mới. Hãy chọn role phòng ban rồi bỏ tick Staff (cũ).</p>
-            }
-        </fieldset>
+        @if (needsReview)
+        {
+            <p class="form-note full" data-role-review>
+                User đang có nhiều role: <strong>@string.Join(", ", Model.CurrentRoles.Select(AppRoles.Label))</strong>.
+                Mỗi user chỉ có 1 role, hãy chọn 1 role rồi bấm Lưu.
+            </p>
+        }
+        else if (isLegacyOnly)
+        {
+            <p class="form-note full">Staff (cũ) giữ quyền như trước khi phân quyền mới. Hãy chọn role phòng ban thay cho Staff (cũ).</p>
+        }
     </div>
 
     <div class="modal__actions">

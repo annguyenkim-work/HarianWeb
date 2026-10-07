@@ -1,0 +1,27 @@
+@model NewHarian.Application.Hr.EmployeeProfileForm
+@{
+    var canManage = User.HasPermission(Permissions.Employees.Manage);
+    var fieldsData = new ViewDataDictionary(ViewData)
+    {
+        ["PersonalEditable"] = canManage,
+        ["HrEditable"] = canManage,
+        ["ShowHrNotes"] = true
+    };
+}
+
+<form asp-area="Admin" asp-controller="Employees" asp-action="Save" method="post" id="employee-edit-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="UserId" />
+    <h2>@(canManage ? "Sửa hồ sơ nhân viên" : "Hồ sơ nhân viên")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <partial name="_EmployeeProfileFields" model="Model" view-data="fieldsData" />
+
+    <div class="modal__actions">
+        <button type="button" data-close class="btn-secondary">@(canManage ? "Hủy" : "Đóng")</button>
+        @if (canManage)
+        {
+            <button type="submit" class="btn-primary">Lưu</button>
+        }
+    </div>
+</form>

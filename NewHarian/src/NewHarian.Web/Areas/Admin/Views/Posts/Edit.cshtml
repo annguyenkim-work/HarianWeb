@@ -10,7 +10,6 @@
     <a class="btn-link" asp-action="Index" asp-route-kind="@kind">← Danh sách</a>
 </div>
 
-@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 
 <form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:900px" id="post-form">
     @Html.AntiForgeryToken()

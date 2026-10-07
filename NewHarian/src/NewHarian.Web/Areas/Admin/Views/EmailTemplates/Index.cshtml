@@ -8,10 +8,6 @@
     <a class="btn-secondary" asp-controller="Settings" asp-action="Email">Email &amp; SMTP</a>
 </div>
 
-@if (TempData["Success"] is string ok)
-{
-    <p class="text-success">@ok</p>
-}
 
 <p class="muted">Chỉnh tiêu đề và nội dung rich text. Dùng placeholder dạng <code>{{CustomerName}}</code> - hệ thống tự thay khi gửi.</p>
 

@@ -3,7 +3,7 @@
     Layout = null;
 }
 
-<div class="import-orders-result">
+<div class="import-orders-result" data-created="@Model.CreatedCount" data-errors="@Model.Errors.Count">
     <h2>Kết quả import</h2>
     <p>Đã tạo <strong>@Model.CreatedCount</strong> đơn.
         @if (Model.CreatedOrderNumbers.Count > 0)

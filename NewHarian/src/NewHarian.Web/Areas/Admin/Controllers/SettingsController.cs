@@ -18,7 +18,7 @@ public class SettingsController(ISiteSettingsService settings) : Controller
     public async Task<IActionResult> Index(BankSettingsDto model, CancellationToken ct)
     {
         await settings.SaveBankAsync(model, ct);
-        TempData["Success"] = "Đã lưu thông tin ngân hàng / VietQR.";
+        this.FlashSuccess("Đã lưu thông tin ngân hàng / VietQR.");
         return RedirectToAction(nameof(Index), new { area = "Admin" });
     }
 
@@ -32,21 +32,29 @@ public class SettingsController(ISiteSettingsService settings) : Controller
         IFormFile? logoFile,
         CancellationToken ct)
     {
-        if (logoFile is { Length: > 0 })
+        try
         {
-            await using var stream = logoFile.OpenReadStream();
-            await settings.SaveBrandAsync(model, new SettingsFileUpload(
-                stream,
-                logoFile.FileName,
-                logoFile.ContentType,
-                User.Identity?.Name), ct);
+            if (logoFile is { Length: > 0 })
+            {
+                await using var stream = logoFile.OpenReadStream();
+                await settings.SaveBrandAsync(model, new SettingsFileUpload(
+                    stream,
+                    logoFile.FileName,
+                    logoFile.ContentType,
+                    User.Identity?.Name), ct);
+            }
+            else
+            {
+                await settings.SaveBrandAsync(model, null, ct);
+            }
         }
-        else
+        catch (InvalidOperationException ex)
         {
-            await settings.SaveBrandAsync(model, null, ct);
+            this.FlashError(ex.Message);
+            return RedirectToAction(nameof(Brand), new { area = "Admin" });
         }
 
-        TempData["Success"] = "Đã lưu thương hiệu, footer và giao diện header.";
+        this.FlashSuccess("Đã lưu thương hiệu, footer và giao diện header.");
         return RedirectToAction(nameof(Brand), new { area = "Admin" });
     }
 
@@ -55,7 +63,7 @@ public class SettingsController(ISiteSettingsService settings) : Controller
     public async Task<IActionResult> ClearLogo(CancellationToken ct)
     {
         await settings.ClearLogoAsync(ct);
-        TempData["Success"] = "Đã gỡ logo. Header sẽ hiện tên thương hiệu dạng chữ.";
+        this.FlashSuccess("Đã gỡ logo. Header sẽ hiện tên thương hiệu dạng chữ.");
         return RedirectToAction(nameof(Brand), new { area = "Admin" });
     }
 
@@ -74,7 +82,7 @@ public class SettingsController(ISiteSettingsService settings) : Controller
             return View(model);
         }
 
-        TempData["Success"] = "Đã lưu email nhận thông báo.";
+        this.FlashSuccess("Đã lưu email nhận thông báo.");
         return RedirectToAction(nameof(Email), new { area = "Admin" });
     }
 
@@ -83,7 +91,7 @@ public class SettingsController(ISiteSettingsService settings) : Controller
     public async Task<IActionResult> TestEmail(string? testTo, CancellationToken ct)
     {
         var result = await settings.TestEmailAsync(testTo, ct);
-        TempData[result.Ok ? "Success" : "Error"] = result.Message;
+        this.FlashResult(result.Ok, result.Message ?? "Đã gửi email thử.", result.Message);
         return RedirectToAction(nameof(Email), new { area = "Admin" });
     }
 }

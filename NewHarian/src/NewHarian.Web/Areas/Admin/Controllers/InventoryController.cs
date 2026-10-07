@@ -53,7 +53,12 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
             ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");
             return PartialView("_LocationForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action("Index", "InventorySettings", new { area = "Admin" }) });
+        return Json(new
+        {
+            ok = true,
+            message = model.Id is null ? "Đã thêm vị trí kho." : "Đã cập nhật vị trí kho.",
+            redirect = Url.Action("Index", "InventorySettings", new { area = "Admin" })
+        });
     }
 
     [HttpGet]
@@ -84,7 +89,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
                 ViewBag.SelectedVariantLabel = await products.GetVariantDisplayAsync(model.ProductVariantId, ct);
             return PartialView("_ReceiveLotForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action(nameof(Index)) });
+        return Json(new { ok = true, message = "Đã nhập lô hàng.", redirect = Url.Action(nameof(Index)) });
     }
 
     [HttpGet]
@@ -113,7 +118,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
             ViewBag.Lot = await inventory.GetLotAsync(model.LotId, ct);
             return PartialView("_AdjustLotForm", model);
         }
-        return Json(new { ok = true, redirect = Url.Action(nameof(Index)) });
+        return Json(new { ok = true, message = "Đã điều chỉnh tồn kho.", redirect = Url.Action(nameof(Index)) });
     }
 
     [HasPermission(Permissions.Inventory.ViewHistory)]

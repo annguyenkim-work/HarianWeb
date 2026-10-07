@@ -17,10 +17,13 @@ public sealed class AdminUserSaveRequest
     /// <summary>Required on create; on edit, empty keeps the current password.</summary>
     public string? Password { get; set; }
     public bool IsActive { get; set; } = true;
-    public List<string> Roles { get; set; } = [];
+    /// <summary>The single role picked in the form (see <see cref="UserRolePolicy"/>).</summary>
+    public string? Role { get; set; }
+    /// <summary>Roles held before this edit, for display only; the service always re-reads them.</summary>
+    public List<string> CurrentRoles { get; set; } = [];
 }
 
-/// <summary>Super Admin management of internal accounts: create, roles, activate/deactivate, reset password.</summary>
+/// <summary>Super Admin management of internal accounts: create, role, activate/deactivate, reset password.</summary>
 public interface IAdminUserService
 {
     Task<IReadOnlyList<AdminUserListItemDto>> ListAsync(CancellationToken ct = default);

@@ -26,8 +26,11 @@ public class ShippingController(IAdminShippingService shipping) : Controller
     public async Task<IActionResult> Save(int provinceId, decimal fee, bool isActive, CancellationToken ct)
     {
         if (!await shipping.SaveAsync(provinceId, fee, isActive, ct))
-            return NotFound();
-        TempData["Success"] = "Đã lưu phí ship.";
+        {
+            this.FlashError("Không tìm thấy tỉnh / thành để lưu phí ship.");
+            return AdminListRedirect.ToRefererOrIndex(this);
+        }
+        this.FlashSuccess("Đã lưu phí ship.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }
@@ -56,12 +59,20 @@ public class MediaController(AppDbContext db, IMediaStorage media) : Controller
     {
         if (file is null || file.Length == 0)
         {
-            TempData["Error"] = "Chọn file.";
+            this.FlashError("Chọn file.");
             return AdminListRedirect.ToRefererOrIndex(this);
         }
-        await using var stream = file.OpenReadStream();
-        await media.SaveImageAsync(stream, file.FileName, file.ContentType, User.Identity?.Name, ct, "media");
-        TempData["Success"] = "Đã upload.";
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            await media.SaveImageAsync(stream, file.FileName, file.ContentType, User.Identity?.Name, ct, "media");
+        }
+        catch (InvalidOperationException ex)
+        {
+            this.FlashError(ex.Message);
+            return AdminListRedirect.ToRefererOrIndex(this);
+        }
+        this.FlashSuccess("Đã upload.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }
@@ -77,9 +88,8 @@ public class MenusController(IMenuAdminService menus) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetActive(int itemId, bool isActive, CancellationToken ct)
     {
-        if (!await menus.SetActiveAsync(itemId, isActive, ct))
-            return NotFound();
-        TempData["Success"] = isActive ? "Đã hiện mục menu." : "Đã ẩn mục menu.";
+        var ok = await menus.SetActiveAsync(itemId, isActive, ct);
+        this.FlashResult(ok, isActive ? "Đã hiện mục menu." : "Đã ẩn mục menu.", "Không tìm thấy mục menu.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 
@@ -87,9 +97,8 @@ public class MenusController(IMenuAdminService menus) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> MoveItem(int itemId, int direction, CancellationToken ct)
     {
-        if (!await menus.MoveItemAsync(itemId, direction, ct))
-            return NotFound();
-        TempData["Success"] = "Đã đổi thứ tự menu.";
+        var ok = await menus.MoveItemAsync(itemId, direction, ct);
+        this.FlashResult(ok, "Đã đổi thứ tự menu.", "Không đổi được thứ tự mục menu.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }
@@ -116,7 +125,7 @@ public class HomeSlidesController(IHomeSlideAdminService slides) : Controller
         {
             await slides.CreateAsync(captionVi, linkUrl, isActive, null, ct);
         }
-        TempData["Success"] = "Đã thêm slide.";
+        this.FlashSuccess("Đã thêm slide.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 
@@ -125,6 +134,7 @@ public class HomeSlidesController(IHomeSlideAdminService slides) : Controller
     public async Task<IActionResult> Move(int id, int direction, CancellationToken ct)
     {
         await slides.MoveAsync(id, direction, ct);
+        this.FlashSuccess("Đã đổi thứ tự slide.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 
@@ -133,6 +143,7 @@ public class HomeSlidesController(IHomeSlideAdminService slides) : Controller
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await slides.DeleteAsync(id, ct);
+        this.FlashSuccess("Đã xóa slide.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 }

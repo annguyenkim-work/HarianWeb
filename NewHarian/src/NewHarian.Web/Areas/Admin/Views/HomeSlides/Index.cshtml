@@ -4,7 +4,6 @@
     Layout = "_AdminLayout";
 }
 <div class="admin-toolbar"><h1>Home slides</h1></div>
-@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
 <form asp-action="Create" method="post" enctype="multipart/form-data" class="form-stack" style="max-width:480px;margin-bottom:2rem">
     @Html.AntiForgeryToken()
     <label>Caption Vi <input name="captionVi" class="form-control" /></label>

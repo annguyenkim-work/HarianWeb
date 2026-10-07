@@ -19,7 +19,6 @@
     <a asp-action="Blocks" asp-route-id="@pageId" class="btn-link">← Nội dung trang</a>
 </div>
 
-@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 @if (!isSupported)
 {
     <p class="text-danger">Đây là kiểu khối cũ. Nên tạo mới bằng một trong bốn kiểu hỗ trợ, rồi xóa khối này.</p>

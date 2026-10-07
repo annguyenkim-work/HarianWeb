@@ -13,16 +13,49 @@ public class AdminUserServiceTests : IClassFixture<NewHarianWebApplicationFactor
 
     public AdminUserServiceTests(NewHarianWebApplicationFactory factory) => _factory = factory;
 
-    [Fact]
-    public async Task Create_rejects_legacy_staff_and_unknown_roles()
+    [Theory]
+    [InlineData(null, UserRolePolicy.RoleRequired)]
+    [InlineData(AppRoles.LegacyStaff, UserRolePolicy.RoleInvalid)]
+    [InlineData("Admin", UserRolePolicy.RoleInvalid)]
+    public async Task Create_rejects_missing_legacy_and_unknown_role(string? role, string expected)
     {
         using var scope = await ScopeAsync();
         var service = scope.ServiceProvider.GetRequiredService<IAdminUserService>();
 
-        var (ok, error, _) = await service.SaveAsync(NewUser("legacy-only", AppRoles.LegacyStaff, "Admin"), actorUserId: null);
+        var (ok, error, _) = await service.SaveAsync(NewUser("bad-role", role), actorUserId: null);
 
         Assert.False(ok);
-        Assert.Equal("Chọn ít nhất một role.", error);
+        Assert.Equal(expected, error);
+    }
+
+    [Fact]
+    public async Task Create_assigns_exactly_the_picked_role()
+    {
+        using var scope = await ScopeAsync();
+        var sp = scope.ServiceProvider;
+        var service = sp.GetRequiredService<IAdminUserService>();
+
+        var (ok, _, id) = await service.SaveAsync(NewUser("one-role", AppRoles.WarehouseStaff), actorUserId: null);
+
+        Assert.True(ok);
+        var users = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        Assert.Equal(new[] { AppRoles.WarehouseStaff }, await users.GetRolesAsync((await users.FindByIdAsync(id!))!));
+    }
+
+    [Fact]
+    public async Task Create_rejects_duplicate_email_with_vietnamese_message()
+    {
+        using var scope = await ScopeAsync();
+        var service = scope.ServiceProvider.GetRequiredService<IAdminUserService>();
+        var first = NewUser("dup", AppRoles.SalesStaff);
+        Assert.True((await service.SaveAsync(first, actorUserId: null)).Ok);
+
+        var again = NewUser("dup", AppRoles.HrStaff);
+        again.Email = first.Email;
+        var (ok, error, _) = await service.SaveAsync(again, actorUserId: null);
+
+        Assert.False(ok);
+        Assert.Equal("Email đã được dùng cho user khác.", error);
     }
 
     [Fact]
@@ -51,37 +84,61 @@ public class AdminUserServiceTests : IClassFixture<NewHarianWebApplicationFactor
         Assert.False((await service.SaveAsync(deactivate, selfId)).Ok);
 
         var demote = (await service.GetForEditAsync(selfId!))!;
-        demote.Roles = [AppRoles.HrManager];
+        demote.Role = AppRoles.HrManager;
         Assert.False((await service.SaveAsync(demote, selfId)).Ok);
     }
 
     [Fact]
-    public async Task Role_change_rotates_security_stamp_and_keeps_legacy_staff_only_while_ticked()
+    public async Task Multi_role_user_needs_a_pick_and_saving_one_role_replaces_all()
     {
         using var scope = await ScopeAsync();
         var sp = scope.ServiceProvider;
         var service = sp.GetRequiredService<IAdminUserService>();
         var users = sp.GetRequiredService<UserManager<ApplicationUser>>();
 
-        var legacy = new ApplicationUser { UserName = "legacy@test.local", Email = "legacy@test.local", IsActive = true };
+        var legacy = new ApplicationUser { UserName = $"multi-{Guid.NewGuid():N}@test.local", Email = $"multi-{Guid.NewGuid():N}@test.local", IsActive = true };
         await users.CreateAsync(legacy, TestUsers.Password);
-        await users.AddToRoleAsync(legacy, AppRoles.LegacyStaff);
+        await users.AddToRolesAsync(legacy, [AppRoles.LegacyStaff, AppRoles.WarehouseStaff]);
         var stampBefore = await users.GetSecurityStampAsync(legacy);
 
         var edit = (await service.GetForEditAsync(legacy.Id))!;
-        Assert.Contains(AppRoles.LegacyStaff, edit.Roles);
-        edit.Roles = [AppRoles.LegacyStaff, AppRoles.WarehouseStaff];
-        Assert.True((await service.SaveAsync(edit, actorUserId: "someone-else")).Ok);
+        Assert.Null(edit.Role);
+        Assert.Equal(new[] { AppRoles.WarehouseStaff, AppRoles.LegacyStaff }, edit.CurrentRoles);
+        Assert.Contains(await service.ListAsync(), u => u.Id == legacy.Id && UserRolePolicy.NeedsRoleReview(u.Roles));
 
-        edit = (await service.GetForEditAsync(legacy.Id))!;
-        Assert.Equal(new[] { AppRoles.WarehouseStaff, AppRoles.LegacyStaff }, edit.Roles);
+        Assert.Equal(UserRolePolicy.RoleRequired, (await service.SaveAsync(edit, actorUserId: "someone-else")).Error);
 
-        edit.Roles = [AppRoles.WarehouseStaff];
+        edit.Role = AppRoles.WarehouseStaff;
         Assert.True((await service.SaveAsync(edit, actorUserId: "someone-else")).Ok);
 
         var reloaded = await users.FindByIdAsync(legacy.Id);
         Assert.Equal(new[] { AppRoles.WarehouseStaff }, await users.GetRolesAsync(reloaded!));
         Assert.NotEqual(stampBefore, await users.GetSecurityStampAsync(reloaded!));
+        Assert.Equal(AppRoles.WarehouseStaff, (await service.GetForEditAsync(legacy.Id))!.Role);
+    }
+
+    [Fact]
+    public async Task Legacy_staff_can_be_kept_but_not_reassigned_after_leaving_it()
+    {
+        using var scope = await ScopeAsync();
+        var sp = scope.ServiceProvider;
+        var service = sp.GetRequiredService<IAdminUserService>();
+        var users = sp.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var legacy = new ApplicationUser { UserName = $"legacy-{Guid.NewGuid():N}@test.local", Email = $"legacy-{Guid.NewGuid():N}@test.local", IsActive = true };
+        await users.CreateAsync(legacy, TestUsers.Password);
+        await users.AddToRoleAsync(legacy, AppRoles.LegacyStaff);
+
+        var edit = (await service.GetForEditAsync(legacy.Id))!;
+        Assert.Equal(AppRoles.LegacyStaff, edit.Role);
+        Assert.True((await service.SaveAsync(edit, actorUserId: "someone-else")).Ok);
+
+        edit.Role = AppRoles.HrStaff;
+        Assert.True((await service.SaveAsync(edit, actorUserId: "someone-else")).Ok);
+
+        edit = (await service.GetForEditAsync(legacy.Id))!;
+        edit.Role = AppRoles.LegacyStaff;
+        Assert.Equal(UserRolePolicy.RoleInvalid, (await service.SaveAsync(edit, actorUserId: "someone-else")).Error);
     }
 
     private async Task<IServiceScope> ScopeAsync()
@@ -91,13 +148,13 @@ public class AdminUserServiceTests : IClassFixture<NewHarianWebApplicationFactor
         return scope;
     }
 
-    internal static AdminUserSaveRequest NewUser(string name, params string[] roles) => new()
+    internal static AdminUserSaveRequest NewUser(string name, string? role) => new()
     {
         Email = $"{name}-{Guid.NewGuid():N}@test.local",
         FullName = name,
         Password = TestUsers.Password,
         IsActive = true,
-        Roles = roles.ToList()
+        Role = role
     };
 }
 
@@ -117,7 +174,7 @@ public class AdminUserServiceLastSuperAdminTests : IClassFixture<NewHarianWebApp
 
         var (_, _, firstId) = await service.SaveAsync(AdminUserServiceTests.NewUser("sa-first", AppRoles.SuperAdmin), actorUserId: null);
         var demote = (await service.GetForEditAsync(firstId!))!;
-        demote.Roles = [AppRoles.SalesManager];
+        demote.Role = AppRoles.SalesManager;
 
         var (blocked, error, _) = await service.SaveAsync(demote, actorUserId: "someone-else");
         Assert.False(blocked);

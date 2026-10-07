@@ -160,6 +160,7 @@ public class OrdersController(
         {
             ok = true,
             orderNumber,
+            message = $"Đã tạo đơn {orderNumber}.",
             redirect = Url.Action(nameof(Index), new { area = "Admin", q = orderNumber })
         });
     }
@@ -211,7 +212,7 @@ public class OrdersController(
     public async Task<IActionResult> ConfirmCod(int id, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await orders.ConfirmCodAsync(id, internalNotes, ct);
-        return Json(new { ok, error });
+        return ok ? Json(new { ok = true, message = "Đã xác nhận COD." }) : this.JsonFail(error);
     }
 
     [HttpPost]
@@ -220,7 +221,7 @@ public class OrdersController(
     public async Task<IActionResult> ConfirmPayment(int id, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await orders.ConfirmBankTransferAsync(id, internalNotes, ct);
-        return Json(new { ok, error });
+        return ok ? Json(new { ok = true, message = "Đã xác nhận chuyển khoản." }) : this.JsonFail(error);
     }
 
     [HttpPost]
@@ -229,9 +230,11 @@ public class OrdersController(
     public async Task<IActionResult> UpdateStatus(int id, OrderStatus status, string? internalNotes, CancellationToken ct)
     {
         if (status == OrderStatus.Cancelled && !User.HasPermission(Permissions.Orders.Cancel))
-            return Json(new { ok = false, error = "Bạn không có quyền hủy đơn." });
+            return this.JsonFail("Bạn không có quyền hủy đơn.");
 
         var (ok, error) = await orders.AdminUpdateStatusAsync(id, status, internalNotes, ActorUserId(), ActorName(), ct);
-        return Json(new { ok, error, status = status.ToString() });
+        return ok
+            ? Json(new { ok = true, status = status.ToString(), message = "Đã cập nhật trạng thái đơn hàng." })
+            : this.JsonFail(error);
     }
 }

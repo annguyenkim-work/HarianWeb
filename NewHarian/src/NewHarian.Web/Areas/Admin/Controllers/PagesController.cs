@@ -39,10 +39,10 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
         var (ok, error) = await cms.SavePageMetaAsync(model, ct);
         if (!ok)
         {
-            TempData["Error"] = error;
+            this.FlashError(error);
             return View(model);
         }
-        TempData["Success"] = "Đã lưu meta trang.";
+        this.FlashSuccess("Đã lưu meta trang.");
         return RedirectToAction(nameof(Edit), new { id = model.Id, area = "Admin" });
     }
 
@@ -122,10 +122,10 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
         var (ok, error, _) = await cms.SaveBlockAsync(model, ct);
         if (!ok)
         {
-            TempData["Error"] = error;
+            this.FlashError(error);
             return View(model);
         }
-        TempData["Success"] = "Đã lưu block.";
+        this.FlashSuccess("Đã lưu block.");
         return RedirectToAction(nameof(Blocks), new { id = model.PageId, area = "Admin" });
     }
 
@@ -158,7 +158,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
     public async Task<IActionResult> DeleteBlock(int pageId, int id, CancellationToken ct)
     {
         var (ok, error) = await cms.DeleteBlockAsync(id, ct);
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã xóa block." : error;
+        this.FlashResult(ok, "Đã xóa block.", error);
         return RedirectToAction(nameof(Blocks), new { id = pageId, area = "Admin" });
     }
 
@@ -168,6 +168,7 @@ public class PagesController(IAdminCmsService cms, IMediaStorage media) : Contro
     public async Task<IActionResult> MoveBlock(int pageId, int id, int direction, CancellationToken ct)
     {
         await cms.MoveBlockAsync(id, direction, ct);
+        this.FlashSuccess("Đã đổi thứ tự block.");
         return RedirectToAction(nameof(Blocks), new { id = pageId, area = "Admin" });
     }
 

@@ -49,20 +49,13 @@ public sealed class RbacJourneyTests(E2EFixture fx)
     }
 
     [E2EFact]
-    public async Task Forbidden_modal_fetch_shows_403_alert_instead_of_access_denied_page()
+    public async Task Forbidden_modal_fetch_shows_403_toast_instead_of_access_denied_page()
     {
         await using var context = await fx.NewRoleContextAsync(AppRoles.WarehouseStaff);
-        await fx.RunAsync(context, nameof(Forbidden_modal_fetch_shows_403_alert_instead_of_access_denied_page), async page =>
+        await fx.RunAsync(context, nameof(Forbidden_modal_fetch_shows_403_toast_instead_of_access_denied_page), async page =>
         {
             await page.GotoAsync("/Admin/Inventory");
             await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Kho", Level = 1 })).ToBeVisibleAsync();
-
-            var dialog = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            page.Dialog += async (_, d) =>
-            {
-                dialog.TrySetResult(d.Message);
-                await d.AcceptAsync();
-            };
 
             // Same path a modal takes: fetch the form partial. Warehouse Staff lacks Inventory.ManageLocations.
             var outcome = await page.EvaluateAsync<string>("""
@@ -76,7 +69,7 @@ public sealed class RbacJourneyTests(E2EFixture fx)
                 }
                 """);
 
-            Assert.Equal("Bạn không có quyền thực hiện thao tác này.", await dialog.Task.WaitAsync(TimeSpan.FromSeconds(10)));
+            await new AdminToasts(page).ExpectErrorAsync("Bạn không có quyền thực hiện thao tác này.");
             Assert.Equal("rejected:Forbidden", outcome);
             await Expect(page).ToHaveURLAsync(new Regex("/Admin/Inventory$", RegexOptions.IgnoreCase));
         });

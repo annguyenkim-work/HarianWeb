@@ -42,8 +42,8 @@ public sealed class ServiceBookingJourneyTests(E2EFixture fx)
             await bookings.RunActionAsync(bookingNo, "Xác nhận lịch", "Confirmed");
 
             // Completion needs CCCD (9/12 digits) + amount; the modal blocks it client-side first.
-            var alert = await bookings.ClickExpectingAlertAsync("Hoàn thành");
-            Assert.Contains("CCCD", alert);
+            var error = await bookings.ClickExpectingErrorToastAsync("Hoàn thành");
+            Assert.Contains("CCCD", error);
             await bookings.ExpectStatusAsync(bookingNo, "Confirmed");
 
             await bookings.CitizenIdInput.FillAsync("001234567890");

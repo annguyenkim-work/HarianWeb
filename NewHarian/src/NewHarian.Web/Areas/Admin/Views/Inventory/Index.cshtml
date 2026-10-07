@@ -148,6 +148,7 @@
           form.querySelector('h2')?.after(err);
         }
         err.textContent = 'Chọn sản phẩm từ danh sách gợi ý.';
+        adminToast.error(err.textContent);
         form.querySelector('.js-sku-input')?.focus();
         return;
       }
@@ -160,10 +161,13 @@
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('application/json')) {
         const data = await res.json();
-        if (data.ok) { location.href = data.redirect || location.href; return; }
+        if (data.ok) { adminToast.reloadWith(data.message, data.redirect || location.href); return; }
+        adminToast.jsonError(data);
+        return;
       }
       body.innerHTML = await res.text();
       bindForm();
+      adminToast.formErrors(body);
     });
   }
 

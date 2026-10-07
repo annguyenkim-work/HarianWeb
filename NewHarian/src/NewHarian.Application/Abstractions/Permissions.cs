@@ -146,6 +146,18 @@ public static class Permissions
         public const string Manage = "Users.Manage";
     }
 
+    public static class Employees
+    {
+        public const string View = "Employees.View";
+        public const string Manage = "Employees.Manage";
+    }
+
+    /// <summary>Self-service "Hồ sơ của tôi": personal fields of the signed-in user's own employee profile.</summary>
+    public static class MyProfile
+    {
+        public const string Edit = "MyProfile.Edit";
+    }
+
     /// <summary>Bank / VietQR, brand &amp; logo, notification email.</summary>
     public static class SiteSettings
     {

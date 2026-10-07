@@ -63,11 +63,13 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
         {
             if (!decimal.TryParse(amount, NumberStyles.Number, CultureInfo.InvariantCulture, out var v)
                 && !decimal.TryParse(amount, NumberStyles.Number, CultureInfo.GetCultureInfo("vi-VN"), out v))
-                return Json(new { ok = false, error = "Thành tiền không hợp lệ." });
+                return this.JsonFail("Thành tiền không hợp lệ.");
             parsedAmount = v;
         }
 
         var (ok, error) = await bookings.UpdateStatusAsync(id, status, internalNotes, citizenId, parsedAmount, ct);
-        return Json(new { ok, error, status = status.ToString() });
+        return ok
+            ? Json(new { ok = true, status = status.ToString(), message = "Đã cập nhật trạng thái lịch hẹn." })
+            : this.JsonFail(error);
     }
 }

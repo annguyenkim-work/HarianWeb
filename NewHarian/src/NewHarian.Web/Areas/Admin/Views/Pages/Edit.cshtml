@@ -10,8 +10,6 @@
     <a asp-action="Index" class="btn-link">← Danh sách trang</a>
 </div>
 
-@if (TempData["Success"] is string ok) { <p class="text-success">@ok</p> }
-@if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 
 <form method="post" class="form-stack" style="max-width:720px">
     @Html.AntiForgeryToken()

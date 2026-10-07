@@ -56,6 +56,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<AppLogEntry> AppLogEntries => Set<AppLogEntry>();
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+    public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -496,6 +497,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<ApplicationUser>(e =>
         {
             e.Property(x => x.FullName).HasMaxLength(200);
+        });
+
+        builder.Entity<EmployeeProfile>(e =>
+        {
+            e.HasIndex(x => x.UserId).IsUnique();
+            e.HasIndex(x => x.EmployeeCode).IsUnique();
+            e.Property(x => x.EmployeeCode).HasMaxLength(20);
+            e.Property(x => x.Phone).HasMaxLength(20);
+            e.Property(x => x.PersonalEmail).HasMaxLength(200);
+            e.Property(x => x.Address).HasMaxLength(500);
+            e.Property(x => x.CitizenId).HasMaxLength(20);
+            e.Property(x => x.EmergencyContactName).HasMaxLength(200);
+            e.Property(x => x.EmergencyContactPhone).HasMaxLength(20);
+            e.Property(x => x.HrNotes).HasMaxLength(2000);
+            e.HasOne<ApplicationUser>().WithOne().HasForeignKey<EmployeeProfile>(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

@@ -56,13 +56,13 @@ public class DealersController(IDealerService dealers) : Controller
         var (ok, error, _) = await dealers.CreateApprovedAsync(model, User.Identity?.Name, ct);
         if (Request.Headers.Accept.ToString().Contains("application/json")
             || Request.Headers.XRequestedWith == "XMLHttpRequest")
-            return Json(new { ok, error });
+            return ok ? Json(new { ok = true, message = "Đã thêm đại lý." }) : this.JsonFail(error);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Không tạo được.");
             return PartialView("_CreateForm", model);
         }
-        TempData["Success"] = "Đã thêm đại lý.";
+        this.FlashSuccess("Đã thêm đại lý.");
         return AdminListRedirect.ToRefererOrIndex(this);
     }
 
@@ -72,7 +72,7 @@ public class DealersController(IDealerService dealers) : Controller
     public async Task<IActionResult> Approve(int id, decimal discountPercent, string? internalNotes, string? citizenId, CancellationToken ct)
     {
         var (ok, error) = await dealers.ApproveAsync(id, discountPercent, internalNotes, User.Identity?.Name, citizenId, ct);
-        return Json(new { ok, error });
+        return ok ? Json(new { ok = true, message = "Đã duyệt đại lý." }) : this.JsonFail(error);
     }
 
     [HttpPost]
@@ -81,7 +81,7 @@ public class DealersController(IDealerService dealers) : Controller
     public async Task<IActionResult> Reject(int id, string? internalNotes, CancellationToken ct)
     {
         var (ok, error) = await dealers.RejectAsync(id, internalNotes, User.Identity?.Name, ct);
-        return Json(new { ok, error });
+        return ok ? Json(new { ok = true, message = "Đã từ chối đại lý." }) : this.JsonFail(error);
     }
 
     [HttpPost]
@@ -90,6 +90,6 @@ public class DealersController(IDealerService dealers) : Controller
     public async Task<IActionResult> Save(int id, decimal discountPercent, string? internalNotes, string? citizenId, CancellationToken ct)
     {
         var (ok, error) = await dealers.SaveApprovedAsync(id, discountPercent, internalNotes, User.Identity?.Name, citizenId, ct);
-        return Json(new { ok, error });
+        return ok ? Json(new { ok = true, message = "Đã lưu thông tin đại lý." }) : this.JsonFail(error);
     }
 }

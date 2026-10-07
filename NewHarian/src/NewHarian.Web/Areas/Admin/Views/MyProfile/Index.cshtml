@@ -1,0 +1,29 @@
+@model NewHarian.Application.Hr.EmployeeProfileForm
+@{
+    ViewData["Title"] = "Hồ sơ của tôi";
+    Layout = "_AdminLayout";
+    var fieldsData = new ViewDataDictionary(ViewData)
+    {
+        ["PersonalEditable"] = true,
+        ["HrEditable"] = false,
+        ["ShowHrNotes"] = false
+    };
+}
+
+<div class="profile-page">
+    <div class="admin-toolbar">
+        <h1>Hồ sơ của tôi</h1>
+    </div>
+    <p class="form-hint">Bạn tự cập nhật thông tin cá nhân. Thông tin công việc do phòng Nhân sự cập nhật.</p>
+
+    <form asp-area="Admin" asp-controller="MyProfile" asp-action="Index" method="post" id="my-profile-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <partial name="_EmployeeProfileFields" model="Model" view-data="fieldsData" />
+
+        <div class="modal__actions">
+            <button type="submit" class="btn-primary">Lưu</button>
+        </div>
+    </form>
+</div>
