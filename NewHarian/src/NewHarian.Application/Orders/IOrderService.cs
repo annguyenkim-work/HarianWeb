@@ -19,7 +19,12 @@ public class CheckoutDraft
     public string CheckoutId { get; set; } = Guid.NewGuid().ToString("N");
 }
 
-public record OrderLineDto(string ProductName, string VariantLabel, string Sku, decimal UnitPrice, int Quantity, decimal LineTotal);
+public record OrderLineDto(
+    string ProductName, string VariantLabel, string Sku, decimal UnitPrice, int Quantity, decimal LineTotal,
+    decimal DiscountPercent = 0, decimal DiscountAmount = 0, string? DiscountTierLabel = null,
+    DealerDiscountSource DiscountSource = DealerDiscountSource.None);
+
+public record OrderInvoiceDto(string BuyerName, string TaxCode, string Address, string? Email);
 
 public record OrderSummaryDto(
     int Id,
@@ -45,7 +50,8 @@ public record OrderSummaryDto(
     string? DealerName,
     decimal? DealerDiscountPercent,
     DateTime CreatedAt,
-    IReadOnlyList<OrderLineDto> Items);
+    IReadOnlyList<OrderLineDto> Items,
+    OrderInvoiceDto? Invoice = null);
 
 public record AdminOrderListItemDto(
     int Id,
@@ -57,13 +63,16 @@ public record AdminOrderListItemDto(
     PaymentMethod PaymentMethod,
     OrderStatus Status,
     OrderSource Source,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? DealerName = null);
 
 public class ManualOrderLineRequest
 {
     public string Sku { get; set; } = string.Empty;
     public int Quantity { get; set; } = 1;
     public decimal? UnitPrice { get; set; }
+    /// <summary>Manual discount override; honoured only with Orders.OverrideDiscount.</summary>
+    public decimal? DiscountPercent { get; set; }
 }
 
 public class ManualOrderCreateRequest
@@ -77,7 +86,6 @@ public class ManualOrderCreateRequest
     public string? CustomerEmail { get; set; }
     public string CitizenId { get; set; } = string.Empty;
     public int? DealerId { get; set; }
-    public decimal? DealerDiscountPercent { get; set; }
     public string? ShippingAddress { get; set; }
     public string? ShippingProvinceCode { get; set; }
     public string? ShippingCommuneCode { get; set; }
@@ -95,7 +103,9 @@ public record OrderImportResult(
 
 public interface IOrderService
 {
-    Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(CheckoutDraft draft, CancellationToken ct = default);
+    /// <param name="dealerId">Dealer verified by access code in this session (never taken from the posted form).</param>
+    Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(
+        CheckoutDraft draft, int? dealerId = null, CancellationToken ct = default);
     Task<OrderSummaryDto?> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default);
     Task<OrderSummaryDto?> TrackAsync(string orderNumber, string customerEmail, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> CancelGuestAsync(string orderNumber, string customerEmail, CancellationToken ct = default);

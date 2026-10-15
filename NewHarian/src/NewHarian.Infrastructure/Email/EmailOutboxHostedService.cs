@@ -82,7 +82,7 @@ public sealed class EmailOutboxHostedService(
             try
             {
                 var attachments = LoadAttachments(env, msg.AttachmentsJson);
-                await smtp.SendAsync(msg.ToAddress, msg.Subject, msg.HtmlBody, ct, attachments);
+                await smtp.SendAsync(msg.ToAddress, msg.Subject, msg.HtmlBody, msg.IsSensitive, ct, attachments);
                 msg.Status = EmailOutboxStatus.Sent;
                 msg.SentAt = DateTime.UtcNow;
                 msg.LastError = null;
@@ -107,6 +107,7 @@ public sealed class EmailOutboxHostedService(
                         msg.Id, msg.AttemptCount, msg.NextAttemptAt);
                 }
             }
+            EmailOutboxRedaction.Apply(msg);
             await db.SaveChangesAsync(ct);
         }
 

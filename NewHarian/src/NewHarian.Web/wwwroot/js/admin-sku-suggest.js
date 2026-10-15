@@ -108,6 +108,7 @@
         if (priceInput && option.dataset.price !== undefined && option.dataset.price !== '') {
           priceInput.value = String(Math.round(Number(option.dataset.price)));
         }
+        input?.dispatchEvent(new Event('change', { bubbles: true }));
       }
       if (list) {
         list.hidden = true;

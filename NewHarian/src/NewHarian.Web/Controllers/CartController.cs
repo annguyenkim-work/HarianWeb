@@ -1,12 +1,26 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using NewHarian.Application.Cart;
+using NewHarian.Application.Dealers;
+using NewHarian.Web.Models;
 
 namespace NewHarian.Web.Controllers;
 
-public class CartController(ICartService cart) : Controller
+public class CartController(
+    ICartService cart,
+    ICartPricingService pricing,
+    IDealerCheckoutContext dealerCheckout,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     [HttpGet]
-    public IActionResult Index() => View(cart.GetCart());
+    public async Task<IActionResult> Index(CancellationToken ct)
+    {
+        var state = await dealerCheckout.GetAsync(ct);
+        if (state.Expired) ViewBag.DealerNotice = localizer["Checkout.DealerCode.Expired"].Value;
+        ViewBag.DealerBox = new DealerCodeBoxModel(
+            state.Dealer, "/cart", TempData[CheckoutController.DealerCodeErrorKey] as string);
+        return View(await pricing.PriceAsync(cart.GetCart(), state.Dealer?.Id, ct));
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -29,7 +43,7 @@ public class CartController(ICartService cart) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Update(int productVariantId, int quantity)
+    public async Task<IActionResult> Update(int productVariantId, int quantity, CancellationToken ct)
     {
         var (ok, error) = cart.Update(productVariantId, quantity);
         if (!ok)
@@ -37,6 +51,7 @@ public class CartController(ICartService cart) : Controller
 
         var snapshot = cart.GetCart();
         var line = snapshot.Items.FirstOrDefault(i => i.ProductVariantId == productVariantId);
+        var isDealer = (await dealerCheckout.GetAsync(ct)).Dealer is not null;
         return Json(new
         {
             ok = true,
@@ -44,7 +59,9 @@ public class CartController(ICartService cart) : Controller
             lineTotal = line?.LineTotal ?? 0,
             lineTotalText = (line?.LineTotal ?? 0).ToString("N0") + "đ",
             subTotal = snapshot.SubTotal,
-            subTotalText = snapshot.SubTotal.ToString("N0") + "đ"
+            subTotalText = snapshot.SubTotal.ToString("N0") + "đ",
+            // Dealer tiers depend on the whole group quantity: the page re-renders every line's discount.
+            reload = isDealer
         });
     }
 

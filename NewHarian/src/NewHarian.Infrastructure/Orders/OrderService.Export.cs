@@ -43,7 +43,11 @@ public partial class OrderService
 
         var extra = await db.Orders.AsNoTracking()
             .Where(o => ids.Contains(o.Id))
-            .Select(o => new { o.Id, o.ExternalRef, o.CitizenId, o.DiscountAmount })
+            .Select(o => new
+            {
+                o.Id, o.ExternalRef, o.CitizenId, o.DiscountAmount,
+                o.InvoiceBuyerName, o.InvoiceTaxCode, o.InvoiceAddress, o.InvoiceEmail
+            })
             .ToDictionaryAsync(o => o.Id, ct);
 
         using var wb = new XLWorkbook();
@@ -51,7 +55,8 @@ public partial class OrderService
         var headers = new[]
         {
             "OrderNumber", "Source", "ExternalRef", "CustomerName", "CitizenId", "Phone", "Email",
-            "Status", "PaymentMethod", "DiscountAmount", "Total", "CreatedAt", "Items"
+            "Status", "PaymentMethod", "DiscountAmount", "Total", "CreatedAt", "Items",
+            "InvoiceBuyerName", "InvoiceTaxCode", "InvoiceAddress", "InvoiceEmail"
         };
         for (var c = 0; c < headers.Length; c++)
             ws.Cell(1, c + 1).Value = headers[c];
@@ -78,6 +83,10 @@ public partial class OrderService
             ws.Cell(row, 12).Value = o.CreatedAt.ToLocalTime();
             ws.Cell(row, 12).Style.DateFormat.Format = "yyyy-mm-dd hh:mm";
             ws.Cell(row, 13).Value = items ?? string.Empty;
+            ws.Cell(row, 14).Value = meta?.InvoiceBuyerName ?? string.Empty;
+            ws.Cell(row, 15).Value = meta?.InvoiceTaxCode ?? string.Empty;
+            ws.Cell(row, 16).Value = meta?.InvoiceAddress ?? string.Empty;
+            ws.Cell(row, 17).Value = meta?.InvoiceEmail ?? string.Empty;
             row++;
         }
 

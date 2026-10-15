@@ -15,7 +15,8 @@ public class OrdersController(
     IOrderAdminService orders,
     IOrderImportExportService importExport,
     IStatusHistoryService history,
-    IDealerService dealers,
+    IDealerLookup dealers,
+    IManualOrderPricingService manualPricing,
     IOrderStockService orderStock) : Controller
 {
     private static readonly HashSet<string> SortKeys = new(StringComparer.OrdinalIgnoreCase)
@@ -143,12 +144,42 @@ public class OrdersController(
         return Json(plan);
     }
 
+    /// <summary>Live per-line dealer discount on the manual order form; the server recomputes on save.</summary>
+    [HttpPost("/admin/orders/dealer-discount-preview")]
+    [IgnoreAntiforgeryToken]
+    [HasPermission(Permissions.Orders.Create)]
+    public async Task<IActionResult> DealerDiscountPreview([FromBody] DealerDiscountPreviewRequest? request, CancellationToken ct)
+    {
+        var allowManual = User.HasPermission(Permissions.Orders.OverrideDiscount);
+        var dealerId = request?.DealerId is > 0 ? request.DealerId : null;
+        var result = await manualPricing.PriceAsync(dealerId, request?.Lines ?? [], allowManual, ct);
+        return Json(new
+        {
+            lines = result.Lines.Select(l => new
+            {
+                index = l.Index,
+                error = l.Error,
+                lineTotal = l.LineTotal,
+                percent = l.DiscountPercent,
+                amount = l.DiscountAmount,
+                tierLabel = l.DiscountTierLabel,
+                source = DealerLabels.Source(l.DiscountSource),
+                manual = l.DiscountSource == DealerDiscountSource.Manual,
+                unconfigured = dealerId is not null && l.Error is null && l.DiscountUnconfigured
+            }),
+            subTotal = result.SubTotal,
+            discount = result.DiscountAmount,
+            total = result.SubTotal - result.DiscountAmount
+        });
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     [HasPermission(Permissions.Orders.Create)]
     public async Task<IActionResult> Create(ManualOrderCreateRequest model, CancellationToken ct)
     {
-        var (ok, error, orderNumber) = await orders.CreateManualOrderAsync(model, ActorUserId(), ActorName(), ct);
+        var (ok, error, orderNumber) = await orders.CreateManualOrderAsync(
+            model, ActorUserId(), ActorName(), ct, User.HasPermission(Permissions.Orders.OverrideDiscount));
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Không tạo được đơn.");

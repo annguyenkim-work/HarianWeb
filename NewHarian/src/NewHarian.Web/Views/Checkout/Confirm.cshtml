@@ -1,11 +1,13 @@
 @model NewHarian.Application.Orders.CheckoutDraft
 @{
     ViewData["Title"] = Localizer["Checkout.Confirm"];
-    var cart = (NewHarian.Application.Cart.CartDto)ViewBag.Cart;
+    var priced = (NewHarian.Application.Cart.PricedCart)ViewBag.Priced;
+    var dealer = ViewBag.Dealer as NewHarian.Application.Dealers.DealerOptionDto;
     var fee = (decimal)ViewBag.ShippingFee;
     var total = (decimal)ViewBag.Total;
     var shipTo = (string)(ViewBag.ShipTo ?? "");
     var isFree = (bool)ViewBag.IsFreeShipping;
+    var colspan = priced.IsDealer ? 3 : 2;
 }
 
 <nav class="breadcrumb">
@@ -19,10 +21,24 @@
 {
     <p class="text-danger">@err</p>
 }
+@if (ViewBag.DealerNotice is string notice)
+{
+    <p class="text-danger" data-dealer-notice>@notice</p>
+}
 
 <section class="confirm-block">
+    @if (dealer is not null)
+    {
+        <p data-dealer-active>@Localizer["Checkout.DealerCode.Active"] <strong>@dealer.BusinessName</strong></p>
+    }
     <h2>@Localizer["Checkout.Customer"]</h2>
-    <p>@Model.CustomerName<br />@Model.CustomerEmail<br />@Model.CustomerPhone<br />@Localizer["Checkout.CitizenId"]: @Model.CitizenId</p>
+    <p>
+        @Model.CustomerName<br />@Model.CustomerEmail<br />@Model.CustomerPhone
+        @if (!string.IsNullOrWhiteSpace(Model.CitizenId))
+        {
+            <br />@Localizer["Checkout.CitizenId"]<text>: </text>@Model.CitizenId
+        }
+    </p>
     <h2>@Localizer["Checkout.ShipTo"]</h2>
     <p>@shipTo</p>
     @if (!string.IsNullOrEmpty(Model.Notes))
@@ -34,22 +50,46 @@
     </p>
 </section>
 
+@if (dealer is not null)
+{
+    <partial name="_DealerInvoiceBlock" model="dealer" />
+}
+
 <table class="data-table">
-    <thead><tr><th>@Localizer["Cart.Item"]</th><th>@Localizer["Products.Qty"]</th><th>@Localizer["Cart.Price"]</th></tr></thead>
-    <tbody>
-    @foreach (var i in cart.Items)
-    {
+    <thead>
         <tr>
+            <th>@Localizer["Cart.Item"]</th>
+            <th>@Localizer["Products.Qty"]</th>
+            @if (priced.IsDealer)
+            {
+                <th>@Localizer["Checkout.DealerDiscount"]</th>
+            }
+            <th>@Localizer["Cart.Price"]</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var line in priced.Lines)
+    {
+        var i = line.Item;
+        <tr data-confirm-sku="@i.Sku">
             <td>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}") (@i.Sku)</td>
             <td>@i.Quantity</td>
+            @if (priced.IsDealer)
+            {
+                <td data-line-discount><partial name="_DealerLineDiscount" model="line" /></td>
+            }
             <td>@i.LineTotal.ToString("N0")đ</td>
         </tr>
     }
     </tbody>
     <tfoot>
-        <tr><td colspan="2">@Localizer["Cart.Subtotal"]</td><td>@cart.SubTotal.ToString("N0")đ</td></tr>
-        <tr><td colspan="2">@Localizer["Checkout.Shipping"]</td><td>@(isFree ? Localizer["Checkout.FreeShip"].ToString() : fee.ToString("N0") + "đ")</td></tr>
-        <tr><td colspan="2"><strong>@Localizer["Checkout.Total"]</strong></td><td><strong>@total.ToString("N0")đ</strong></td></tr>
+        <tr><td colspan="@colspan">@Localizer["Cart.Subtotal"]</td><td>@priced.SubTotal.ToString("N0")đ</td></tr>
+        @if (priced.IsDealer)
+        {
+            <tr><td colspan="@colspan">@Localizer["Checkout.DealerDiscount"]</td><td data-confirm-discount>-@priced.DiscountAmount.ToString("N0")đ</td></tr>
+        }
+        <tr><td colspan="@colspan">@Localizer["Checkout.Shipping"]</td><td>@(isFree ? Localizer["Checkout.FreeShip"].ToString() : fee.ToString("N0") + "đ")</td></tr>
+        <tr><td colspan="@colspan"><strong>@Localizer["Checkout.Total"]</strong></td><td><strong data-confirm-total>@total.ToString("N0")đ</strong></td></tr>
     </tfoot>
 </table>
 

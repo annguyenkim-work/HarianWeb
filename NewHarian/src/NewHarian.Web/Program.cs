@@ -3,10 +3,12 @@ using System.IO.Compression;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NewHarian.Infrastructure.DependencyInjection;
 using NewHarian.Infrastructure.Persistence;
+using NewHarian.Web.ModelBinding;
 using NewHarian.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,7 +47,11 @@ builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = Comp
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.AddScoped<NewHarian.Web.Areas.Admin.Services.IProductPreviewStore, NewHarian.Web.Areas.Admin.Services.ProductPreviewStore>();
 builder.Services.AddScoped<NewHarian.Web.Areas.Admin.Services.IAdminProductPreviewBuilder, NewHarian.Web.Areas.Admin.Services.AdminProductPreviewBuilder>();
-builder.Services.AddControllersWithViews()
+builder.Services.AddControllersWithViews(options =>
+    {
+        var simple = options.ModelBinderProviders.OfType<SimpleTypeModelBinderProvider>().First();
+        options.ModelBinderProviders.Insert(0, new NumberInputDecimalBinderProvider(simple));
+    })
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
 

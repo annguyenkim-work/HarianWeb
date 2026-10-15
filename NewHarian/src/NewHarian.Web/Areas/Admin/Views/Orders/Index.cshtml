@@ -116,7 +116,14 @@
     {
         <tr data-id="@o.Id">
             <td>@o.OrderNumber</td>
-            <td>@o.CustomerName<br /><span class="muted">@o.CustomerEmail</span></td>
+            <td>
+                @o.CustomerName
+                @if (o.DealerName is not null)
+                {
+                    <span class="badge" data-dealer-badge title="@o.DealerName">Đại lý</span>
+                }
+                <br /><span class="muted">@o.CustomerEmail</span>
+            </td>
             <td>@o.Total.ToString("N0")đ</td>
             <td>@OrderSourceLabels.Vi(o.Source)</td>
             <td>@o.PaymentMethod</td>
@@ -194,11 +201,10 @@
     });
   }
 
-  function wireDealerPicker(form) {
+  function wireDealerPicker(form, onChange) {
     const sel = form.querySelector('#dealer-select');
     const wrapSel = form.querySelector('#dealer-select-wrap');
-    const wrapPct = form.querySelector('#dealer-percent-wrap');
-    const pct = form.querySelector('[name="DealerDiscountPercent"]');
+    const invoice = form.querySelector('#dealer-invoice');
     const name = form.querySelector('[name="CustomerName"]');
     const phone = form.querySelector('[name="CustomerPhone"]');
     const email = form.querySelector('[name="CustomerEmail"]');
@@ -206,33 +212,100 @@
     const province = form.querySelector('[data-address-province]');
     const commune = form.querySelector('[data-address-commune]');
     const citizenId = form.querySelector('[name="CitizenId"]');
+    const citizenMark = form.querySelector('#citizen-required-mark');
 
     function applyKind() {
       const kind = form.querySelector('input[name="customerKind"]:checked')?.value;
       const isDealer = kind === 'dealer';
       if (wrapSel) wrapSel.hidden = !isDealer;
-      if (wrapPct) wrapPct.hidden = !isDealer;
       if (sel) sel.required = isDealer;
       if (!isDealer && sel) sel.value = '';
+      const opt = sel?.selectedOptions[0];
+      const hasDealer = isDealer && !!opt?.value;
+      form.querySelectorAll('.js-dealer-only').forEach(el => { el.hidden = !hasDealer; });
+      if (invoice) {
+        invoice.hidden = !hasDealer;
+        if (hasDealer) {
+          ['name', 'taxcode', 'address', 'email'].forEach(k => {
+            const target = invoice.querySelector(`[data-invoice="${k}"]`);
+            if (target) target.textContent = opt.dataset['invoice' + k[0].toUpperCase() + k.slice(1)] || '-';
+          });
+        }
+      }
+      const optionalCitizen = hasDealer && opt.dataset.type === 'Company';
+      if (citizenId) citizenId.required = !optionalCitizen;
+      if (citizenMark) citizenMark.hidden = optionalCitizen;
+      onChange?.();
     }
 
     form.querySelectorAll('input[name="customerKind"]').forEach(r => r.addEventListener('change', applyKind));
     sel?.addEventListener('change', () => {
       const opt = sel.selectedOptions[0];
-      if (!opt || !opt.value) return;
-      if (name) name.value = opt.dataset.name || '';
-      if (phone) phone.value = opt.dataset.phone || '';
-      if (email) email.value = opt.dataset.email || '';
-      if (address) address.value = opt.dataset.address || '';
-      if (province) {
-        province.value = opt.dataset.province || '';
-        province.dispatchEvent(new Event('change'));
+      if (opt && opt.value) {
+        if (name) name.value = opt.dataset.name || '';
+        if (phone) phone.value = opt.dataset.phone || '';
+        if (email) email.value = opt.dataset.email || '';
+        if (address) address.value = opt.dataset.address || '';
+        if (province) {
+          province.value = opt.dataset.province || '';
+          province.dispatchEvent(new Event('change'));
+        }
+        if (commune) commune.value = opt.dataset.commune || '';
+        if (citizenId) citizenId.value = opt.dataset.citizenid || '';
       }
-      if (commune) commune.value = opt.dataset.commune || '';
-      if (citizenId) citizenId.value = opt.dataset.citizenid || '';
-      if (pct) pct.value = opt.dataset.percent || '';
+      applyKind();
     });
     applyKind();
+    return applyKind;
+  }
+
+  function wireDealerDiscount(form) {
+    const url = form.dataset.discountUrl;
+    const summary = form.querySelector('#dealer-discount-summary');
+    const fmt = (n) => Number(n || 0).toLocaleString('vi-VN');
+    let timer = null;
+
+    async function refresh() {
+      const dealerId = Number(form.querySelector('#dealer-select')?.value || 0);
+      const rows = [...form.querySelectorAll('#manual-order-lines .manual-order-line')];
+      rows.forEach(r => { const s = r.querySelector('.js-line-discount'); if (s) s.textContent = ''; });
+      if (!dealerId || !url) { if (summary) summary.innerHTML = ''; return; }
+      const lines = rows.map(r => ({
+        sku: r.querySelector('.js-sku-input')?.value?.trim() || '',
+        quantity: Number(r.querySelector('input[name*="Quantity"]')?.value || 0),
+        unitPrice: r.querySelector('.js-sku-price')?.value ? Number(r.querySelector('.js-sku-price').value) : null,
+        discountPercent: r.querySelector('.js-line-manual')?.value ? Number(r.querySelector('.js-line-manual').value) : null
+      }));
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Silent': '1' },
+          body: JSON.stringify({ dealerId, lines })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        (data.lines || []).forEach(l => {
+          const span = rows[l.index]?.querySelector('.js-line-discount');
+          if (!span) return;
+          span.classList.toggle('text-danger', !!l.error);
+          span.classList.toggle('text-warning', !!l.unconfigured);
+          if (l.error) span.textContent = l.error;
+          else if (l.unconfigured) span.textContent = 'Chưa có chiết khấu đại lý (0%)';
+          else span.textContent = `${l.tierLabel || '-'} · CK ${l.percent}% · -${fmt(l.amount)}đ (${l.source})`;
+          span.dataset.percent = l.percent;
+        });
+        if (summary) {
+          summary.innerHTML = `Tạm tính <strong>${fmt(data.subTotal)}đ</strong> · Chiết khấu <strong>-${fmt(data.discount)}đ</strong> · Tổng <strong data-discount-total>${fmt(data.total)}đ</strong>`;
+        }
+      } catch {
+        if (summary) summary.innerHTML = '<span class="text-danger">Không tính được chiết khấu.</span>';
+      }
+    }
+
+    const schedule = () => { clearTimeout(timer); timer = setTimeout(refresh, 300); };
+    form.querySelector('#manual-order-lines')?.addEventListener('input', schedule);
+    form.querySelector('#manual-order-lines')?.addEventListener('change', schedule);
+    return schedule;
   }
 
   function bindCreateForm() {
@@ -240,7 +313,8 @@
     const form = createBody.querySelector('form');
     if (!form) return;
     window.AdminSkuSuggest.wire(form, { mode: 'sku' });
-    wireDealerPicker(form);
+    const refreshDiscount = wireDealerDiscount(form);
+    const applyDealer = wireDealerPicker(form, refreshDiscount);
 
     const pickUrl = '@Url.Action("PreviewStockPick", "Orders", new { area = "Admin" })';
     const pickBox = () => createBody.querySelector('#manual-order-stock-pick');
@@ -330,6 +404,7 @@
       if (!tpl || !wrap) return;
       wrap.insertAdjacentHTML('beforeend', tpl.innerHTML.replaceAll('__i__', '0'));
       reindexLines(wrap);
+      applyDealer();
     });
 
     createBody.querySelector('#manual-order-lines')?.addEventListener('click', e => {
@@ -341,6 +416,7 @@
       btn.closest('.manual-order-line')?.remove();
       reindexLines(wrap);
       refreshStockPick();
+      refreshDiscount();
     });
 
     form.addEventListener('submit', async (e) => {

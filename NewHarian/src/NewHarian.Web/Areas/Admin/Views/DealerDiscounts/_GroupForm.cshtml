@@ -1,0 +1,95 @@
+@model NewHarian.Application.DealerDiscounts.DealerDiscountGroupEditModel
+@using System.Globalization
+@{
+    Layout = null;
+    var input = Model.Input;
+    var isNew = input.Id is null;
+    var selected = input.ProductIds.ToHashSet();
+    var names = Model.ProductOptions.ToDictionary(p => p.ProductId, p => p.Name);
+    string Pct(decimal? v) => v?.ToString("0.##", CultureInfo.InvariantCulture) ?? "";
+}
+<form id="discount-group-form" asp-area="Admin" asp-controller="DealerDiscounts" asp-action="Save" method="post" data-modal-form data-discount-group-form>
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Id" value="@input.Id" />
+    <h2>@(isNew ? "Thêm nhóm chiết khấu" : "Sửa nhóm chiết khấu")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    @if (Model.DealersWithOverrides > 0)
+    {
+        <p class="badge badge--warning" data-overrides-warning>
+            @Model.DealersWithOverrides đại lý đang có % riêng trong nhóm này. Xóa mức hoặc bỏ sản phẩm sẽ xóa % riêng tương ứng.
+        </p>
+    }
+
+    <div class="detail-grid">
+        <label class="detail-field detail-field--wide">
+            <span class="detail-field__label">Tên nhóm *</span>
+            <input name="Name" value="@input.Name" class="form-control" required maxlength="200" />
+        </label>
+    </div>
+
+    <h3 class="detail-section-title">Mức số lượng (cộng chung cả nhóm)</h3>
+    <table class="data-table" data-tiers>
+        <thead><tr><th>Từ</th><th>Đến (trống = trở lên)</th><th></th></tr></thead>
+        <tbody>
+        @for (var i = 0; i < input.Tiers.Count; i++)
+        {
+            var t = input.Tiers[i];
+            <tr data-tier-key="t@(i)">
+                <td>
+                    <input type="hidden" data-tier-id value="@t.Id" />
+                    <input type="number" class="form-control" data-tier-min value="@t.MinQuantity" readonly style="max-width:6rem" />
+                </td>
+                <td><input type="number" class="form-control" data-tier-max value="@t.MaxQuantity" min="1" style="max-width:6rem" /></td>
+                <td><button type="button" class="btn-icon btn-icon--danger" data-remove-tier title="Xóa mức" aria-label="Xóa mức"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <button type="button" class="btn-secondary" data-add-tier>Thêm mức</button>
+
+    <h3 class="detail-section-title">Sản phẩm trong nhóm</h3>
+    <div class="discount-products" data-products style="display:flex;flex-wrap:wrap;gap:0.25rem 1rem;max-height:12rem;overflow:auto">
+        @foreach (var p in Model.ProductOptions)
+        {
+            var taken = p.GroupName is not null;
+            <label class="@(taken ? "muted" : null)">
+                <input type="checkbox" name="ProductIds" value="@p.ProductId" data-product-name="@p.Name" checked="@selected.Contains(p.ProductId)" disabled="@taken" />
+                @p.Name @(taken ? $"(nhóm {p.GroupName})" : "")
+            </label>
+        }
+    </div>
+
+    <h3 class="detail-section-title">% chiết khấu mặc định</h3>
+    <div data-matrix>
+        @* Initial render; dealer-discount-group.js rebuilds this table whenever tiers or products change. *@
+        <table class="data-table discount-table">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    @for (var i = 0; i < input.Tiers.Count; i++)
+                    {
+                        <th>Mức @(i + 1)</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var pid in input.ProductIds)
+            {
+                <tr>
+                    <td>@(names.GetValueOrDefault(pid) ?? $"#{pid}")</td>
+                    @for (var i = 0; i < input.Tiers.Count; i++)
+                    {
+                        input.Tiers[i].Percents.TryGetValue(pid, out var v);
+                        <td><input type="number" class="form-control" data-cell="t@(i)|@pid" value="@Pct(v)" min="0" max="100" step="0.01" required style="max-width:6rem" /></td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close>Hủy</button>
+        <button type="submit" class="btn-primary">@(isNew ? "Thêm" : "Lưu")</button>
+    </div>
+</form>

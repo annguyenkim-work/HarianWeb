@@ -10,6 +10,8 @@ public class EmailOutboxMessage
     public string HtmlBody { get; set; } = string.Empty;
     /// <summary>JSON list of { fileName, contentType, relativePath } under App_Data.</summary>
     public string? AttachmentsJson { get; set; }
+    /// <summary>Body holds a secret (dealer access code): wiped once sent or given up.</summary>
+    public bool IsSensitive { get; set; }
     public EmailOutboxStatus Status { get; set; } = EmailOutboxStatus.Pending;
     public int AttemptCount { get; set; }
     public int MaxAttempts { get; set; } = 5;

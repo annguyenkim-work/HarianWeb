@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
 
@@ -12,26 +13,37 @@ namespace NewHarian.Infrastructure.Email;
 /// </summary>
 public sealed class ConfigurableEmailSender(
     IConfiguration config,
+    IHostEnvironment env,
     ILogger<ConfigurableEmailSender> logger,
     FileLoggingEmailSender fileFallback) : IEmailSender
 {
     private const int MaxAttempts = 3;
 
+    public Task SendAsync(
+        string to,
+        string subject,
+        string htmlBody,
+        CancellationToken cancellationToken = default,
+        IReadOnlyList<EmailAttachment>? attachments = null)
+        => SendAsync(to, subject, htmlBody, sensitive: false, cancellationToken, attachments);
+
     public async Task SendAsync(
         string to,
         string subject,
         string htmlBody,
+        bool sensitive,
         CancellationToken cancellationToken = default,
         IReadOnlyList<EmailAttachment>? attachments = null)
     {
         if (string.IsNullOrWhiteSpace(to))
             throw new ArgumentException("Email recipient is required.", nameof(to));
 
+        var copyBody = EmailOutboxRedaction.ForFileCopy(htmlBody, sensitive, env.IsDevelopment());
         var enabled = config.GetValue("Email:Smtp:Enabled", false);
         if (!enabled)
         {
             logger.LogInformation("SMTP disabled — outbox only. To={To} Subject={Subject}", to, subject);
-            await fileFallback.SendAsync(to, subject, htmlBody, cancellationToken, attachments);
+            await fileFallback.SendAsync(to, subject, copyBody, cancellationToken, attachments);
             return;
         }
 
@@ -43,7 +55,7 @@ public sealed class ConfigurableEmailSender(
                 await SendSmtpAsync(to, subject, htmlBody, attachments, cancellationToken);
                 logger.LogInformation("SMTP email sent To={To} Subject={Subject} Attempt={Attempt} Attachments={Count}",
                     to, subject, attempt, attachments?.Count ?? 0);
-                await fileFallback.SendAsync(to, subject, htmlBody, cancellationToken, attachments);
+                await fileFallback.SendAsync(to, subject, copyBody, cancellationToken, attachments);
                 return;
             }
             catch (Exception ex) when (attempt < MaxAttempts)
@@ -61,7 +73,7 @@ public sealed class ConfigurableEmailSender(
         }
 
         // Keep a copy even when SMTP fails (ops can still open outbox)
-        try { await fileFallback.SendAsync(to, subject, htmlBody, cancellationToken, attachments); }
+        try { await fileFallback.SendAsync(to, subject, copyBody, cancellationToken, attachments); }
         catch (Exception outboxEx)
         {
             logger.LogError(outboxEx, "Failed writing email outbox after SMTP error To={To}", to);

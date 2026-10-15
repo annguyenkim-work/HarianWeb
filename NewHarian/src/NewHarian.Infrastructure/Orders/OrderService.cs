@@ -4,6 +4,7 @@ using NewHarian.Application.Abstractions;
 using NewHarian.Application.Address;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Cart;
+using NewHarian.Application.Dealers;
 using NewHarian.Application.Email;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
@@ -29,19 +30,34 @@ public partial class OrderService(
     IBankTransferDisplayService bankTransfer,
     IVietnamDivisionCatalog catalog,
     IOrderStockService orderStock,
+    IManualOrderPricingService manualPricing,
+    ICartPricingService cartPricing,
     ILogger<OrderService> logger) : IOrderService, IOrderAdminService, IOrderImportExportService
 {
-    public async Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(CheckoutDraft draft, CancellationToken ct = default)
+    public async Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(
+        CheckoutDraft draft, int? dealerId = null, CancellationToken ct = default)
     {
-        logger.LogInformation("PlaceOrder Start");
+        logger.LogInformation("PlaceOrder Start DealerId={DealerId}", dealerId);
         try
         {
             var basket = cart.GetCart();
             if (basket.Items.Count == 0)
                 return RejectPlaceOrder("Giỏ hàng trống.");
 
+            Dealer? dealer = null;
+            if (dealerId is int did)
+            {
+                dealer = await db.Dealers.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == did && x.Status == DealerStatus.Approved, ct);
+                if (dealer is null)
+                    return RejectPlaceOrder(DealerCodeMessages.Expired);
+            }
+
+            var citizenIdOptional = dealer?.BusinessType == DealerBusinessType.Company
+                                    && string.IsNullOrWhiteSpace(draft.CitizenId);
             if (string.IsNullOrWhiteSpace(draft.CustomerName) || string.IsNullOrWhiteSpace(draft.CustomerEmail)
-                || string.IsNullOrWhiteSpace(draft.CustomerPhone) || !GuestValidation.IsCitizenId(draft.CitizenId))
+                || string.IsNullOrWhiteSpace(draft.CustomerPhone)
+                || (!citizenIdOptional && !GuestValidation.IsCitizenId(draft.CitizenId)))
                 return RejectPlaceOrder("Vui lòng điền đầy đủ thông tin bắt buộc (gồm CCCD).");
 
             if (!AddressFormat.TryBind(catalog, draft.ShippingProvinceCode, draft.ShippingCommuneCode, draft.ShippingAddress, out var resolved, out var addrErr))
@@ -55,9 +71,10 @@ public partial class OrderService(
             if (draft.PaymentMethod is not (PaymentMethod.COD or PaymentMethod.BankTransfer))
                 return RejectPlaceOrder("Phương thức thanh toán không hợp lệ.");
 
-            var subTotal = basket.SubTotal;
-            var (shipFee, _) = await shipping.CalculateFeeAsync(subTotal, province.Id, ct);
-            var total = subTotal + shipFee;
+            var priced = await cartPricing.PriceAsync(basket, dealer?.Id, ct);
+            var subTotal = priced.SubTotal;
+            var (shipFee, _) = await shipping.CalculateFeeAsync(priced.NetSubTotal, province.Id, ct);
+            var total = priced.NetSubTotal + shipFee;
 
             var orderNumber = await NextOrderNumberAsync(ct);
             var orderStatus = draft.PaymentMethod == PaymentMethod.COD
@@ -71,6 +88,14 @@ public partial class OrderService(
                 CustomerEmail = draft.CustomerEmail.Trim(),
                 CustomerPhone = draft.CustomerPhone.Trim(),
                 CitizenId = GuestValidation.NormalizeCitizenId(draft.CitizenId),
+                DealerId = dealer?.Id,
+                DiscountAmount = priced.DiscountAmount,
+                InvoiceBuyerName = dealer?.BusinessName,
+                InvoiceTaxCode = dealer?.TaxCode,
+                InvoiceAddress = dealer is null
+                    ? null
+                    : AddressFormat.Join(dealer.Address, dealer.CommuneName, dealer.ProvinceName),
+                InvoiceEmail = dealer is null ? null : dealer.InvoiceEmail ?? dealer.Email,
                 ShippingAddress = draft.ShippingAddress.Trim(),
                 ShippingProvinceId = province.Id,
                 ShippingCity = resolved.ProvinceName,
@@ -94,8 +119,9 @@ public partial class OrderService(
                 }
             };
 
-            foreach (var line in basket.Items)
+            foreach (var priceLine in priced.Lines)
             {
+                var line = priceLine.Item;
                 order.Items.Add(new OrderItem
                 {
                     ProductId = line.ProductId,
@@ -105,7 +131,11 @@ public partial class OrderService(
                     Sku = line.Sku,
                     UnitPrice = line.UnitPrice,
                     Quantity = line.Quantity,
-                    LineTotal = line.LineTotal
+                    LineTotal = line.LineTotal,
+                    DiscountPercent = priceLine.DiscountPercent,
+                    DiscountAmount = priceLine.DiscountAmount,
+                    DiscountTierLabel = priceLine.DiscountTierLabel,
+                    DiscountSource = priceLine.DiscountSource
                 });
             }
 
@@ -124,15 +154,16 @@ public partial class OrderService(
 
             await notifications.PublishAsync(
                 AdminNotificationTypes.OrderCreated,
-                $"Đơn hàng mới {order.OrderNumber}",
-                $"{order.CustomerName} · {order.Total:N0}đ",
+                dealer is null ? $"Đơn hàng mới {order.OrderNumber}" : $"Đơn đại lý mới {order.OrderNumber}",
+                $"{dealer?.BusinessName ?? order.CustomerName} · {order.Total:N0}đ",
                 $"/admin/Orders?q={Uri.EscapeDataString(order.OrderNumber)}",
                 "Order",
                 order.Id.ToString(),
                 ct);
 
-            await SendOrderEmailsAsync(order, resolved.ProvinceName, ct);
-            logger.LogInformation("PlaceOrder Done OrderNumber={OrderNumber}", order.OrderNumber);
+            await SendOrderEmailsAsync(order, resolved.ProvinceName, ct, dealer);
+            logger.LogInformation("PlaceOrder Done OrderNumber={OrderNumber} DealerId={DealerId}",
+                order.OrderNumber, order.DealerId);
             return (true, null, order.OrderNumber);
         }
         catch (Exception ex)
@@ -261,7 +292,8 @@ public partial class OrderService(
             .Take(take)
             .Select(o => new AdminOrderListItemDto(
                 o.Id, o.OrderNumber, o.CustomerName, o.CustomerEmail, o.CustomerPhone,
-                o.Total, o.PaymentMethod, o.Status, o.Source, o.CreatedAt))
+                o.Total, o.PaymentMethod, o.Status, o.Source, o.CreatedAt,
+                o.Dealer != null ? o.Dealer.BusinessName : null))
             .ToListAsync(ct);
         return (list, total);
     }
@@ -340,7 +372,8 @@ public partial class OrderService(
         ManualOrderCreateRequest request,
         string? actorUserId = null,
         string? actorName = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool allowDiscountOverride = false)
     {
         logger.LogInformation("CreateManualOrder Start Source={Source}", request.Source);
         try
@@ -358,7 +391,18 @@ public partial class OrderService(
             if (string.IsNullOrWhiteSpace(request.CustomerPhone))
                 return RejectManual("Vui lòng nhập số điện thoại.");
 
-            if (!GuestValidation.IsCitizenId(request.CitizenId))
+            Dealer? dealer = null;
+            if (request.DealerId is int did && did > 0)
+            {
+                dealer = await db.Dealers.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == did && x.Status == DealerStatus.Approved, ct);
+                if (dealer is null)
+                    return RejectManual("Đại lý không hợp lệ hoặc chưa được duyệt.");
+            }
+
+            var citizenIdOptional = dealer?.BusinessType == DealerBusinessType.Company
+                                    && string.IsNullOrWhiteSpace(request.CitizenId);
+            if (!citizenIdOptional && !GuestValidation.IsCitizenId(request.CitizenId))
                 return RejectManual("CCCD phải gồm 9 hoặc 12 chữ số.");
 
             if (!AddressFormat.TryBind(catalog, request.ShippingProvinceCode, request.ShippingCommuneCode, request.ShippingAddress, out var resolved, out var addrErr))
@@ -369,87 +413,41 @@ public partial class OrderService(
                 .Select(p => (int?)p.Id)
                 .FirstOrDefaultAsync(ct);
 
-            var lines = (request.Lines ?? [])
-                .Where(l => !string.IsNullOrWhiteSpace(l.Sku))
-                .ToList();
-            if (lines.Count == 0)
+            var lines = request.Lines ?? [];
+            if (!lines.Any(l => !string.IsNullOrWhiteSpace(l.Sku)))
                 return RejectManual("Cần ít nhất một dòng hàng (SKU).");
 
-            for (var i = 0; i < lines.Count; i++)
+            var priced = await manualPricing.PriceAsync(dealer?.Id, lines, allowDiscountOverride, ct);
+            if (priced.Error is not null)
+                return RejectManual(priced.Error);
+            if (priced.HasManualDiscount && string.IsNullOrWhiteSpace(request.InternalNotes))
+                return RejectManual("Vui lòng ghi chú nội bộ lý do sửa tay % chiết khấu.");
+
+            var orderItems = priced.Lines.Select(l => new OrderItem
             {
-                if (lines[i].Quantity <= 0)
-                    return RejectManual($"Dòng {i + 1}: số lượng phải > 0.");
-                if (lines[i].UnitPrice is < 0)
-                    return RejectManual($"Dòng {i + 1}: đơn giá không hợp lệ.");
-            }
-
-            var skuKeys = lines.Select(l => l.Sku.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-            var skuLower = skuKeys.Select(s => s.ToLowerInvariant()).ToList();
-            var variants = await db.ProductVariants.AsNoTracking()
-                .Include(v => v.Product).ThenInclude(p => p.Translations)
-                .Where(v => v.IsActive && skuLower.Contains(v.Sku.ToLower()))
-                .ToListAsync(ct);
-
-            var bySku = variants
-                .GroupBy(v => v.Sku, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-
-            var orderItems = new List<OrderItem>();
-            decimal subTotal = 0;
-            for (var i = 0; i < lines.Count; i++)
-            {
-                var line = lines[i];
-                var sku = line.Sku.Trim();
-                if (!bySku.TryGetValue(sku, out var variant))
-                    return RejectManual($"Dòng {i + 1}: không tìm thấy SKU '{sku}'.");
-
-                var unit = line.UnitPrice ?? variant.Price;
-                var lineTotal = unit * line.Quantity;
-                subTotal += lineTotal;
-
-                var productName = variant.Product.Translations
-                    .OrderBy(t => t.LanguageCode == "vi" ? 0 : 1)
-                    .Select(t => t.Name)
-                    .FirstOrDefault() ?? variant.Product.Slug;
-
-                orderItems.Add(new OrderItem
-                {
-                    ProductId = variant.ProductId,
-                    ProductVariantId = variant.Id,
-                    ProductName = productName,
-                    VariantLabel = variant.VariantLabel,
-                    Sku = variant.Sku,
-                    UnitPrice = unit,
-                    Quantity = line.Quantity,
-                    LineTotal = lineTotal
-                });
-            }
+                ProductId = l.ProductId,
+                ProductVariantId = l.ProductVariantId,
+                ProductName = l.ProductName,
+                VariantLabel = l.VariantLabel,
+                Sku = l.Sku,
+                UnitPrice = l.UnitPrice,
+                Quantity = l.Quantity,
+                LineTotal = l.LineTotal,
+                DiscountPercent = l.DiscountPercent,
+                DiscountAmount = l.DiscountAmount,
+                DiscountTierLabel = l.DiscountTierLabel,
+                DiscountSource = l.DiscountSource
+            }).ToList();
 
             var now = DateTime.UtcNow;
             var status = request.Status;
             var orderNumber = await NextOrderNumberAsync(ct);
 
-            decimal discountPercent = 0;
-            int? dealerId = null;
-            string? dealerName = null;
-            if (request.DealerId is int did && did > 0)
-            {
-                var dealer = await db.Dealers.AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == did && x.Status == DealerStatus.Approved, ct);
-                if (dealer is null)
-                    return RejectManual("Đại lý không hợp lệ hoặc chưa được duyệt.");
-                dealerId = dealer.Id;
-                dealerName = dealer.FullName;
-                discountPercent = request.DealerDiscountPercent ?? dealer.DiscountPercent ?? 0;
-                if (discountPercent is < 0 or > 100)
-                    return RejectManual("Chiết khấu phải từ 0 đến 100.");
-            }
-
             const decimal shippingFee = 0m;
-            var discountAmount = dealerId is null
-                ? 0
-                : Math.Round(subTotal * discountPercent / 100m, 0, MidpointRounding.AwayFromZero);
+            var subTotal = priced.SubTotal;
+            var discountAmount = priced.DiscountAmount;
             var total = subTotal - discountAmount + shippingFee;
+            var dealerId = dealer?.Id;
 
             var order = new Order
             {
@@ -459,8 +457,13 @@ public partial class OrderService(
                 CustomerPhone = request.CustomerPhone.Trim(),
                 CitizenId = GuestValidation.NormalizeCitizenId(request.CitizenId),
                 DealerId = dealerId,
-                DealerDiscountPercent = dealerId is null ? null : discountPercent,
                 DiscountAmount = discountAmount,
+                InvoiceBuyerName = dealer?.BusinessName,
+                InvoiceTaxCode = dealer?.TaxCode,
+                InvoiceAddress = dealer is null
+                    ? null
+                    : AddressFormat.Join(dealer.Address, dealer.CommuneName, dealer.ProvinceName),
+                InvoiceEmail = dealer is null ? null : dealer.InvoiceEmail ?? dealer.Email,
                 ShippingAddress = request.ShippingAddress?.Trim() ?? string.Empty,
                 ShippingProvinceId = shippingProvinceId,
                 ShippingCity = resolved.ProvinceName,
@@ -514,9 +517,9 @@ public partial class OrderService(
                 StatusHistoryEventTypes.ManualCreated,
                 null,
                 status,
-                messageVi: dealerId is null
-                    ? $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) — {statusLabel}"
-                    : $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) — đại lý {dealerName} (−{discountPercent:0.##}%) — {statusLabel}",
+                messageVi: dealer is null
+                    ? $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) - {statusLabel}"
+                    : $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) - đại lý {dealer.BusinessName} (CK {discountAmount:N0}đ) - {statusLabel}",
                 ct: ct);
 
             await audit.WriteAsync(
@@ -532,8 +535,12 @@ public partial class OrderService(
                     order.ExternalRef,
                     order.Total,
                     DealerId = dealerId,
-                    DiscountPercent = discountPercent,
-                    Lines = orderItems.Count
+                    order.DiscountAmount,
+                    Lines = orderItems.Count,
+                    ManualDiscounts = priced.Lines
+                        .Where(l => l.DiscountSource == DealerDiscountSource.Manual)
+                        .Select(l => new { l.Sku, l.PolicyPercent, ManualPercent = l.DiscountPercent })
+                        .ToList()
                 },
                 ct);
 
@@ -754,10 +761,15 @@ public partial class OrderService(
         o.DiscountAmount,
         o.Total,
         o.DealerId,
-        o.Dealer?.FullName,
+        o.Dealer?.BusinessName,
         o.DealerDiscountPercent,
         o.CreatedAt,
-        o.Items.Select(i => new OrderLineDto(i.ProductName, i.VariantLabel, i.Sku, i.UnitPrice, i.Quantity, i.LineTotal)).ToList());
+        o.Items.OrderBy(i => i.Id).Select(i => new OrderLineDto(
+            i.ProductName, i.VariantLabel, i.Sku, i.UnitPrice, i.Quantity, i.LineTotal,
+            i.DiscountPercent, i.DiscountAmount, i.DiscountTierLabel, i.DiscountSource)).ToList(),
+        string.IsNullOrEmpty(o.InvoiceTaxCode)
+            ? null
+            : new OrderInvoiceDto(o.InvoiceBuyerName ?? "", o.InvoiceTaxCode, o.InvoiceAddress ?? "", o.InvoiceEmail));
 
     private async Task<string> NextOrderNumberAsync(CancellationToken ct)
     {
@@ -769,14 +781,19 @@ public partial class OrderService(
         return PublicReferenceCodes.Format(prefix, PublicReferenceCodes.NextSequence(existing, prefix));
     }
 
-    private async Task SendOrderEmailsAsync(Order order, string provinceName, CancellationToken ct)
+    private async Task SendOrderEmailsAsync(Order order, string provinceName, CancellationToken ct, Dealer? dealer = null)
     {
         var staff = await GetSettingAsync("notifications.order_email")
                     ?? await GetSettingAsync("company.email")
                     ?? "info@harian.local";
 
         var lines = string.Join("<br/>", order.Items.Select(i =>
-            $"{EmailTemplateService.Enc(i.ProductName)} ({EmailTemplateService.Enc(i.VariantLabel)}) × {i.Quantity} = {i.LineTotal:N0}đ"));
+            $"{EmailTemplateService.Enc(i.ProductName)} ({EmailTemplateService.Enc(i.VariantLabel)}) × {i.Quantity} = {i.LineTotal:N0}đ"
+            + (i.DiscountSource == DealerDiscountSource.None
+                ? ""
+                : $" (CK {i.DiscountPercent:0.##}%: -{i.DiscountAmount:N0}đ)")));
+        if (dealer is not null)
+            lines += DealerOrderEmailBlock(order, dealer);
 
         var bankBlock = "";
         if (order.PaymentMethod == PaymentMethod.BankTransfer)
@@ -803,7 +820,7 @@ public partial class OrderService(
             ["ProvinceName"] = EmailTemplateService.Enc(provinceName),
             ["PaymentMethod"] = EmailTemplateService.Enc(order.PaymentMethod.ToString()),
             ["OrderLinesHtml"] = lines,
-            ["SubTotal"] = order.SubTotal.ToString("N0"),
+            ["SubTotal"] = (order.SubTotal - order.DiscountAmount).ToString("N0"),
             ["ShippingFee"] = order.ShippingFee.ToString("N0"),
             ["Total"] = order.Total.ToString("N0"),
             ["BankBlockHtml"] = bankBlock
@@ -815,12 +832,23 @@ public partial class OrderService(
             await email.SendAsync(staff, staffMail.Subject, staffMail.Body, ct);
             var customerMail = await emailTemplates.RenderAsync(EmailTemplateCodes.OrderCustomer, vars, ct);
             await email.SendAsync(order.CustomerEmail, customerMail.Subject, customerMail.Body, ct);
+            if (dealer is not null && !string.Equals(dealer.Email, order.CustomerEmail, StringComparison.OrdinalIgnoreCase))
+                await email.SendAsync(dealer.Email, customerMail.Subject, customerMail.Body, ct);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Order email failed for {Order}", order.OrderNumber);
         }
     }
+
+    private static string DealerOrderEmailBlock(Order order, Dealer dealer) =>
+        $"<br/><br/><strong>Đơn đại lý: {EmailTemplateService.Enc(dealer.BusinessName)}</strong>"
+        + $"<br/>Chiết khấu đại lý: -{order.DiscountAmount:N0}đ"
+        + "<br/><strong>Thông tin xuất hóa đơn</strong>"
+        + $"<br/>Tên đơn vị: {EmailTemplateService.Enc(order.InvoiceBuyerName)}"
+        + $"<br/>MST: {EmailTemplateService.Enc(order.InvoiceTaxCode)}"
+        + $"<br/>Địa chỉ: {EmailTemplateService.Enc(order.InvoiceAddress)}"
+        + $"<br/>Email nhận hóa đơn: {EmailTemplateService.Enc(order.InvoiceEmail)}";
 
     private async Task<string?> GetSettingAsync(string key)
         => await db.SiteSettings.AsNoTracking().Where(s => s.Key == key).Select(s => s.Value).FirstOrDefaultAsync();

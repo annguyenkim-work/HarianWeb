@@ -2,25 +2,34 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Localization;
 using NewHarian.Application.Address;
 using NewHarian.Application.Cart;
+using NewHarian.Application.Dealers;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
 using NewHarian.Application.Shipping;
 using NewHarian.Application.Validation;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Models;
+using NewHarian.Web.Security;
 
 namespace NewHarian.Web.Controllers;
 
 public class CheckoutController(
     ICartService cart,
+    ICartPricingService pricing,
     IShippingService shipping,
     IOrderService orders,
     IBankTransferDisplayService bankTransfer,
-    IVietnamDivisionCatalog catalog) : Controller
+    IVietnamDivisionCatalog catalog,
+    IDealerAccessCodeService accessCodes,
+    IDealerCheckoutContext dealerCheckout,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     private const string DraftKey = "CheckoutDraft";
     private const string LastOrderKey = "LastPlacedOrder";
+    public const string DealerCodeErrorKey = "DealerCodeError";
 
     private string Lang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
@@ -30,8 +39,8 @@ public class CheckoutController(
         var basket = cart.GetCart();
         if (basket.Items.Count == 0) return RedirectToAction("Index", "Cart");
 
-        ViewBag.Cart = basket;
-        ViewBag.FreeThreshold = await shipping.GetFreeThresholdAsync(ct);
+        var dealer = await LoadDealerAsync(ct);
+        await SetSummaryAsync(basket, dealer, "/checkout", ct);
 
         var draft = LoadDraft() ?? new CheckoutDraft
         {
@@ -48,13 +57,13 @@ public class CheckoutController(
         var basket = cart.GetCart();
         if (basket.Items.Count == 0) return RedirectToAction("Index", "Cart");
 
+        var dealer = await LoadDealerAsync(ct);
         model.LanguageCode = Lang;
-        var error = ValidateDraft(model);
+        var error = ValidateDraft(model, CitizenIdOptional(dealer));
         if (error is not null)
         {
             ModelState.AddModelError(string.Empty, error);
-            ViewBag.Cart = basket;
-            ViewBag.FreeThreshold = await shipping.GetFreeThresholdAsync(ct);
+            await SetSummaryAsync(basket, dealer, "/checkout", ct);
             return View(model);
         }
 
@@ -66,17 +75,19 @@ public class CheckoutController(
     [HttpGet("/checkout/shipping-fee")]
     public async Task<IActionResult> ShippingFee(string provinceCode, CancellationToken ct)
     {
-        var basket = cart.GetCart();
-        var (fee, isFree) = await shipping.CalculateFeeAsync(basket.SubTotal, provinceCode ?? "", ct);
+        var dealer = (await dealerCheckout.GetAsync(ct)).Dealer;
+        var priced = await pricing.PriceAsync(cart.GetCart(), dealer?.Id, ct);
+        var (fee, isFree) = await shipping.CalculateFeeAsync(priced.NetSubTotal, provinceCode ?? "", ct);
+        var total = priced.NetSubTotal + fee;
         return Json(new
         {
             fee,
             feeText = fee.ToString("N0") + "đ",
             isFree,
-            subTotal = basket.SubTotal,
-            subTotalText = basket.SubTotal.ToString("N0") + "đ",
-            total = basket.SubTotal + fee,
-            totalText = (basket.SubTotal + fee).ToString("N0") + "đ"
+            subTotal = priced.SubTotal,
+            subTotalText = priced.SubTotal.ToString("N0") + "đ",
+            total,
+            totalText = total.ToString("N0") + "đ"
         });
     }
 
@@ -87,13 +98,16 @@ public class CheckoutController(
         var basket = cart.GetCart();
         if (draft is null || basket.Items.Count == 0) return RedirectToAction(nameof(Index));
 
-        var (fee, isFree) = await shipping.CalculateFeeAsync(basket.SubTotal, draft.ShippingProvinceCode, ct);
+        var dealer = await LoadDealerAsync(ct);
+        var priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
+        var (fee, isFree) = await shipping.CalculateFeeAsync(priced.NetSubTotal, draft.ShippingProvinceCode, ct);
         catalog.TryResolve(draft.ShippingProvinceCode, draft.ShippingCommuneCode, out var addr);
-        ViewBag.Cart = basket;
+        ViewBag.Priced = priced;
+        ViewBag.Dealer = dealer;
         ViewBag.ShippingFee = fee;
         ViewBag.IsFreeShipping = isFree;
         ViewBag.ShipTo = AddressFormat.Join(draft.ShippingAddress, addr.CommuneName, addr.ProvinceName);
-        ViewBag.Total = basket.SubTotal + fee;
+        ViewBag.Total = priced.NetSubTotal + fee;
         return View(draft);
     }
 
@@ -114,7 +128,14 @@ public class CheckoutController(
                 return RedirectToAction(nameof(Success), new { orderNumber = parts[1] });
         }
 
-        var (ok, error, orderNumber) = await orders.PlaceOrderAsync(draft, ct);
+        var state = await dealerCheckout.GetAsync(ct);
+        if (state.Expired)
+        {
+            TempData["Error"] = localizer["Checkout.DealerCode.Expired"].Value;
+            return RedirectToAction(nameof(Confirm));
+        }
+
+        var (ok, error, orderNumber) = await orders.PlaceOrderAsync(draft, state.Dealer?.Id, ct);
         if (!ok || orderNumber is null)
         {
             TempData["Error"] = error;
@@ -123,7 +144,37 @@ public class CheckoutController(
 
         HttpContext.Session.SetString(LastOrderKey, $"{draft.CheckoutId}|{orderNumber}");
         HttpContext.Session.Remove(DraftKey);
+        dealerCheckout.Clear();
         return RedirectToAction(nameof(Success), new { orderNumber });
+    }
+
+    [HttpPost("/checkout/dealer-code")]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting(RateLimitingSetup.DealerCodePolicy)]
+    public async Task<IActionResult> DealerCode(string? code, string? returnUrl, CancellationToken ct)
+    {
+        var back = SafeReturnUrl(returnUrl);
+        var identity = await accessCodes.VerifyAsync(code, HttpContext.Connection.RemoteIpAddress?.ToString(), ct);
+        if (identity is null)
+        {
+            var invalid = localizer["Checkout.DealerCode.Invalid"].Value;
+            if (RateLimitingSetup.WantsJson(Request)) return Json(new { ok = false, error = invalid });
+            TempData[DealerCodeErrorKey] = invalid;
+            return LocalRedirect(back);
+        }
+
+        dealerCheckout.Set(identity);
+        var dealer = (await dealerCheckout.GetAsync(ct)).Dealer;
+        if (dealer is not null) PrefillDraft(dealer);
+        return RateLimitingSetup.WantsJson(Request) ? Json(new { ok = true }) : LocalRedirect(back);
+    }
+
+    [HttpPost("/checkout/dealer-code/remove")]
+    [ValidateAntiForgeryToken]
+    public IActionResult RemoveDealerCode(string? returnUrl)
+    {
+        dealerCheckout.Clear();
+        return LocalRedirect(SafeReturnUrl(returnUrl));
     }
 
     [HttpGet("/checkout/success/{orderNumber}")]
@@ -146,7 +197,41 @@ public class CheckoutController(
         return View(order);
     }
 
-    private string? ValidateDraft(CheckoutDraft m)
+    /// <summary>Dealer of this session; an outdated one is dropped with a notice on the page.</summary>
+    private async Task<DealerOptionDto?> LoadDealerAsync(CancellationToken ct)
+    {
+        var state = await dealerCheckout.GetAsync(ct);
+        if (state.Expired) ViewBag.DealerNotice = localizer["Checkout.DealerCode.Expired"].Value;
+        return state.Dealer;
+    }
+
+    private async Task SetSummaryAsync(CartDto basket, DealerOptionDto? dealer, string returnUrl, CancellationToken ct)
+    {
+        ViewBag.Priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
+        ViewBag.Dealer = dealer;
+        ViewBag.FreeThreshold = await shipping.GetFreeThresholdAsync(ct);
+        ViewBag.DealerBox = new DealerCodeBoxModel(dealer, returnUrl, TempData[DealerCodeErrorKey] as string);
+    }
+
+    private void PrefillDraft(DealerOptionDto dealer)
+    {
+        var draft = LoadDraft() ?? new CheckoutDraft { PaymentMethod = PaymentMethod.COD, LanguageCode = Lang };
+        draft.CustomerName = dealer.FullName;
+        draft.CustomerEmail = dealer.Email;
+        draft.CustomerPhone = dealer.Phone;
+        draft.CitizenId = dealer.CitizenId ?? "";
+        draft.ShippingAddress = dealer.ShipAddress;
+        draft.ShippingProvinceCode = dealer.ShipProvinceCode ?? "";
+        draft.ShippingCommuneCode = dealer.ShipCommuneCode ?? "";
+        SaveDraft(draft);
+    }
+
+    private static bool CitizenIdOptional(DealerOptionDto? dealer) => dealer?.BusinessType == DealerBusinessType.Company;
+
+    private string SafeReturnUrl(string? returnUrl)
+        => !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/cart";
+
+    private string? ValidateDraft(CheckoutDraft m, bool citizenIdOptional)
     {
         if (!GuestValidation.HasLength(m.CustomerName, 2, GuestValidation.NameMax))
             return "Vui lòng điền họ tên (2-200 ký tự)."; // CHK_REQUIRED
@@ -154,7 +239,8 @@ public class CheckoutController(
             return "Email không hợp lệ."; // CHK_EMAIL_INVALID
         if (string.IsNullOrWhiteSpace(m.CustomerPhone) || !GuestValidation.IsPhone(m.CustomerPhone))
             return "Số điện thoại không hợp lệ (8-20 ký tự, chỉ số/khoảng trắng/+/-)."; // CHK_PHONE_INVALID
-        if (!GuestValidation.IsCitizenId(m.CitizenId))
+        var skipCitizenId = citizenIdOptional && string.IsNullOrWhiteSpace(m.CitizenId);
+        if (!skipCitizenId && !GuestValidation.IsCitizenId(m.CitizenId))
             return "CCCD phải gồm 9 hoặc 12 chữ số."; // CHK_CITIZEN_ID_INVALID
         var addrErr = AddressFormat.Require(catalog, m.ShippingProvinceCode, m.ShippingCommuneCode, m.ShippingAddress);
         if (addrErr is not null)

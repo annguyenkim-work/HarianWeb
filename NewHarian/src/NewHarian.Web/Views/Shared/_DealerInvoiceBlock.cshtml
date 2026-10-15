@@ -1,0 +1,12 @@
+@model NewHarian.Application.Dealers.DealerOptionDto
+
+<section class="confirm-block" data-dealer-invoice>
+    <h2>@Localizer["Checkout.Invoice"]</h2>
+    <p>
+        @Localizer["Checkout.InvoiceName"]: <strong data-invoice="name">@Model.BusinessName</strong><br />
+        @Localizer["Checkout.InvoiceTaxCode"]: <span data-invoice="taxcode">@Model.TaxCode</span><br />
+        @Localizer["Checkout.InvoiceAddress"]: <span data-invoice="address">@Model.InvoiceAddress</span><br />
+        @Localizer["Checkout.InvoiceEmail"]: <span data-invoice="email">@Model.InvoiceEmail</span>
+    </p>
+    <p class="muted">@Localizer["Checkout.InvoiceHint"]</p>
+</section>

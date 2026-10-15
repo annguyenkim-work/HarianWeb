@@ -36,6 +36,7 @@ public static class Permissions
         public const string Cancel = "Orders.Cancel";
         public const string PreviewStockPick = "Orders.PreviewStockPick";
         public const string ViewAllocations = "Orders.ViewAllocations";
+        public const string OverrideDiscount = "Orders.OverrideDiscount";
     }
 
     public static class Inventory
@@ -99,6 +100,7 @@ public static class Permissions
         public const string Create = "Dealers.Create";
         public const string Approve = "Dealers.Approve";
         public const string Edit = "Dealers.Edit";
+        public const string ManageDiscounts = "Dealers.ManageDiscounts";
     }
 
     public static class Applications

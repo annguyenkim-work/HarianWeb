@@ -115,6 +115,21 @@ public enum DealerStatus
     Rejected = 2
 }
 
+public enum DealerBusinessType
+{
+    Company = 1,
+    Household = 2
+}
+
+/// <summary>Where the % on a dealer order line came from.</summary>
+public enum DealerDiscountSource
+{
+    None = 0,
+    Default = 1,
+    DealerOverride = 2,
+    Manual = 3
+}
+
 public enum EmployeeStatus
 {
     Probation = 0,

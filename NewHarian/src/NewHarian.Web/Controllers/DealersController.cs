@@ -2,15 +2,16 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using NewHarian.Application.Abstractions;
 using NewHarian.Application.Cms;
 using NewHarian.Application.Dealers;
-using NewHarian.Application.Validation;
 
 namespace NewHarian.Web.Controllers;
 
-public class DealersController(IDealerService dealers, ICmsPageService cms) : Controller
+public class DealersController(IDealerRegistrationService dealers, IMediaStorage media, ICmsPageService cms) : Controller
 {
     private const string SessionKey = "dealers.draft";
+    private const string MediaFolder = "dealers";
     private string Lang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
     [HttpGet("/dealers")]
@@ -23,18 +24,13 @@ public class DealersController(IDealerService dealers, ICmsPageService cms) : Co
     }
 
     [HttpGet("/dealers/register")]
-    public IActionResult Index()
-    {
-        var draft = HttpContext.Session.GetString(SessionKey);
-        var model = string.IsNullOrEmpty(draft)
-            ? new DealerFormModel()
-            : JsonSerializer.Deserialize<DealerFormModel>(draft) ?? new DealerFormModel();
-        return View(model);
-    }
+    public IActionResult Index() => View(ReadDraft() ?? new DealerFormModel());
 
     [HttpPost("/dealers/register")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Index(DealerFormModel model, CancellationToken ct)
+    [EnableRateLimiting("dealers-upload")]
+    [RequestSizeLimit(MediaUploadLimits.HttpRequestBytes)]
+    public async Task<IActionResult> Index(DealerFormModel model, IFormFile? businessLicenseFile, CancellationToken ct)
     {
         if (!string.IsNullOrWhiteSpace(model.Website))
         {
@@ -42,15 +38,32 @@ public class DealersController(IDealerService dealers, ICmsPageService cms) : Co
             return RedirectToAction(nameof(ThankYou));
         }
 
-        if (!GuestValidation.HasLength(model.FullName, 2, GuestValidation.NameMax)
-            || string.IsNullOrWhiteSpace(model.Phone) || !GuestValidation.IsPhone(model.Phone)
-            || !GuestValidation.IsEmail(model.Email)
-            || !GuestValidation.IsCitizenId(model.CitizenId)
-            || !GuestValidation.HasLength(model.Address, 5, GuestValidation.AddressMax)
-            || !GuestValidation.FitsMax(model.Message, GuestValidation.NotesMax))
+        var previous = ReadDraft();
+        model.BusinessLicenseMediaFileId = previous?.BusinessLicenseMediaFileId;
+        model.BusinessLicenseFileName = previous?.BusinessLicenseFileName;
+
+        var error = await dealers.ValidateAsync(model, ct);
+        if (error is not null)
         {
-            ModelState.AddModelError(string.Empty, "Vui lòng kiểm tra họ tên, SĐT, email, CCCD và địa chỉ.");
+            ModelState.AddModelError(string.Empty, error);
             return View(model);
+        }
+
+        if (businessLicenseFile is { Length: > 0 })
+        {
+            try
+            {
+                await using var stream = businessLicenseFile.OpenReadStream();
+                var up = await media.SaveDocumentAsync(
+                    stream, businessLicenseFile.FileName, businessLicenseFile.ContentType, null, ct, MediaFolder);
+                model.BusinessLicenseMediaFileId = up.Id;
+                model.BusinessLicenseFileName = up.FileName;
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                return View(model);
+            }
         }
 
         HttpContext.Session.SetString(SessionKey, JsonSerializer.Serialize(model));
@@ -61,11 +74,8 @@ public class DealersController(IDealerService dealers, ICmsPageService cms) : Co
     [HttpGet("/dealers/confirm")]
     public IActionResult Confirm()
     {
-        var draft = HttpContext.Session.GetString(SessionKey);
-        if (string.IsNullOrEmpty(draft)) return RedirectToAction(nameof(Index));
-        var model = JsonSerializer.Deserialize<DealerFormModel>(draft);
-        if (model is null) return RedirectToAction(nameof(Index));
-        return View(model);
+        var model = ReadDraft();
+        return model is null ? RedirectToAction(nameof(Index)) : View(model);
     }
 
     [HttpPost("/dealers/submit")]
@@ -73,11 +83,7 @@ public class DealersController(IDealerService dealers, ICmsPageService cms) : Co
     [EnableRateLimiting("dealers-form")]
     public async Task<IActionResult> Submit(DealerFormModel? formModel, CancellationToken ct)
     {
-        DealerFormModel? model = null;
-        var draft = HttpContext.Session.GetString(SessionKey);
-        if (!string.IsNullOrEmpty(draft))
-            model = JsonSerializer.Deserialize<DealerFormModel>(draft);
-
+        var model = ReadDraft();
         if (model is null || string.IsNullOrWhiteSpace(model.Email))
             model = formModel;
 
@@ -100,4 +106,10 @@ public class DealersController(IDealerService dealers, ICmsPageService cms) : Co
 
     [HttpGet("/dealers/thank-you")]
     public IActionResult ThankYou() => View();
+
+    private DealerFormModel? ReadDraft()
+    {
+        var draft = HttpContext.Session.GetString(SessionKey);
+        return string.IsNullOrEmpty(draft) ? null : JsonSerializer.Deserialize<DealerFormModel>(draft);
+    }
 }

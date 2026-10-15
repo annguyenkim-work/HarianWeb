@@ -505,10 +505,36 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AccessCodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("AccessCodeIssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AccessCodeIssuedByUserId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("AccessCodeLast4")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
+
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("BusinessLicenseMediaFileId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BusinessName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("BusinessType")
+                        .HasColumnType("integer");
 
                     b.Property<string>("CitizenId")
                         .HasMaxLength(20)
@@ -525,10 +551,6 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("DiscountPercent")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -539,8 +561,16 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("HouseholdRegistrationNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("InternalNotes")
                         .HasColumnType("text");
+
+                    b.Property<string>("InvoiceEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("LanguageCode")
                         .IsRequired()
@@ -564,22 +594,201 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("RepresentativeName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("RepresentativeTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<DateTime?>("ReviewedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ReviewedByUserId")
                         .HasColumnType("text");
 
+                    b.Property<bool>("ShipToHeadOffice")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ShippingAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ShippingCommuneCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("ShippingCommuneName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ShippingProvinceCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("ShippingProvinceName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("TaxCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("AccessCodeHash")
+                        .IsUnique()
+                        .HasFilter("\"AccessCodeHash\" IS NOT NULL");
+
+                    b.HasIndex("BusinessLicenseMediaFileId");
 
                     b.HasIndex("Email");
 
                     b.HasIndex("Status");
 
+                    b.HasIndex("TaxCode")
+                        .IsUnique()
+                        .HasFilter("\"Status\" <> 2");
+
                     b.ToTable("Dealers");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("DealerDiscountGroups");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroupProduct", b =>
+                {
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GroupId", "ProductId");
+
+                    b.HasIndex("ProductId")
+                        .IsUnique();
+
+                    b.ToTable("DealerDiscountGroupProducts");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountOverride", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DealerId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Percent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TierId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TierId");
+
+                    b.HasIndex("DealerId", "TierId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("DealerDiscountOverrides");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountRate", b =>
+                {
+                    b.Property<int>("TierId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Percent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.HasKey("TierId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("DealerDiscountRates");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountTier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaxQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("DealerDiscountTiers");
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.EmailOutboxMessage", b =>
@@ -602,6 +811,9 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Property<string>("HtmlBody")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsSensitive")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LastError")
                         .HasMaxLength(2000)
@@ -1172,6 +1384,22 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Property<string>("InternalNotes")
                         .HasColumnType("text");
 
+                    b.Property<string>("InvoiceAddress")
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)");
+
+                    b.Property<string>("InvoiceBuyerName")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("InvoiceEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("InvoiceTaxCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("LanguageCode")
                         .IsRequired()
                         .HasMaxLength(5)
@@ -1311,6 +1539,21 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<int>("DiscountSource")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DiscountTierLabel")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
 
                     b.Property<decimal>("LineTotal")
                         .HasPrecision(18, 2)
@@ -2528,6 +2771,92 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Navigation("ContentBlock");
                 });
 
+            modelBuilder.Entity("NewHarian.Domain.Entities.Dealer", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.MediaFile", "BusinessLicense")
+                        .WithMany()
+                        .HasForeignKey("BusinessLicenseMediaFileId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BusinessLicense");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroupProduct", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.DealerDiscountGroup", "Group")
+                        .WithMany("Products")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NewHarian.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountOverride", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.Dealer", "Dealer")
+                        .WithMany("DiscountOverrides")
+                        .HasForeignKey("DealerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NewHarian.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NewHarian.Domain.Entities.DealerDiscountTier", "Tier")
+                        .WithMany()
+                        .HasForeignKey("TierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dealer");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Tier");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountRate", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NewHarian.Domain.Entities.DealerDiscountTier", "Tier")
+                        .WithMany("Rates")
+                        .HasForeignKey("TierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Tier");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountTier", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.DealerDiscountGroup", "Group")
+                        .WithMany("Tiers")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+                });
+
             modelBuilder.Entity("NewHarian.Domain.Entities.EmployeeProfile", b =>
                 {
                     b.HasOne("NewHarian.Infrastructure.Identity.ApplicationUser", null)
@@ -2954,7 +3283,21 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("NewHarian.Domain.Entities.Dealer", b =>
                 {
+                    b.Navigation("DiscountOverrides");
+
                     b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroup", b =>
+                {
+                    b.Navigation("Products");
+
+                    b.Navigation("Tiers");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountTier", b =>
+                {
+                    b.Navigation("Rates");
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.HomeSlide", b =>

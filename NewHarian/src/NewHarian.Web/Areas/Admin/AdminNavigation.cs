@@ -26,6 +26,7 @@ public static class AdminNavigation
             new("Kho", "Inventory", "Index", Permissions.Inventory.View),
             new("Liên hệ", "Inquiries", "Index", Permissions.Inquiries.View),
             new("Đại lý", "Dealers", "Index", Permissions.Dealers.View),
+            new("Chiết khấu đại lý", "DealerDiscounts", "Index", Permissions.Dealers.View),
             new("Hồ sơ ứng tuyển", "Applications", "Index", Permissions.Applications.View),
             new("Hướng dẫn", "Help", "Index", Permissions.Help.View),
             new("Tin tức", "Posts", "Index", Permissions.Posts.Manage, new Dictionary<string, string> { ["kind"] = "News" }),

@@ -12,8 +12,13 @@ public class Order
     public string? CustomerPhone { get; set; }
     public string? CitizenId { get; set; }
     public int? DealerId { get; set; }
+    /// <summary>Legacy single % for the whole order; new dealer orders store % per line.</summary>
     public decimal? DealerDiscountPercent { get; set; }
     public decimal DiscountAmount { get; set; }
+    public string? InvoiceBuyerName { get; set; }
+    public string? InvoiceTaxCode { get; set; }
+    public string? InvoiceAddress { get; set; }
+    public string? InvoiceEmail { get; set; }
     public string ShippingAddress { get; set; } = string.Empty;
     public int? ShippingProvinceId { get; set; }
     public string? ShippingCity { get; set; }
@@ -56,6 +61,10 @@ public class OrderItem
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public decimal LineTotal { get; set; }
+    public decimal DiscountPercent { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public string? DiscountTierLabel { get; set; }
+    public DealerDiscountSource DiscountSource { get; set; } = DealerDiscountSource.None;
 
     public Order Order { get; set; } = null!;
     public ICollection<OrderItemLotAllocation> LotAllocations { get; set; } = new List<OrderItemLotAllocation>();
@@ -103,23 +112,46 @@ public class ShippingRate
 public class Dealer
 {
     public int Id { get; set; }
+    public DealerBusinessType BusinessType { get; set; } = DealerBusinessType.Company;
+    public string BusinessName { get; set; } = string.Empty;
+    public string TaxCode { get; set; } = string.Empty;
+    public string? HouseholdRegistrationNo { get; set; }
+    public string RepresentativeName { get; set; } = string.Empty;
+    public string? RepresentativeTitle { get; set; }
+    /// <summary>Contact person.</summary>
     public string FullName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    /// <summary>Head office (as registered) — used on VAT invoices.</summary>
     public string Address { get; set; } = string.Empty;
     public string? ProvinceCode { get; set; }
     public string? ProvinceName { get; set; }
     public string? CommuneCode { get; set; }
     public string? CommuneName { get; set; }
+    public bool ShipToHeadOffice { get; set; } = true;
+    public string? ShippingAddress { get; set; }
+    public string? ShippingProvinceCode { get; set; }
+    public string? ShippingProvinceName { get; set; }
+    public string? ShippingCommuneCode { get; set; }
+    public string? ShippingCommuneName { get; set; }
+    public string? InvoiceEmail { get; set; }
+    public int? BusinessLicenseMediaFileId { get; set; }
     public string? CitizenId { get; set; }
     public string? Message { get; set; }
     public DealerStatus Status { get; set; } = DealerStatus.Pending;
-    public decimal? DiscountPercent { get; set; }
     public string? InternalNotes { get; set; }
     public string? ReviewedByUserId { get; set; }
     public string LanguageCode { get; set; } = "vi";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ReviewedAt { get; set; }
+    /// <summary>HMAC of the normalized access code; the plain code is only ever sent by email.</summary>
+    public string? AccessCodeHash { get; set; }
+    public string? AccessCodeLast4 { get; set; }
+    /// <summary>Also stamps checkout sessions: a re-issued code invalidates sessions verified with the old one.</summary>
+    public DateTime? AccessCodeIssuedAt { get; set; }
+    public string? AccessCodeIssuedByUserId { get; set; }
 
+    public MediaFile? BusinessLicense { get; set; }
     public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public ICollection<DealerDiscountOverride> DiscountOverrides { get; set; } = new List<DealerDiscountOverride>();
 }

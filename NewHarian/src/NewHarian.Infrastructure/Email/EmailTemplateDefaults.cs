@@ -109,22 +109,35 @@ public static class EmailTemplateDefaults
             """),
 
         T(EmailTemplateCodes.DealerCustomer, "Đại lý - cảm ơn đăng ký",
-            "CustomerName",
+            "CustomerName, BusinessName",
             "Cảm ơn bạn đã đăng ký đại lý - Harian",
             """
             <p>Xin chào {{CustomerName}},</p>
-            <p>Chúng tôi đã nhận hồ sơ đăng ký đại lý và sẽ liên hệ sau khi xét duyệt.</p>
+            <p>Chúng tôi đã nhận hồ sơ đăng ký đại lý của <strong>{{BusinessName}}</strong> và sẽ liên hệ sau khi xét duyệt.</p>
             """),
 
         T(EmailTemplateCodes.DealerStaff, "Đại lý - notify staff",
-            "DealerId, CustomerName, CustomerEmail, CustomerPhone, CitizenId, Address, Message",
-            "[Harian] Hồ sơ đại lý mới #{{DealerId}}",
+            "DealerId, BusinessType, BusinessName, TaxCode, CustomerName, CustomerEmail, CustomerPhone, CitizenId, Address, HasBusinessLicense, Message",
+            "[Harian] Hồ sơ đại lý mới #{{DealerId}}: {{BusinessName}}",
             """
-            <p><strong>{{CustomerName}}</strong> ({{CustomerEmail}})</p>
-            <p>{{CustomerPhone}}</p>
+            <p><strong>{{BusinessName}}</strong> ({{BusinessType}})</p>
+            <p>MST: {{TaxCode}}</p>
+            <p>Người liên hệ: {{CustomerName}} ({{CustomerEmail}}) / {{CustomerPhone}}</p>
             <p>CCCD: {{CitizenId}}</p>
-            <p>{{Address}}</p>
+            <p>Trụ sở: {{Address}}</p>
+            <p>Giấy đăng ký kinh doanh: {{HasBusinessLicense}}</p>
             <p>{{Message}}</p>
+            """),
+
+        T(EmailTemplateCodes.DealerApproved, "Đại lý - duyệt + mã đại lý",
+            "BusinessName, AccessCode, ShopUrl",
+            "Hồ sơ đại lý đã được duyệt - Harian",
+            """
+            <p>Chào {{BusinessName}},</p>
+            <p>Hồ sơ đại lý của bạn đã được duyệt.</p>
+            <p>Mã đại lý: <strong style="font-size:1.2em;letter-spacing:1px">{{AccessCode}}</strong></p>
+            <p>Khi đặt hàng tại <a href="{{ShopUrl}}">{{ShopUrl}}</a>, nhập mã này ở giỏ hàng để được áp chiết khấu đại lý.</p>
+            <p>Vui lòng giữ bí mật mã. Nếu nghi ngờ mã bị lộ, hãy liên hệ Harian để cấp mã mới.</p>
             """)
     ];
 

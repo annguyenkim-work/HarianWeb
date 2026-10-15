@@ -1,16 +1,98 @@
 @model NewHarian.Application.Dealers.DealerDetailDto
 @using NewHarian.Domain.Enums
+@using NewHarian.Application.Dealers
 @{
-    var canApprove = (Model.Status is DealerStatus.Pending or DealerStatus.Rejected) && User.HasPermission(Permissions.Dealers.Approve);
-    var canEdit = Model.Status == DealerStatus.Approved && User.HasPermission(Permissions.Dealers.Edit);
-    var canWrite = canApprove || canEdit;
+    var discounts = ViewBag.Discounts as NewHarian.Application.DealerDiscounts.DealerDiscountOverridesDto;
+    var canApprove = User.HasPermission(Permissions.Dealers.Approve);
+    var canEdit = User.HasPermission(Permissions.Dealers.Edit);
+    var canManageDiscounts = User.HasPermission(Permissions.Dealers.ManageDiscounts);
+    var household = Model.BusinessType == DealerBusinessType.Household;
+    string Or(string? v) => string.IsNullOrWhiteSpace(v) ? "-" : v;
 }
 
-<h2>Đại lý #@Model.Id</h2>
+<h2>Đại lý #@Model.Id: @Model.BusinessName</h2>
 
+<h3 class="detail-section-title">Đơn vị</h3>
+<div class="detail-grid">
+    <div class="detail-field">
+        <span class="detail-field__label">Loại hình</span>
+        <span class="detail-field__value">@DealerLabels.Type(Model.BusinessType)</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">@(household ? "Tên hộ kinh doanh" : "Tên doanh nghiệp")</span>
+        <span class="detail-field__value">@Model.BusinessName</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">MST</span>
+        <span class="detail-field__value" data-field="taxCode">@Model.TaxCode</span>
+    </div>
+    @if (household)
+    {
+        <div class="detail-field">
+            <span class="detail-field__label">Số GCN đăng ký hộ kinh doanh</span>
+            <span class="detail-field__value">@Or(Model.HouseholdRegistrationNo)</span>
+        </div>
+    }
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Địa chỉ trụ sở</span>
+        <span class="detail-field__value">@Model.HeadOfficeAddress</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Giấy đăng ký kinh doanh</span>
+        <span class="detail-field__value">
+            @if (Model.BusinessLicenseMediaFileId is not null)
+            {
+                <a href="@Url.Action("Document", "Dealers", new { area = "Admin", id = Model.Id })" data-license-link>@Model.BusinessLicenseFileName</a>
+            }
+            else
+            {
+                <text>-</text>
+            }
+        </span>
+    </div>
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Mã đại lý</span>
+        <span class="detail-field__value" data-field="accessCode">
+            @if (Model.Status != DealerStatus.Approved)
+            {
+                <text>-</text>
+            }
+            else if (Model.AccessCodeLast4 is null)
+            {
+                <text>Chưa cấp</text>
+            }
+            else
+            {
+                <code>@DealerAccessCode.Masked(Model.AccessCodeLast4)</code>
+                <span class="muted">Cấp ngày @Model.AccessCodeIssuedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") bởi @Or(Model.AccessCodeIssuedByUserId)</span>
+            }
+        </span>
+    </div>
+</div>
+
+<h3 class="detail-section-title">@(household ? "Chủ hộ" : "Người đại diện")</h3>
 <div class="detail-grid">
     <div class="detail-field">
         <span class="detail-field__label">Họ tên</span>
+        <span class="detail-field__value">@Model.RepresentativeName</span>
+    </div>
+    @if (!household)
+    {
+        <div class="detail-field">
+            <span class="detail-field__label">Chức vụ</span>
+            <span class="detail-field__value">@Or(Model.RepresentativeTitle)</span>
+        </div>
+    }
+    <div class="detail-field">
+        <span class="detail-field__label">CCCD</span>
+        <span class="detail-field__value">@Or(Model.CitizenId)</span>
+    </div>
+</div>
+
+<h3 class="detail-section-title">Liên hệ</h3>
+<div class="detail-grid">
+    <div class="detail-field">
+        <span class="detail-field__label">Người liên hệ</span>
         <span class="detail-field__value">@Model.FullName</span>
     </div>
     <div class="detail-field">
@@ -21,79 +103,95 @@
         <span class="detail-field__label">Email</span>
         <span class="detail-field__value">@Model.Email</span>
     </div>
-    @if (canWrite)
-    {
-        <label class="detail-field">
-            <span class="detail-field__label">CCCD *</span>
-            <input name="citizenId" class="form-control" required maxlength="20" inputmode="numeric" value="@Model.CitizenId" />
-        </label>
-    }
-    else
-    {
-        <div class="detail-field">
-            <span class="detail-field__label">CCCD</span>
-            <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.CitizenId) ? "-" : Model.CitizenId)</span>
-        </div>
-    }
+</div>
+
+<h3 class="detail-section-title">Nhận hàng và hóa đơn</h3>
+<div class="detail-grid">
+    <div class="detail-field detail-field--wide">
+        <span class="detail-field__label">Địa chỉ nhận hàng</span>
+        <span class="detail-field__value" data-field="shippingAddress">@(Model.ShipToHeadOffice ? "Giống trụ sở" : Model.ShippingAddress)</span>
+    </div>
     <div class="detail-field">
-        <span class="detail-field__label">Status</span>
-        <span class="detail-field__value">@Model.Status</span>
+        <span class="detail-field__label">Email nhận hóa đơn</span>
+        <span class="detail-field__value">@(Model.InvoiceEmail ?? Model.Email + " (mặc định)")</span>
     </div>
-    @if (canWrite)
-    {
-        <label class="detail-field">
-            <span class="detail-field__label">@(Model.Status == DealerStatus.Approved ? "Chiết khấu % *" : "Chiết khấu % (khi duyệt)")</span>
-            <input name="discountPercent" type="number" min="0" max="100" step="0.01" class="form-control"
-                   value="@(Model.DiscountPercent?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? (Model.Status == DealerStatus.Approved ? "0" : ""))" />
-        </label>
-    }
-    else
-    {
-        <div class="detail-field">
-            <span class="detail-field__label">Chiết khấu %</span>
-            <span class="detail-field__value">@(Model.DiscountPercent?.ToString("0.##") ?? "-")</span>
-        </div>
-    }
-    <div class="detail-field detail-field--wide">
-        <span class="detail-field__label">Địa chỉ</span>
-        <span class="detail-field__value">@AddressFormat.Join(Model.Address, Model.CommuneName, Model.ProvinceName)</span>
+</div>
+
+<h3 class="detail-section-title">Khác</h3>
+<div class="detail-grid">
+    <div class="detail-field">
+        <span class="detail-field__label">Trạng thái</span>
+        <span class="detail-field__value">@DealerLabels.Status(Model.Status)</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Ngày gửi</span>
+        <span class="detail-field__value">@Model.CreatedAt.ToLocalTime().ToString("g") (@Model.LanguageCode)</span>
+    </div>
+    <div class="detail-field">
+        <span class="detail-field__label">Người duyệt</span>
+        <span class="detail-field__value">@Or(Model.ReviewedByUserId) @(Model.ReviewedAt?.ToLocalTime().ToString("g"))</span>
     </div>
     <div class="detail-field detail-field--wide">
-        <span class="detail-field__label">Ghi chú KH</span>
-        <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.Message) ? "-" : Model.Message)</span>
+        <span class="detail-field__label">Ghi chú khách</span>
+        <span class="detail-field__value">@Or(Model.Message)</span>
     </div>
-    @if (canWrite)
+    @if (canApprove)
     {
         <label class="detail-field detail-field--wide">
             <span class="detail-field__label">Ghi chú nội bộ</span>
-            <textarea name="internalNotes" class="form-control" rows="2">@Model.InternalNotes</textarea>
+            <textarea name="internalNotes" class="form-control" rows="2" maxlength="2000">@Model.InternalNotes</textarea>
         </label>
     }
     else
     {
         <div class="detail-field detail-field--wide">
             <span class="detail-field__label">Ghi chú nội bộ</span>
-            <span class="detail-field__value">@(string.IsNullOrWhiteSpace(Model.InternalNotes) ? "-" : Model.InternalNotes)</span>
+            <span class="detail-field__value">@Or(Model.InternalNotes)</span>
         </div>
     }
 </div>
 
-@if (canApprove)
+<h3 class="detail-section-title">Chiết khấu</h3>
+@if (discounts is null || discounts.Groups.Count == 0)
 {
-    <div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+    <p class="muted">Chưa có bảng chiết khấu đại lý.</p>
+}
+else
+{
+    <p class="muted">Ô không có % riêng sẽ theo bảng mặc định.</p>
+    @foreach (var g in discounts.Groups)
+    {
+        <h4>@g.Name</h4>
+        <partial name="_DiscountGroupTable" model="new DiscountGroupTableModel(g, discounts.Overrides)" />
+    }
+}
+
+<div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+    @if (canApprove && (Model.Status is DealerStatus.Pending or DealerStatus.Rejected))
+    {
         <button type="button" class="btn-primary" data-action="approve" data-id="@Model.Id">Duyệt</button>
-        @if (Model.Status == DealerStatus.Pending)
-        {
-            <button type="button" class="btn-link" data-action="reject" data-id="@Model.Id">Từ chối</button>
-        }
-    </div>
-}
-else if (canEdit)
-{
-    <div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
-        <button type="button" class="btn-primary" data-action="save" data-id="@Model.Id">Lưu</button>
-    </div>
-}
+    }
+    @if (canApprove && Model.Status == DealerStatus.Pending)
+    {
+        <button type="button" class="btn-link" data-action="reject" data-id="@Model.Id">Từ chối</button>
+    }
+    @if (canApprove && Model.Status == DealerStatus.Approved)
+    {
+        <button type="button" class="btn-primary" data-action="notes" data-id="@Model.Id">Lưu ghi chú</button>
+        <button type="button" class="btn-secondary" data-action="issue-code" data-id="@Model.Id"
+                data-confirm="@(Model.AccessCodeLast4 is null ? $"Cấp mã đại lý và gửi tới {Model.Email}?" : $"Mã cũ sẽ hết hiệu lực ngay. Gửi mã mới tới {Model.Email}?")">
+            @(Model.AccessCodeLast4 is null ? "Cấp mã" : "Cấp lại mã")
+        </button>
+    }
+    @if (canEdit)
+    {
+        <button type="button" class="btn-secondary" data-action="edit" data-id="@Model.Id">Sửa thông tin</button>
+    }
+    @if (canManageDiscounts && discounts is not null && discounts.Groups.Count > 0)
+    {
+        <button type="button" class="btn-secondary" data-action="edit-overrides" data-id="@Model.Id">Sửa % riêng</button>
+    }
+</div>
 
 <div class="modal__actions">
     <button type="button" class="btn-secondary" data-close>Đóng</button>
