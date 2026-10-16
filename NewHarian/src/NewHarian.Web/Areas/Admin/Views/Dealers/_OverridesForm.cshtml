@@ -1,0 +1,54 @@
+@model NewHarian.Application.DealerDiscounts.DealerDiscountOverridesDto
+@{
+    Layout = null;
+    var i = 0;
+}
+<form id="dealer-overrides-form" asp-area="Admin" asp-controller="Dealers" asp-action="SaveOverrides" method="post" data-modal-form>
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="DealerId" value="@Model.DealerId" />
+    <h2>% riêng: @Model.DealerName</h2>
+    <p class="muted">Để trống = theo bảng mặc định (hiện ở placeholder).</p>
+
+    @foreach (var g in Model.Groups)
+    {
+        <h4>@g.Name</h4>
+        <table class="data-table discount-table">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    @foreach (var t in g.Tiers)
+                    {
+                        <th>@t.Range</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var p in g.Products)
+            {
+                <tr>
+                    <td>@p.Name</td>
+                    @foreach (var t in g.Tiers)
+                    {
+                        var def = g.Rates.TryGetValue((t.Id, p.ProductId), out var d) ? d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "";
+                        var own = Model.Overrides.TryGetValue((t.Id, p.ProductId), out var o) ? o.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "";
+                        <td>
+                            <input type="hidden" name="Cells[@i].TierId" value="@t.Id" />
+                            <input type="hidden" name="Cells[@i].ProductId" value="@p.ProductId" />
+                            <input type="number" name="Cells[@i].Percent" value="@own" placeholder="@def" min="0" max="100" step="0.01"
+                                   class="form-control" style="max-width:6rem" data-override-input
+                                   aria-label="@p.Name @t.Range" />
+                        </td>
+                        i++;
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+
+    <div class="modal__actions">
+        <button type="button" class="btn-link" data-action="clear-overrides">Bỏ toàn bộ % riêng</button>
+        <button type="button" class="btn-secondary" data-close>Hủy</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+    </div>
+</form>

@@ -3,9 +3,10 @@
 @{
     ViewData["Title"] = "Đại lý";
     Layout = "_AdminLayout";
-    var statuses = Enum.GetValues<DealerStatus>();
     var sort = (string)(ViewBag.Sort ?? "createdAt");
     var dir = (string)(ViewBag.Dir ?? "desc");
+    var currentStatus = ViewBag.Status as DealerStatus?;
+    var currentType = ViewBag.Type as DealerBusinessType?;
 }
 
 <div class="admin-toolbar">
@@ -18,25 +19,24 @@
     </div>
 </div>
 
-
 <form method="get" class="filter-bar filter-bar--row">
     <input type="hidden" name="sort" value="@sort" />
     <input type="hidden" name="dir" value="@dir" />
     <select name="status" aria-label="Trạng thái">
-        <option value="">Trạng thái</option>
-        @foreach (var s in statuses)
+        <option value="">Tất cả trạng thái</option>
+        @foreach (var s in Enum.GetValues<DealerStatus>())
         {
-            if (ViewBag.Status as DealerStatus? == s)
-            {
-                <option value="@s" selected>@s</option>
-            }
-            else
-            {
-                <option value="@s">@s</option>
-            }
+            <option value="@s" selected="@(currentStatus == s)">@DealerLabels.Status(s)</option>
         }
     </select>
-    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm tên / email / SĐT / CCCD" class="form-control filter-bar__search" />
+    <select name="type" aria-label="Loại hình">
+        <option value="">Tất cả loại hình</option>
+        @foreach (var t in Enum.GetValues<DealerBusinessType>())
+        {
+            <option value="@t" selected="@(currentType == t)">@DealerLabels.Type(t)</option>
+        }
+    </select>
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tên đơn vị / MST / người liên hệ / email / SĐT" class="form-control filter-bar__search" />
     <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
 </form>
 
@@ -47,26 +47,34 @@
         <tr>
             <partial name="_SortableTh" model='new SortableThModel { Column = "id", Label = "#", CurrentSort = sort, CurrentDir = dir }' />
             <partial name="_SortableTh" model='new SortableThModel { Column = "createdAt", Label = "Ngày", CurrentSort = sort, CurrentDir = dir }' />
-            <partial name="_SortableTh" model='new SortableThModel { Column = "name", Label = "Họ tên", CurrentSort = sort, CurrentDir = dir }' />
+            <partial name="_SortableTh" model='new SortableThModel { Column = "name", Label = "Tên đơn vị", CurrentSort = sort, CurrentDir = dir }' />
+            <th>Loại</th>
+            <partial name="_SortableTh" model='new SortableThModel { Column = "taxCode", Label = "MST", CurrentSort = sort, CurrentDir = dir }' />
+            <th>Người liên hệ</th>
             <partial name="_SortableTh" model='new SortableThModel { Column = "phone", Label = "SĐT", CurrentSort = sort, CurrentDir = dir }' />
-            <partial name="_SortableTh" model='new SortableThModel { Column = "email", Label = "Email", CurrentSort = sort, CurrentDir = dir }' />
-            <partial name="_SortableTh" model='new SortableThModel { Column = "status", Label = "Status", CurrentSort = sort, CurrentDir = dir }' />
-            <th>%</th>
+            <partial name="_SortableTh" model='new SortableThModel { Column = "status", Label = "Trạng thái", CurrentSort = sort, CurrentDir = dir }' />
             <th></th>
         </tr>
     </thead>
     <tbody>
     @foreach (var d in Model)
     {
-        <tr>
+        <tr data-dealer-row="@d.Id">
             <td>@d.Id</td>
             <td>@d.CreatedAt.ToLocalTime().ToString("g")</td>
+            <td>
+                @d.BusinessName
+                @if (d.HasDiscountOverrides)
+                {
+                    <span class="badge badge--warning" data-has-overrides>Có % riêng</span>
+                }
+            </td>
+            <td><span class="badge">@DealerLabels.TypeShort(d.BusinessType)</span></td>
+            <td>@d.TaxCode</td>
             <td>@d.FullName</td>
             <td>@d.Phone</td>
-            <td>@d.Email</td>
-            <td>@d.Status</td>
-            <td>@(d.DiscountPercent?.ToString("0.##") ?? "—")</td>
-            <td>
+            <td>@DealerLabels.Status(d.Status)</td>
+            <td class="actions">
                 <button type="button" class="btn-icon btn-detail" data-id="@d.Id" title="Chi tiết" aria-label="Chi tiết"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
             </td>
         </tr>
@@ -82,56 +90,76 @@
 </div>
 
 @section Scripts {
+<script src="~/js/dealer-form.js" asp-append-version="true"></script>
 <script>
 (() => {
   const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
   const modal = document.getElementById('dealer-modal');
   const body = document.getElementById('dealer-modal-body');
-  const open = async (url) => {
-    body.innerHTML = await (await fetch(url)).text();
+  const bindPartial = () => {
     window.HarianAddress?.bindAll();
+    window.HarianDealerForm?.bindAll();
+  };
+  const open = async (url) => {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    body.innerHTML = await res.text();
+    bindPartial();
     modal.hidden = false;
   };
-  document.getElementById('btn-add-dealer')?.addEventListener('click', () => open('@Url.Action("Create")'));
+  const handleJson = (json) => {
+    if (!json.ok) return adminToast.jsonError(json);
+    if (!json.warning) return adminToast.reloadWith(json.message);
+    adminToast.flash('error', json.message + ' ' + json.warning);
+    location.reload();
+  };
+
+  document.getElementById('btn-add-dealer')?.addEventListener('click', () => open('@Url.Action("Edit")'));
   document.querySelectorAll('.btn-detail').forEach(btn => btn.addEventListener('click', () => open('@Url.Action("Detail")?id=' + btn.dataset.id)));
   modal?.addEventListener('click', e => {
     if (e.target.matches('[data-close], [data-close-modal]')) modal.hidden = true;
   });
+
   body?.addEventListener('click', async e => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const id = btn.dataset.id;
-    const notes = body.querySelector('[name="internalNotes"]')?.value ?? '';
-    const pct = body.querySelector('[name="discountPercent"]')?.value ?? '';
-    const citizenId = body.querySelector('[name="citizenId"]')?.value ?? '';
+    const action = btn.dataset.action;
+    if (action === 'edit') return open('@Url.Action("Edit")?id=' + id);
+    if (action === 'edit-overrides') return open('@Url.Action("EditOverrides")?id=' + id);
+    if (action === 'clear-overrides') {
+      body.querySelectorAll('[data-override-input]').forEach(i => { i.value = ''; });
+      return;
+    }
+    const urls = {
+      approve: '@Url.Action("Approve")',
+      reject: '@Url.Action("Reject")',
+      notes: '@Url.Action("SaveNotes")',
+      'issue-code': '@Url.Action("IssueCode")'
+    };
+    if (!urls[action]) return;
+    if (btn.dataset.confirm && !confirm(btn.dataset.confirm)) return;
     const fd = new FormData();
     fd.append('__RequestVerificationToken', token);
     fd.append('id', id);
-    fd.append('internalNotes', notes);
-    fd.append('citizenId', citizenId);
-    let url = '';
-    if (btn.dataset.action === 'approve') {
-      url = '@Url.Action("Approve")';
-      fd.append('discountPercent', pct);
-    } else if (btn.dataset.action === 'reject') {
-      url = '@Url.Action("Reject")';
-    } else if (btn.dataset.action === 'save') {
-      url = '@Url.Action("Save")';
-      fd.append('discountPercent', pct);
-    } else return;
-    const res = await fetch(url, { method: 'POST', body: fd });
-    const json = await res.json();
-    if (json.ok) adminToast.reloadWith(json.message);
-    else adminToast.jsonError(json);
+    fd.append('internalNotes', body.querySelector('[name="internalNotes"]')?.value ?? '');
+    const res = await fetch(urls[action], { method: 'POST', body: fd });
+    handleJson(await res.json());
   });
+
   body?.addEventListener('submit', async e => {
-    const form = e.target.closest('#dealer-create-form');
+    const form = e.target.closest('form[data-modal-form]');
     if (!form) return;
     e.preventDefault();
-    const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'Accept': 'application/json' } });
-    const json = await res.json();
-    if (json.ok) adminToast.reloadWith(json.message);
-    else adminToast.jsonError(json);
+    const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      handleJson(await res.json());
+    } else {
+      body.innerHTML = await res.text();
+      bindPartial();
+      adminToast.formErrors(body);
+    }
   });
 })();
 </script>

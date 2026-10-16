@@ -173,11 +173,57 @@
   <data name="Error.BackHome" xml:space="preserve"><value>ホームへ戻る</value></data>
   <data name="Checkout.CitizenId" xml:space="preserve"><value>身分証番号（CCCD / CMND）</value></data>
   <data name="Checkout.CitizenIdHint" xml:space="preserve"><value>請求書発行に必要です（9桁または12桁）。</value></data>
+  <data name="Checkout.CitizenIdOptional" xml:space="preserve"><value>法人の販売店は任意です。</value></data>
+  <data name="Checkout.DealerCode.Prompt" xml:space="preserve"><value>販売店の方：販売店コードを入力</value></data>
+  <data name="Checkout.DealerCode.Label" xml:space="preserve"><value>販売店コード</value></data>
+  <data name="Checkout.DealerCode.Apply" xml:space="preserve"><value>適用</value></data>
+  <data name="Checkout.DealerCode.Remove" xml:space="preserve"><value>販売店コードを解除</value></data>
+  <data name="Checkout.DealerCode.Active" xml:space="preserve"><value>販売店として注文：</value></data>
+  <data name="Checkout.DealerCode.Invalid" xml:space="preserve"><value>販売店コードが無効です。</value></data>
+  <data name="Checkout.DealerCode.Expired" xml:space="preserve"><value>販売店コードの有効期限が切れました。もう一度入力してください。</value></data>
+  <data name="Checkout.DealerCode.TooMany" xml:space="preserve"><value>入力回数が多すぎます。15分後に再度お試しください。</value></data>
+  <data name="Checkout.DealerDiscount" xml:space="preserve"><value>販売店割引</value></data>
+  <data name="Checkout.DealerUnconfigured" xml:space="preserve"><value>販売店割引なし</value></data>
+  <data name="Checkout.Invoice" xml:space="preserve"><value>請求書情報</value></data>
+  <data name="Checkout.InvoiceName" xml:space="preserve"><value>会社名</value></data>
+  <data name="Checkout.InvoiceTaxCode" xml:space="preserve"><value>税番号</value></data>
+  <data name="Checkout.InvoiceAddress" xml:space="preserve"><value>住所</value></data>
+  <data name="Checkout.InvoiceEmail" xml:space="preserve"><value>請求書送付先メール</value></data>
+  <data name="Checkout.InvoiceHint" xml:space="preserve"><value>内容に誤りがある場合は、Harianまでご連絡ください。</value></data>
   <data name="Dealers.PageTitle" xml:space="preserve"><value>代理店登録</value></data>
   <data name="Dealers.RegisterCta" xml:space="preserve"><value>代理店に登録する</value></data>
   <data name="Dealers.Intro" xml:space="preserve"><value>連絡先をご記入ください。審査後にご連絡します。代理店向けのご注文は承認後にスタッフが作成します。</value></data>
   <data name="Dealers.Confirm" xml:space="preserve"><value>代理店登録内容の確認</value></data>
   <data name="Dealers.Thanks" xml:space="preserve"><value>申請を受け付けました</value></data>
   <data name="Dealers.ThanksBody" xml:space="preserve"><value>ご登録ありがとうございます。審査後にご連絡いたします。</value></data>
+  <data name="Dealers.BusinessType" xml:space="preserve"><value>事業形態</value></data>
+  <data name="Dealers.TypeCompany" xml:space="preserve"><value>法人</value></data>
+  <data name="Dealers.TypeHousehold" xml:space="preserve"><value>個人事業（世帯事業）</value></data>
+  <data name="Dealers.SectionBusiness" xml:space="preserve"><value>事業者情報</value></data>
+  <data name="Dealers.SectionRepresentative" xml:space="preserve"><value>代表者</value></data>
+  <data name="Dealers.SectionContact" xml:space="preserve"><value>担当者</value></data>
+  <data name="Dealers.SectionShipping" xml:space="preserve"><value>配送・請求書</value></data>
+  <data name="Dealers.CompanyName" xml:space="preserve"><value>会社名</value></data>
+  <data name="Dealers.HouseholdName" xml:space="preserve"><value>屋号</value></data>
+  <data name="Dealers.TaxCode" xml:space="preserve"><value>税番号</value></data>
+  <data name="Dealers.TaxCodeHintCompany" xml:space="preserve"><value>10桁。支店は0101234567-001の形式です。</value></data>
+  <data name="Dealers.TaxCodeHintHousehold" xml:space="preserve"><value>2025年7月1日以降、世帯事業の税番号は事業主の市民ID番号です。</value></data>
+  <data name="Dealers.HouseholdRegistrationNo" xml:space="preserve"><value>世帯事業登録証番号</value></data>
+  <data name="Dealers.LegalRepresentative" xml:space="preserve"><value>法定代表者</value></data>
+  <data name="Dealers.HouseholdOwner" xml:space="preserve"><value>事業主</value></data>
+  <data name="Dealers.RepresentativeTitle" xml:space="preserve"><value>役職</value></data>
+  <data name="Dealers.RepresentativeCitizenId" xml:space="preserve"><value>代表者の市民ID</value></data>
+  <data name="Dealers.OwnerCitizenId" xml:space="preserve"><value>事業主の市民ID</value></data>
+  <data name="Dealers.ContactPerson" xml:space="preserve"><value>担当者名</value></data>
+  <data name="Dealers.HeadOfficeAddress" xml:space="preserve"><value>登記所在地</value></data>
+  <data name="Dealers.ShipToHeadOffice" xml:space="preserve"><value>登記所在地に配送する</value></data>
+  <data name="Dealers.ShippingAddress" xml:space="preserve"><value>配送先住所</value></data>
+  <data name="Dealers.SameAsHeadOffice" xml:space="preserve"><value>登記所在地と同じ</value></data>
+  <data name="Dealers.InvoiceEmail" xml:space="preserve"><value>電子請求書の受信メール</value></data>
+  <data name="Dealers.InvoiceEmailHint" xml:space="preserve"><value>空欄の場合は担当者のメールを使用します。</value></data>
+  <data name="Dealers.BusinessLicense" xml:space="preserve"><value>事業登録証</value></data>
+  <data name="Dealers.BusinessLicenseHint" xml:space="preserve"><value>任意。PDF、DOC、DOCX、JPG、PNG、最大10MB。</value></data>
+  <data name="Dealers.BusinessLicenseKeep" xml:space="preserve"><value>アップロード済み: {0}。差し替える場合は新しいファイルを選択してください。</value></data>
+  <data name="Dealers.NoFile" xml:space="preserve"><value>なし</value></data>
   <data name="Nav.Dealers" xml:space="preserve"><value>代理店</value></data>
 </root>

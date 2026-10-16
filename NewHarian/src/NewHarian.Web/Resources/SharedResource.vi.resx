@@ -173,11 +173,57 @@
   <data name="Error.BackHome" xml:space="preserve"><value>Về trang chủ</value></data>
   <data name="Checkout.CitizenId" xml:space="preserve"><value>CCCD / CMND</value></data>
   <data name="Checkout.CitizenIdHint" xml:space="preserve"><value>Cần CCCD để xuất hóa đơn (9 hoặc 12 chữ số).</value></data>
+  <data name="Checkout.CitizenIdOptional" xml:space="preserve"><value>Không bắt buộc với đại lý doanh nghiệp.</value></data>
+  <data name="Checkout.DealerCode.Prompt" xml:space="preserve"><value>Bạn là đại lý? Nhập mã đại lý</value></data>
+  <data name="Checkout.DealerCode.Label" xml:space="preserve"><value>Mã đại lý</value></data>
+  <data name="Checkout.DealerCode.Apply" xml:space="preserve"><value>Áp dụng</value></data>
+  <data name="Checkout.DealerCode.Remove" xml:space="preserve"><value>Bỏ mã đại lý</value></data>
+  <data name="Checkout.DealerCode.Active" xml:space="preserve"><value>Đặt hàng với tư cách đại lý:</value></data>
+  <data name="Checkout.DealerCode.Invalid" xml:space="preserve"><value>Mã đại lý không hợp lệ.</value></data>
+  <data name="Checkout.DealerCode.Expired" xml:space="preserve"><value>Mã đại lý đã hết hiệu lực. Vui lòng nhập lại mã.</value></data>
+  <data name="Checkout.DealerCode.TooMany" xml:space="preserve"><value>Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.</value></data>
+  <data name="Checkout.DealerDiscount" xml:space="preserve"><value>Chiết khấu đại lý</value></data>
+  <data name="Checkout.DealerUnconfigured" xml:space="preserve"><value>Chưa có chiết khấu đại lý</value></data>
+  <data name="Checkout.Invoice" xml:space="preserve"><value>Thông tin xuất hóa đơn</value></data>
+  <data name="Checkout.InvoiceName" xml:space="preserve"><value>Tên đơn vị</value></data>
+  <data name="Checkout.InvoiceTaxCode" xml:space="preserve"><value>MST</value></data>
+  <data name="Checkout.InvoiceAddress" xml:space="preserve"><value>Địa chỉ</value></data>
+  <data name="Checkout.InvoiceEmail" xml:space="preserve"><value>Email nhận hóa đơn</value></data>
+  <data name="Checkout.InvoiceHint" xml:space="preserve"><value>Thông tin chưa đúng? Vui lòng liên hệ Harian để cập nhật hồ sơ đại lý.</value></data>
   <data name="Dealers.PageTitle" xml:space="preserve"><value>Đăng ký đại lý</value></data>
   <data name="Dealers.RegisterCta" xml:space="preserve"><value>Đăng ký làm đại lý</value></data>
   <data name="Dealers.Intro" xml:space="preserve"><value>Điền thông tin liên hệ. Chúng tôi sẽ xét duyệt hồ sơ và liên hệ lại. Đơn hàng đại lý do nhân viên tạo sau khi được duyệt.</value></data>
   <data name="Dealers.Confirm" xml:space="preserve"><value>Xác nhận thông tin đăng ký đại lý</value></data>
   <data name="Dealers.Thanks" xml:space="preserve"><value>Đã nhận hồ sơ</value></data>
   <data name="Dealers.ThanksBody" xml:space="preserve"><value>Cảm ơn bạn đã đăng ký. Chúng tôi sẽ liên hệ sau khi xét duyệt.</value></data>
+  <data name="Dealers.BusinessType" xml:space="preserve"><value>Loại hình kinh doanh</value></data>
+  <data name="Dealers.TypeCompany" xml:space="preserve"><value>Doanh nghiệp</value></data>
+  <data name="Dealers.TypeHousehold" xml:space="preserve"><value>Hộ kinh doanh</value></data>
+  <data name="Dealers.SectionBusiness" xml:space="preserve"><value>Thông tin đơn vị</value></data>
+  <data name="Dealers.SectionRepresentative" xml:space="preserve"><value>Người đại diện</value></data>
+  <data name="Dealers.SectionContact" xml:space="preserve"><value>Người liên hệ</value></data>
+  <data name="Dealers.SectionShipping" xml:space="preserve"><value>Nhận hàng và hóa đơn</value></data>
+  <data name="Dealers.CompanyName" xml:space="preserve"><value>Tên doanh nghiệp</value></data>
+  <data name="Dealers.HouseholdName" xml:space="preserve"><value>Tên hộ kinh doanh</value></data>
+  <data name="Dealers.TaxCode" xml:space="preserve"><value>Mã số thuế</value></data>
+  <data name="Dealers.TaxCodeHintCompany" xml:space="preserve"><value>MST 10 số, chi nhánh 13 số dạng 0101234567-001.</value></data>
+  <data name="Dealers.TaxCodeHintHousehold" xml:space="preserve"><value>Từ 01/07/2025, MST hộ kinh doanh là số CCCD của chủ hộ.</value></data>
+  <data name="Dealers.HouseholdRegistrationNo" xml:space="preserve"><value>Số GCN đăng ký hộ kinh doanh</value></data>
+  <data name="Dealers.LegalRepresentative" xml:space="preserve"><value>Người đại diện theo pháp luật</value></data>
+  <data name="Dealers.HouseholdOwner" xml:space="preserve"><value>Chủ hộ</value></data>
+  <data name="Dealers.RepresentativeTitle" xml:space="preserve"><value>Chức vụ</value></data>
+  <data name="Dealers.RepresentativeCitizenId" xml:space="preserve"><value>CCCD người đại diện</value></data>
+  <data name="Dealers.OwnerCitizenId" xml:space="preserve"><value>CCCD chủ hộ</value></data>
+  <data name="Dealers.ContactPerson" xml:space="preserve"><value>Họ tên người liên hệ</value></data>
+  <data name="Dealers.HeadOfficeAddress" xml:space="preserve"><value>Địa chỉ trụ sở</value></data>
+  <data name="Dealers.ShipToHeadOffice" xml:space="preserve"><value>Giao hàng tới địa chỉ trụ sở</value></data>
+  <data name="Dealers.ShippingAddress" xml:space="preserve"><value>Địa chỉ nhận hàng</value></data>
+  <data name="Dealers.SameAsHeadOffice" xml:space="preserve"><value>Giống địa chỉ trụ sở</value></data>
+  <data name="Dealers.InvoiceEmail" xml:space="preserve"><value>Email nhận hóa đơn điện tử</value></data>
+  <data name="Dealers.InvoiceEmailHint" xml:space="preserve"><value>Để trống sẽ dùng email người liên hệ.</value></data>
+  <data name="Dealers.BusinessLicense" xml:space="preserve"><value>Giấy đăng ký kinh doanh</value></data>
+  <data name="Dealers.BusinessLicenseHint" xml:space="preserve"><value>Không bắt buộc. PDF, DOC, DOCX, JPG, PNG, tối đa 10MB.</value></data>
+  <data name="Dealers.BusinessLicenseKeep" xml:space="preserve"><value>Đã tải: {0}. Chọn file mới để thay.</value></data>
+  <data name="Dealers.NoFile" xml:space="preserve"><value>Không có</value></data>
   <data name="Nav.Dealers" xml:space="preserve"><value>Đại lý</value></data>
 </root>

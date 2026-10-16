@@ -1,8 +1,10 @@
 @model NewHarian.Application.Orders.CheckoutDraft
 @{
     ViewData["Title"] = Localizer["Checkout.Title"];
-    var cart = (NewHarian.Application.Cart.CartDto)ViewBag.Cart;
+    var priced = (NewHarian.Application.Cart.PricedCart)ViewBag.Priced;
+    var dealer = ViewBag.Dealer as NewHarian.Application.Dealers.DealerOptionDto;
     var threshold = (decimal)ViewBag.FreeThreshold;
+    var citizenIdOptional = dealer?.BusinessType == NewHarian.Domain.Enums.DealerBusinessType.Company;
 }
 
 <nav class="breadcrumb">
@@ -11,6 +13,11 @@
 </nav>
 
 <h1>@Localizer["Checkout.Title"]</h1>
+@if (ViewBag.DealerNotice is string notice)
+{
+    <p class="text-danger" data-dealer-notice>@notice</p>
+}
+<partial name="_DealerCodeBox" model="(DealerCodeBoxModel)ViewBag.DealerBox" />
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
 <div class="checkout-layout">
@@ -20,8 +27,16 @@
         <label>@Localizer["Book.Email"] <input asp-for="CustomerEmail" type="email" class="form-control" required /></label>
         <label>@Localizer["Book.Phone"] <input asp-for="CustomerPhone" class="form-control" required /></label>
         <label>@Localizer["Checkout.CitizenId"]
-            <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" autocomplete="off" />
-            <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
+            @if (citizenIdOptional)
+            {
+                <input asp-for="CitizenId" class="form-control" maxlength="20" inputmode="numeric" autocomplete="off" />
+                <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdOptional"]</span>
+            }
+            else
+            {
+                <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" autocomplete="off" />
+                <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
+            }
         </label>
         @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
         <label>@Localizer["Checkout.Notes"] <textarea asp-for="Notes" class="form-control" rows="3" maxlength="2000"></textarea></label>
@@ -41,16 +56,31 @@
     </form>
 
     <aside class="cart-summary" id="order-summary">
+        @if (dealer is not null)
+        {
+            <partial name="_DealerInvoiceBlock" model="dealer" />
+        }
         <h2>@Localizer["Checkout.Summary"]</h2>
         <ul class="summary-lines">
-            @foreach (var i in cart.Items)
+            @foreach (var line in priced.Lines)
             {
-                <li>@i.DisplayName × @i.Quantity - @i.LineTotal.ToString("N0")đ</li>
+                var i = line.Item;
+                <li data-summary-sku="@i.Sku">
+                    @i.DisplayName × @i.Quantity - @i.LineTotal.ToString("N0")đ
+                    @if (priced.IsDealer)
+                    {
+                        <br /><small><partial name="_DealerLineDiscount" model="line" /></small>
+                    }
+                </li>
             }
         </ul>
-        <p>@Localizer["Cart.Subtotal"]: <span id="sum-subtotal">@cart.SubTotal.ToString("N0")đ</span></p>
+        <p>@Localizer["Cart.Subtotal"]: <span id="sum-subtotal">@priced.SubTotal.ToString("N0")đ</span></p>
+        @if (priced.IsDealer)
+        {
+            <p>@Localizer["Checkout.DealerDiscount"]: <span id="sum-discount" data-sum-discount>-@priced.DiscountAmount.ToString("N0")đ</span></p>
+        }
         <p>@Localizer["Checkout.Shipping"]: <span id="sum-ship">-</span></p>
-        <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total">@cart.SubTotal.ToString("N0")đ</span></strong></p>
+        <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total">@priced.NetSubTotal.ToString("N0")đ</span></strong></p>
         <p class="muted">@Localizer["Checkout.FreeHint"] @threshold.ToString("N0")đ</p>
     </aside>
 </div>

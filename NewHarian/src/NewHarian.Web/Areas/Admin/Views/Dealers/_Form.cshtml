@@ -1,0 +1,127 @@
+@model NewHarian.Application.Dealers.DealerEditRequest
+@using NewHarian.Domain.Enums
+@{
+    Layout = null;
+    var isNew = Model.Id is null;
+}
+<form id="dealer-form" asp-area="Admin" asp-controller="Dealers" asp-action="Save" method="post"
+      enctype="multipart/form-data" data-modal-form data-dealer-form>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="BusinessLicenseMediaFileId" />
+    <input type="hidden" asp-for="BusinessLicenseFileName" />
+    <h2>@(isNew ? "Thêm đại lý" : $"Sửa đại lý #{Model.Id}")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="detail-grid">
+        <div class="detail-field detail-field--wide">
+            <span class="detail-field__label">Loại hình kinh doanh *</span>
+            <span>
+                <label><input type="radio" name="BusinessType" value="Company" checked="@(Model.BusinessType != DealerBusinessType.Household)" /> Doanh nghiệp</label>
+                <label style="margin-left:1rem"><input type="radio" name="BusinessType" value="Household" checked="@(Model.BusinessType == DealerBusinessType.Household)" /> Hộ kinh doanh</label>
+            </span>
+        </div>
+    </div>
+
+    <h3 class="detail-section-title">Đơn vị</h3>
+    <div class="detail-grid">
+        <label class="detail-field">
+            <span class="detail-field__label"><span data-dealer-text="Company">Tên doanh nghiệp</span><span data-dealer-text="Household" hidden>Tên hộ kinh doanh</span> *</span>
+            <input asp-for="BusinessName" class="form-control" required maxlength="300" />
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">MST *</span>
+            <input asp-for="TaxCode" class="form-control" required maxlength="20" autocomplete="off" />
+            <span class="muted" data-dealer-text="Company">10 số, chi nhánh dạng 0101234567-001.</span>
+            <span class="muted" data-dealer-text="Household" hidden>10 hoặc 12 số (CCCD chủ hộ).</span>
+        </label>
+        <label class="detail-field" data-dealer-only="Household" hidden>
+            <span class="detail-field__label">Số GCN đăng ký hộ kinh doanh *</span>
+            <input asp-for="HouseholdRegistrationNo" class="form-control" required maxlength="50" />
+        </label>
+        <div class="detail-field detail-field--wide">
+            <span class="detail-field__label">Địa chỉ trụ sở *</span>
+            @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "Address", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.Address })
+        </div>
+        <div class="detail-field detail-field--wide">
+            <span class="detail-field__label">Giấy đăng ký kinh doanh</span>
+            @if (Model.BusinessLicenseMediaFileId is not null && Model.Id is not null)
+            {
+                <span>
+                    <a href="@Url.Action("Document", "Dealers", new { area = "Admin", id = Model.Id })">@Model.BusinessLicenseFileName</a>
+                    <label style="margin-left:1rem"><input type="checkbox" name="RemoveBusinessLicense" value="true" /> Xóa file</label>
+                </span>
+            }
+            else if (!string.IsNullOrEmpty(Model.BusinessLicenseFileName))
+            {
+                <span class="muted">Đã tải: @Model.BusinessLicenseFileName</span>
+            }
+            <input type="file" name="businessLicenseFile" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+            <span class="muted">PDF, DOC, DOCX, JPG, PNG, tối đa 10MB. Chọn file mới để thay.</span>
+        </div>
+    </div>
+
+    <h3 class="detail-section-title">Người đại diện</h3>
+    <div class="detail-grid">
+        <label class="detail-field">
+            <span class="detail-field__label"><span data-dealer-text="Company">Người đại diện theo pháp luật</span><span data-dealer-text="Household" hidden>Chủ hộ</span> *</span>
+            <input asp-for="RepresentativeName" class="form-control" required maxlength="200" />
+        </label>
+        <label class="detail-field" data-dealer-only="Company">
+            <span class="detail-field__label">Chức vụ *</span>
+            <input asp-for="RepresentativeTitle" class="form-control" required maxlength="100" />
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">CCCD<span data-dealer-text="Household" hidden> *</span></span>
+            <input asp-for="CitizenId" class="form-control" maxlength="20" inputmode="numeric" data-required-for="Household" />
+        </label>
+    </div>
+
+    <h3 class="detail-section-title">Người liên hệ</h3>
+    <div class="detail-grid">
+        <label class="detail-field">
+            <span class="detail-field__label">Họ tên *</span>
+            <input asp-for="FullName" class="form-control" required maxlength="200" />
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">SĐT *</span>
+            <input asp-for="Phone" class="form-control" required maxlength="20" />
+        </label>
+        <label class="detail-field">
+            <span class="detail-field__label">Email *</span>
+            <input asp-for="Email" type="email" class="form-control" required maxlength="200" />
+        </label>
+    </div>
+
+    <h3 class="detail-section-title">Nhận hàng và hóa đơn</h3>
+    <div class="detail-grid">
+        <label class="detail-field detail-field--wide">
+            <span><input asp-for="ShipToHeadOffice" /> Giao hàng tới địa chỉ trụ sở</span>
+        </label>
+        <fieldset class="detail-field detail-field--wide" data-dealer-shipping style="border:0;padding:0;margin:0;min-width:0"
+                  hidden="@Model.ShipToHeadOffice" disabled="@Model.ShipToHeadOffice">
+            <span class="detail-field__label">Địa chỉ nhận hàng *</span>
+            @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
+        </fieldset>
+        <label class="detail-field">
+            <span class="detail-field__label">Email nhận hóa đơn</span>
+            <input asp-for="InvoiceEmail" type="email" class="form-control" maxlength="200" placeholder="Trống = email liên hệ" />
+        </label>
+    </div>
+
+    <div class="detail-grid">
+        <label class="detail-field detail-field--wide">
+            <span class="detail-field__label">Ghi chú khách</span>
+            <textarea asp-for="Message" class="form-control" rows="2" maxlength="2000"></textarea>
+        </label>
+        <label class="detail-field detail-field--wide">
+            <span class="detail-field__label">Ghi chú nội bộ</span>
+            <textarea asp-for="InternalNotes" class="form-control" rows="2" maxlength="2000"></textarea>
+        </label>
+    </div>
+
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close>Hủy</button>
+        <button type="submit" class="btn-primary">@(isNew ? "Thêm" : "Lưu")</button>
+    </div>
+</form>

@@ -11,6 +11,7 @@ public static class AdminNotificationTypes
     public const string InquiryCreated = "Inquiry.Created";
     public const string ApplicationCreated = "Application.Created";
     public const string DealerCreated = "Dealer.Created";
+    public const string DealerCodeAbuse = "Dealer.CodeAbuse";
 
     /// <summary>Who sees each type (bell list + realtime push). Every type constant must be mapped.</summary>
     public static IReadOnlyDictionary<string, string> RequiredPermission { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -21,6 +22,7 @@ public static class AdminNotificationTypes
         [InquiryCreated] = Permissions.Inquiries.View,
         [ApplicationCreated] = Permissions.Applications.View,
         [DealerCreated] = Permissions.Dealers.View,
+        [DealerCodeAbuse] = Permissions.Dealers.Approve,
     };
 
     public static IReadOnlyList<string> VisibleTo(ClaimsPrincipal user)

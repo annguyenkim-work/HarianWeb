@@ -28,7 +28,15 @@
         </div>
         <div class="detail-field">
             <span class="detail-field__label">Chiết khấu</span>
-            <span class="detail-field__value">@(Model.DealerDiscountPercent?.ToString("0.##") ?? "0")% (−@Model.DiscountAmount.ToString("N0")đ)</span>
+            <span class="detail-field__value" data-order-discount>@if (Model.DealerDiscountPercent is not null)
+                {<text>@Model.DealerDiscountPercent.Value.ToString("0.##")% </text>}-@Model.DiscountAmount.ToString("N0")đ</span>
+        </div>
+    }
+    @if (Model.Invoice is not null)
+    {
+        <div class="detail-field detail-field--wide" data-order-invoice>
+            <span class="detail-field__label">Xuất hóa đơn</span>
+            <span class="detail-field__value">@Model.Invoice.BuyerName / MST @Model.Invoice.TaxCode<br />@Model.Invoice.Address<br />Email: @(Model.Invoice.Email ?? "-")</span>
         </div>
     }
     <div class="detail-field">
@@ -75,7 +83,12 @@
 <ul class="order-detail-items">
 @foreach (var i in Model.Items)
 {
-    <li>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}") (@i.Sku) × @i.Quantity = @i.LineTotal.ToString("N0")đ</li>
+    <li data-order-line="@i.Sku">@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}") (@i.Sku) × @i.Quantity = @i.LineTotal.ToString("N0")đ
+        @if (i.DiscountSource != NewHarian.Domain.Enums.DealerDiscountSource.None)
+        {
+            <span class="muted" data-line-discount>· @(i.DiscountTierLabel ?? "-") · CK @i.DiscountPercent.ToString("0.##")% (-@i.DiscountAmount.ToString("N0")đ, @NewHarian.Web.Areas.Admin.DealerLabels.Source(i.DiscountSource))</span>
+        }
+    </li>
 }
 </ul>
 

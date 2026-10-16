@@ -42,6 +42,16 @@ public sealed class ProductCatalogPage(IPage page)
 
 public sealed class ProductDetailPage(IPage page)
 {
+    /// <summary>Single-variant product: open its page and put <paramref name="quantity"/> in the cart.</summary>
+    public async Task AddAsync(string categorySlug, string productSlug, string productName, int quantity)
+    {
+        await page.GotoAsync($"/products/{categorySlug}/{productSlug}");
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = productName, Level = 1 })).ToBeVisibleAsync();
+        await page.Locator("#add-cart-form input[name=quantity]").FillAsync(quantity.ToString());
+        await page.Locator("#add-cart-form button[type=submit]").ClickAsync();
+        await Expect(page.Locator("#cart-modal")).ToBeVisibleAsync();
+    }
+
     public async Task SelectVariantAsync(string sku)
     {
         await page.Locator("label.variant-option", new() { Has = page.Locator($"input[name=variantId][data-sku='{sku}']") }).ClickAsync();
@@ -62,6 +72,16 @@ public sealed class ProductDetailPage(IPage page)
 public sealed class CartPage(IPage page)
 {
     public ILocator Line(string sku) => page.Locator("tr.js-cart-row").Filter(new() { HasText = sku });
+    public ILocator LineDiscount(string sku) => Line(sku).Locator("[data-line-discount]");
+    public ILocator Discount => page.Locator("[data-cart-discount]");
+    public ILocator DealerNotice => page.Locator("[data-dealer-notice]");
+    public DealerCodeBox DealerCode { get; } = new(page);
+
+    public async Task GotoAsync()
+    {
+        await page.GotoAsync("/cart");
+        await Expect(page.Locator("[data-dealer-code-box]")).ToBeVisibleAsync();
+    }
 
     public async Task ProceedToCheckoutAsync()
     {
@@ -70,8 +90,43 @@ public sealed class CartPage(IPage page)
     }
 }
 
+/// <summary>"Bạn là đại lý? Nhập mã đại lý" box on cart / checkout.</summary>
+public sealed class DealerCodeBox(IPage page)
+{
+    private ILocator Box => page.Locator("[data-dealer-code-box]");
+    public ILocator Active => Box.Locator("[data-dealer-active]");
+    public ILocator Error => Box.Locator("[data-dealer-code-error]");
+
+    /// <summary>Submits a code; on success the page reloads with the dealer active.</summary>
+    public async Task EnterAsync(string code)
+    {
+        var details = Box.Locator("details");
+        if (await details.GetAttributeAsync("open") is null)
+            await Box.Locator("summary").ClickAsync();
+        var form = Box.Locator("[data-dealer-code-form]");
+        await form.Locator("input[name=code]").FillAsync(code);
+        await form.Locator("button[type=submit]").ClickAsync();
+    }
+
+    public Task RemoveAsync() => Box.Locator("[data-dealer-remove]").ClickAsync();
+}
+
 public sealed class CheckoutPage(IPage page)
 {
+    public ILocator Invoice => page.Locator("[data-dealer-invoice]");
+    public ILocator Summary => page.Locator("#order-summary");
+
+    /// <summary>Dealer checkout: contact and shipping are prefilled from the profile; only payment is chosen.</summary>
+    public async Task ContinueWithPrefillAsync(string provinceCode, string communeCode, GuestPayment payment)
+    {
+        await Expect(page.Locator("#checkout-form select[data-address-province]")).ToHaveValueAsync(provinceCode);
+        await Expect(page.Locator("#checkout-form select[data-address-commune]")).ToHaveValueAsync(communeCode);
+        var method = payment == GuestPayment.Cod ? "COD" : "BankTransfer";
+        await page.Locator($"#checkout-form input[name=PaymentMethod][value={method}]").CheckAsync();
+        await page.Locator("#checkout-form button[type=submit]").ClickAsync();
+        await Expect(page).ToHaveURLAsync(new Regex("/checkout/confirm$", RegexOptions.IgnoreCase));
+    }
+
     public async Task FillAndContinueAsync(GuestCustomer customer, GuestPayment payment)
     {
         await page.Locator("#CustomerName").FillAsync(customer.Name);
@@ -101,6 +156,7 @@ public sealed class CheckoutSuccessPage(IPage page)
     private static readonly Regex OrderNumberPattern = new(@"^HAR-ORDER-\d{4,}$");
 
     public ILocator BankBox => page.Locator(".bank-box");
+    public ILocator Discount => page.Locator("[data-success-discount]");
     public ILocator BankQrImage => page.Locator(".bank-box img.bank-qr-img");
 
     public async Task<string> OrderNumberAsync()

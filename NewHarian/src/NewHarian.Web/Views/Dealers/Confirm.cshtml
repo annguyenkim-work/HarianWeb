@@ -1,9 +1,17 @@
 @model NewHarian.Application.Dealers.DealerFormModel
+@using NewHarian.Domain.Enums
 @inject NewHarian.Application.Address.IVietnamDivisionCatalog Catalog
 @{
     ViewData["Title"] = Localizer["Dealers.Confirm"];
+    var household = Model.BusinessType == DealerBusinessType.Household;
     Catalog.TryResolve(Model.ProvinceCode, Model.CommuneCode, out var addr);
     var addressText = AddressFormat.Join(Model.Address, addr.CommuneName, addr.ProvinceName);
+    var shipText = "";
+    if (!Model.ShipToHeadOffice)
+    {
+        Catalog.TryResolve(Model.ShippingProvinceCode, Model.ShippingCommuneCode, out var ship);
+        shipText = AddressFormat.Join(Model.ShippingAddress, ship.CommuneName, ship.ProvinceName);
+    }
 }
 <section class="page-hero"><h1>@Localizer["Dealers.Confirm"]</h1></section>
 <nav class="breadcrumb">
@@ -14,12 +22,30 @@
     <span>@Localizer["Dealers.Confirm"]</span>
 </nav>
 <main class="content-main content-main--full" style="max-width:640px">
-    <dl class="confirm-dl">
-        <dt>@Localizer["Contact.Name"]</dt><dd>@Model.FullName</dd>
+    <dl class="confirm-dl" id="dealer-confirm">
+        <dt>@Localizer["Dealers.BusinessType"]</dt><dd>@(household ? Localizer["Dealers.TypeHousehold"] : Localizer["Dealers.TypeCompany"])</dd>
+        <dt>@(household ? Localizer["Dealers.HouseholdName"] : Localizer["Dealers.CompanyName"])</dt><dd>@Model.BusinessName</dd>
+        <dt>@Localizer["Dealers.TaxCode"]</dt><dd>@Model.TaxCode</dd>
+        @if (household)
+        {
+            <dt>@Localizer["Dealers.HouseholdRegistrationNo"]</dt><dd>@Model.HouseholdRegistrationNo</dd>
+        }
+        <dt>@Localizer["Dealers.HeadOfficeAddress"]</dt><dd>@addressText</dd>
+        <dt>@Localizer["Dealers.BusinessLicense"]</dt><dd>@(Model.BusinessLicenseFileName ?? Localizer["Dealers.NoFile"].Value)</dd>
+        <dt>@(household ? Localizer["Dealers.HouseholdOwner"] : Localizer["Dealers.LegalRepresentative"])</dt><dd>@Model.RepresentativeName</dd>
+        @if (!household)
+        {
+            <dt>@Localizer["Dealers.RepresentativeTitle"]</dt><dd>@Model.RepresentativeTitle</dd>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.CitizenId))
+        {
+            <dt>@(household ? Localizer["Dealers.OwnerCitizenId"] : Localizer["Dealers.RepresentativeCitizenId"])</dt><dd>@Model.CitizenId</dd>
+        }
+        <dt>@Localizer["Dealers.ContactPerson"]</dt><dd>@Model.FullName</dd>
         <dt>@Localizer["Contact.Phone"]</dt><dd>@Model.Phone</dd>
         <dt>@Localizer["Contact.Email"]</dt><dd>@Model.Email</dd>
-        <dt>@Localizer["Checkout.CitizenId"]</dt><dd>@Model.CitizenId</dd>
-        <dt>@Localizer["Contact.Address"]</dt><dd>@addressText</dd>
+        <dt>@Localizer["Dealers.ShippingAddress"]</dt><dd>@(Model.ShipToHeadOffice ? Localizer["Dealers.SameAsHeadOffice"].Value : shipText)</dd>
+        <dt>@Localizer["Dealers.InvoiceEmail"]</dt><dd>@(Model.InvoiceEmail ?? Model.Email)</dd>
         @if (!string.IsNullOrWhiteSpace(Model.Message))
         {
             <dt>@Localizer["Contact.Message"]</dt><dd style="white-space:pre-wrap">@Model.Message</dd>
@@ -29,13 +55,25 @@
           data-submit-once
           data-busy-label="@Localizer["Common.Processing"]">
         @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="BusinessType" />
+        <input type="hidden" asp-for="BusinessName" />
+        <input type="hidden" asp-for="TaxCode" />
+        <input type="hidden" asp-for="HouseholdRegistrationNo" />
+        <input type="hidden" asp-for="RepresentativeName" />
+        <input type="hidden" asp-for="RepresentativeTitle" />
+        <input type="hidden" asp-for="CitizenId" />
         <input type="hidden" asp-for="FullName" />
         <input type="hidden" asp-for="Phone" />
         <input type="hidden" asp-for="Email" />
-        <input type="hidden" asp-for="CitizenId" />
         <input type="hidden" asp-for="Address" />
         <input type="hidden" asp-for="ProvinceCode" />
         <input type="hidden" asp-for="CommuneCode" />
+        <input type="hidden" asp-for="ShipToHeadOffice" />
+        <input type="hidden" asp-for="ShippingAddress" />
+        <input type="hidden" asp-for="ShippingProvinceCode" />
+        <input type="hidden" asp-for="ShippingCommuneCode" />
+        <input type="hidden" asp-for="InvoiceEmail" />
+        <input type="hidden" asp-for="BusinessLicenseMediaFileId" />
         <input type="hidden" asp-for="Message" />
         <a href="/dealers/register" class="btn-secondary">@Localizer["Checkout.Edit"]</a>
         <button type="submit" class="btn-primary">@Localizer["Contact.Send"]</button>

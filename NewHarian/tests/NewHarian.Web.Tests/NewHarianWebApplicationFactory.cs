@@ -6,7 +6,7 @@ using Microsoft.Extensions.FileProviders;
 
 namespace NewHarian.Web.Tests;
 
-public sealed class NewHarianWebApplicationFactory : WebApplicationFactory<Program>
+public class NewHarianWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _dbName = "NewHarianSecurityTests_" + Guid.NewGuid().ToString("N");
 
@@ -33,8 +33,14 @@ public sealed class NewHarianWebApplicationFactory : WebApplicationFactory<Progr
                 ?? throw new InvalidOperationException("IWebHostEnvironment is not registered as an instance.");
             Directory.CreateDirectory(AppDataContentRoot);
             services.AddSingleton<IWebHostEnvironment>(new TempContentRootEnvironment(inner, AppDataContentRoot));
+            ConfigureTestServices(services);
         });
+        ConfigureTestHost(builder);
     }
+
+    protected virtual void ConfigureTestServices(IServiceCollection services) { }
+
+    protected virtual void ConfigureTestHost(IWebHostBuilder builder) { }
 
     protected override void Dispose(bool disposing)
     {

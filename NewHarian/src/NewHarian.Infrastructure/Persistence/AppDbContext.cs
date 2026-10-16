@@ -23,6 +23,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ServiceBooking> ServiceBookings => Set<ServiceBooking>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Dealer> Dealers => Set<Dealer>();
+    public DbSet<DealerDiscountGroup> DealerDiscountGroups => Set<DealerDiscountGroup>();
+    public DbSet<DealerDiscountGroupProduct> DealerDiscountGroupProducts => Set<DealerDiscountGroupProduct>();
+    public DbSet<DealerDiscountTier> DealerDiscountTiers => Set<DealerDiscountTier>();
+    public DbSet<DealerDiscountRate> DealerDiscountRates => Set<DealerDiscountRate>();
+    public DbSet<DealerDiscountOverride> DealerDiscountOverrides => Set<DealerDiscountOverride>();
     public DbSet<OrderHistory> OrderHistories => Set<OrderHistory>();
     public DbSet<ServiceBookingHistory> ServiceBookingHistories => Set<ServiceBookingHistory>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
@@ -207,6 +212,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.ShippingFee).HasPrecision(18, 2);
             e.Property(x => x.DiscountAmount).HasPrecision(18, 2);
             e.Property(x => x.DealerDiscountPercent).HasPrecision(5, 2);
+            e.Property(x => x.InvoiceBuyerName).HasMaxLength(300);
+            e.Property(x => x.InvoiceTaxCode).HasMaxLength(20);
+            e.Property(x => x.InvoiceAddress).HasMaxLength(700);
+            e.Property(x => x.InvoiceEmail).HasMaxLength(200);
             e.Property(x => x.Total).HasPrecision(18, 2);
             e.Property(x => x.LanguageCode).HasMaxLength(5);
             e.HasOne(x => x.ShippingProvince).WithMany().HasForeignKey(x => x.ShippingProvinceId).OnDelete(DeleteBehavior.SetNull);
@@ -217,6 +226,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.Email);
+            // Rejected (2) applications may reuse a tax code.
+            e.HasIndex(x => x.TaxCode).IsUnique().HasFilter("\"Status\" <> 2");
+            e.HasIndex(x => x.AccessCodeHash).IsUnique().HasFilter("\"AccessCodeHash\" IS NOT NULL");
+            e.Property(x => x.AccessCodeHash).HasMaxLength(64);
+            e.Property(x => x.AccessCodeLast4).HasMaxLength(4);
+            e.Property(x => x.AccessCodeIssuedByUserId).HasMaxLength(256);
+            e.Property(x => x.BusinessName).HasMaxLength(300);
+            e.Property(x => x.TaxCode).HasMaxLength(20);
+            e.Property(x => x.HouseholdRegistrationNo).HasMaxLength(50);
+            e.Property(x => x.RepresentativeName).HasMaxLength(200);
+            e.Property(x => x.RepresentativeTitle).HasMaxLength(100);
             e.Property(x => x.FullName).HasMaxLength(200);
             e.Property(x => x.Phone).HasMaxLength(20);
             e.Property(x => x.Email).HasMaxLength(200);
@@ -225,16 +245,62 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.ProvinceName).HasMaxLength(200);
             e.Property(x => x.CommuneCode).HasMaxLength(10);
             e.Property(x => x.CommuneName).HasMaxLength(200);
+            e.Property(x => x.ShippingAddress).HasMaxLength(500);
+            e.Property(x => x.ShippingProvinceCode).HasMaxLength(10);
+            e.Property(x => x.ShippingProvinceName).HasMaxLength(200);
+            e.Property(x => x.ShippingCommuneCode).HasMaxLength(10);
+            e.Property(x => x.ShippingCommuneName).HasMaxLength(200);
+            e.Property(x => x.InvoiceEmail).HasMaxLength(200);
             e.Property(x => x.CitizenId).HasMaxLength(20);
             e.Property(x => x.Message).HasMaxLength(2000);
-            e.Property(x => x.DiscountPercent).HasPrecision(5, 2);
             e.Property(x => x.LanguageCode).HasMaxLength(5);
+            e.HasOne(x => x.BusinessLicense).WithMany().HasForeignKey(x => x.BusinessLicenseMediaFileId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<DealerDiscountGroup>(e =>
+        {
+            e.HasIndex(x => x.Name).IsUnique();
+            e.Property(x => x.Name).HasMaxLength(200);
+        });
+
+        builder.Entity<DealerDiscountGroupProduct>(e =>
+        {
+            e.HasKey(x => new { x.GroupId, x.ProductId });
+            e.HasIndex(x => x.ProductId).IsUnique();
+            e.HasOne(x => x.Group).WithMany(g => g.Products).HasForeignKey(x => x.GroupId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DealerDiscountTier>(e =>
+        {
+            e.HasOne(x => x.Group).WithMany(g => g.Tiers).HasForeignKey(x => x.GroupId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DealerDiscountRate>(e =>
+        {
+            e.HasKey(x => new { x.TierId, x.ProductId });
+            e.Property(x => x.Percent).HasPrecision(5, 2);
+            e.HasOne(x => x.Tier).WithMany(t => t.Rates).HasForeignKey(x => x.TierId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DealerDiscountOverride>(e =>
+        {
+            e.HasIndex(x => new { x.DealerId, x.TierId, x.ProductId }).IsUnique();
+            e.Property(x => x.Percent).HasPrecision(5, 2);
+            e.Property(x => x.UpdatedByUserId).HasMaxLength(450);
+            e.HasOne(x => x.Dealer).WithMany(d => d.DiscountOverrides).HasForeignKey(x => x.DealerId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Tier).WithMany().HasForeignKey(x => x.TierId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<OrderItem>(e =>
         {
             e.Property(x => x.UnitPrice).HasPrecision(18, 2);
             e.Property(x => x.LineTotal).HasPrecision(18, 2);
+            e.Property(x => x.DiscountPercent).HasPrecision(5, 2);
+            e.Property(x => x.DiscountAmount).HasPrecision(18, 2);
+            e.Property(x => x.DiscountTierLabel).HasMaxLength(250);
             e.HasOne(x => x.Order).WithMany(x => x.Items).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -16,10 +16,12 @@ public class RateLimitingSetupTests
     {
         Assert.Equal((5, TimeSpan.FromHours(1)), RateLimitingSetup.Defaults["contact-form"]);
         Assert.Equal((5, TimeSpan.FromHours(1)), RateLimitingSetup.Defaults["dealers-form"]);
+        Assert.Equal((10, TimeSpan.FromHours(1)), RateLimitingSetup.Defaults["dealers-upload"]);
         Assert.Equal((3, TimeSpan.FromHours(1)), RateLimitingSetup.Defaults["careers-form"]);
         Assert.Equal((20, TimeSpan.FromMinutes(15)), RateLimitingSetup.Defaults["admin-login"]);
         Assert.Equal((10, TimeSpan.FromHours(1)), RateLimitingSetup.Defaults["checkout-submit"]);
         Assert.Equal((10, TimeSpan.FromHours(1)), RateLimitingSetup.Defaults["booking-submit"]);
+        Assert.Equal((5, TimeSpan.FromMinutes(15)), RateLimitingSetup.Defaults[RateLimitingSetup.DealerCodePolicy]);
     }
 
     [Fact]

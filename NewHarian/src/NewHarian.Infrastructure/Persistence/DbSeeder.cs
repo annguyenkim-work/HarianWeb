@@ -980,6 +980,24 @@ public static class DbSeeder
             }
             if (changed) row.UpdatedAt = DateTime.UtcNow;
         }
+
+        var dealerStaff = existing.FirstOrDefault(t => t.Code == EmailTemplateCodes.DealerStaff);
+        if (dealerStaff is not null && !dealerStaff.BodyHtml.Contains("{{TaxCode}}", StringComparison.Ordinal))
+        {
+            dealerStaff.PlaceholdersHelp = dealerStaff.PlaceholdersHelp.TrimEnd()
+                                           + ", BusinessType, BusinessName, TaxCode, HasBusinessLicense";
+            dealerStaff.BodyHtml = "<p><strong>{{BusinessName}}</strong> ({{BusinessType}})</p>\n<p>MST: {{TaxCode}}</p>\n"
+                                   + dealerStaff.BodyHtml.TrimEnd()
+                                   + "\n<p>Giấy đăng ký kinh doanh: {{HasBusinessLicense}}</p>";
+            dealerStaff.UpdatedAt = DateTime.UtcNow;
+        }
+        var dealerCustomer = existing.FirstOrDefault(t => t.Code == EmailTemplateCodes.DealerCustomer);
+        if (dealerCustomer is not null && !dealerCustomer.PlaceholdersHelp.Contains("BusinessName", StringComparison.Ordinal))
+        {
+            dealerCustomer.PlaceholdersHelp = dealerCustomer.PlaceholdersHelp.TrimEnd() + ", BusinessName";
+            dealerCustomer.UpdatedAt = DateTime.UtcNow;
+        }
+
         if (db.ChangeTracker.HasChanges())
             await db.SaveChangesAsync();
     }

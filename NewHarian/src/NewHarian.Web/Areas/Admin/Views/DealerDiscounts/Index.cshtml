@@ -1,0 +1,121 @@
+@model NewHarian.Application.DealerDiscounts.DealerDiscountOverviewDto
+@{
+    ViewData["Title"] = "Chiết khấu đại lý";
+    Layout = "_AdminLayout";
+    var canManage = User.HasPermission(Permissions.Dealers.ManageDiscounts);
+    var total = Model.Groups.Count;
+}
+
+<div class="admin-toolbar">
+    <h1>Chiết khấu đại lý</h1>
+    <div class="admin-toolbar__actions">
+        @if (canManage)
+        {
+            <button type="button" class="btn-icon btn-primary" id="btn-add-group" title="Thêm nhóm" aria-label="Thêm nhóm"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+        }
+    </div>
+</div>
+
+<p class="muted">
+    Số lượng được cộng chung cho mọi sản phẩm trong nhóm để xét mức. Bảng mặc định áp cho mọi đại lý (trừ ô đại lý có % riêng) và có hiệu lực từ đơn tạo sau khi lưu.
+</p>
+
+@if (Model.UnconfiguredProducts.Count > 0)
+{
+    <div data-unconfigured style="border:1px solid #f0c36d;background:#fff8e1;border-radius:8px;padding:0.75rem 1rem;margin:1rem 0">
+        <strong>Sản phẩm chưa có chiết khấu đại lý</strong> (đơn đại lý tính 0%):
+        <ul>
+            @foreach (var p in Model.UnconfiguredProducts)
+            {
+                <li>
+                    @p.Name
+                    @if (canManage)
+                    {
+                        <button type="button" class="btn-link btn-group-for-product" data-product-id="@p.ProductId">Thêm vào nhóm</button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@if (total == 0)
+{
+    <p class="muted">Chưa có nhóm chiết khấu.</p>
+}
+
+@for (var i = 0; i < total; i++)
+{
+    var g = Model.Groups[i];
+    <section class="discount-group" data-group-id="@g.Id" style="margin:1.5rem 0">
+        <div class="admin-toolbar">
+            <h2 style="font-size:1.1rem">
+                <span class="sort-controls__pos">@(i + 1)</span> @g.Name
+            </h2>
+            @if (canManage)
+            {
+                <div class="admin-toolbar__actions">
+                    <form asp-action="Move" method="post" class="sort-controls__move">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@g.Id" />
+                        <button name="direction" value="-1" type="submit" class="btn-icon" title="Up" aria-label="Up" @(i == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                        <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(i >= total - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                    </form>
+                    <button type="button" class="btn-icon btn-edit-group" data-id="@g.Id" title="Sửa" aria-label="Sửa"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                    <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Xóa nhóm này? % riêng của đại lý trong nhóm cũng bị xóa.');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@g.Id" />
+                        <button type="submit" class="btn-icon btn-icon--danger" title="Xóa" aria-label="Xóa"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                    </form>
+                </div>
+            }
+        </div>
+        <partial name="_DiscountGroupTable" model="new DiscountGroupTableModel(g)" />
+    </section>
+}
+
+<dialog id="group-modal" class="modal">
+    <div class="modal__box modal__box--wide" id="group-modal-body"></div>
+</dialog>
+
+@section Scripts {
+<script src="~/js/dealer-discount-group.js" asp-append-version="true"></script>
+<script>
+(() => {
+  const modal = document.getElementById('group-modal');
+  const body = document.getElementById('group-modal-body');
+
+  const show = (html) => {
+    body.innerHTML = html;
+    window.DealerDiscountGroupForm.bind(body.querySelector('[data-discount-group-form]'));
+    body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
+  };
+  const open = async (query) => {
+    const res = await fetch('@Url.Action("Edit")' + query);
+    if (!res.ok) return;
+    show(await res.text());
+    modal.showModal();
+  };
+
+  body.addEventListener('submit', async (e) => {
+    const form = e.target.closest('form[data-modal-form]');
+    if (!form) return;
+    e.preventDefault();
+    const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const data = await res.json();
+      if (data.ok) { adminToast.reloadWith(data.message); return; }
+      adminToast.jsonError(data);
+    } else {
+      show(await res.text());
+      adminToast.formErrors(body);
+    }
+  });
+
+  document.getElementById('btn-add-group')?.addEventListener('click', () => open(''));
+  document.querySelectorAll('.btn-edit-group').forEach(b => b.addEventListener('click', () => open('?id=' + b.dataset.id)));
+  document.querySelectorAll('.btn-group-for-product').forEach(b => b.addEventListener('click', () => open('?productId=' + b.dataset.productId)));
+})();
+</script>
+}

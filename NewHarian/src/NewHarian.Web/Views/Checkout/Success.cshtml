@@ -33,6 +33,10 @@ else if (isBank)
             <td>@i.LineTotal.ToString("N0")đ</td>
         </tr>
     }
+    @if (Model.DiscountAmount > 0)
+    {
+        <tr><td colspan="2">@Localizer["Checkout.DealerDiscount"]</td><td data-success-discount>-@Model.DiscountAmount.ToString("N0")đ</td></tr>
+    }
     <tr><td colspan="2">@Localizer["Checkout.Total"]</td><td><strong>@Model.Total.ToString("N0")đ</strong></td></tr>
     </tbody>
 </table>

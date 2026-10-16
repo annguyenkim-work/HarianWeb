@@ -1,6 +1,7 @@
-@model NewHarian.Application.Cart.CartDto
+@model NewHarian.Application.Cart.PricedCart
 @{
     ViewData["Title"] = Localizer["Cart.Title"];
+    var dealerBox = (DealerCodeBoxModel)ViewBag.DealerBox;
 }
 
 <nav class="breadcrumb">
@@ -14,8 +15,12 @@
 {
     <p class="text-danger">@err</p>
 }
+@if (ViewBag.DealerNotice is string notice)
+{
+    <p class="text-danger" data-dealer-notice>@notice</p>
+}
 
-@if (Model.Items.Count == 0)
+@if (Model.Lines.Count == 0)
 {
     <p class="muted">@Localizer["Cart.Empty"]</p>
     <a asp-controller="Products" asp-action="Index" class="btn-primary">@Localizer["Nav.Products"]</a>
@@ -31,13 +36,18 @@ else
                     <th>SKU</th>
                     <th>@Localizer["Products.Qty"]</th>
                     <th>@Localizer["Cart.Price"]</th>
+                    @if (Model.IsDealer)
+                    {
+                        <th>@Localizer["Checkout.DealerDiscount"]</th>
+                    }
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-            @foreach (var i in Model.Items)
+            @foreach (var line in Model.Lines)
             {
-                <tr class="js-cart-row">
+                var i = line.Item;
+                <tr class="js-cart-row" data-cart-sku="@i.Sku">
                     <td class="cart-thumb">
                         @if (!string.IsNullOrEmpty(i.ImageUrl))
                         {
@@ -54,6 +64,12 @@ else
                         </form>
                     </td>
                     <td class="js-line-total">@i.LineTotal.ToString("N0")đ</td>
+                    @if (Model.IsDealer)
+                    {
+                        <td data-line-discount>
+                            <partial name="_DealerLineDiscount" model="line" />
+                        </td>
+                    }
                     <td>
                         <form asp-action="Remove" method="post">
                             @Html.AntiForgeryToken()
@@ -68,7 +84,13 @@ else
 
         <aside class="cart-summary">
             <p><strong>@Localizer["Cart.Subtotal"]:</strong> <span id="cart-subtotal">@Model.SubTotal.ToString("N0")đ</span></p>
+            @if (Model.IsDealer)
+            {
+                <p>@Localizer["Checkout.DealerDiscount"]: <span id="cart-discount" data-cart-discount>-@Model.DiscountAmount.ToString("N0")đ</span></p>
+                <p><strong>@Localizer["Checkout.Total"]:</strong> <span id="cart-net" data-cart-net>@Model.NetSubTotal.ToString("N0")đ</span></p>
+            }
             <p class="muted">@Localizer["Cart.ShipHint"]</p>
+            <partial name="_DealerCodeBox" model="dealerBox" />
             <a class="btn-primary" asp-controller="Checkout" asp-action="Index">@Localizer["Cart.Checkout"]</a>
             <a class="btn-secondary" asp-controller="Products" asp-action="Index">@Localizer["Cart.Continue"]</a>
         </aside>
@@ -98,6 +120,7 @@ else
     }
     if (String(input.value) !== String(data.quantity)) return;
     input.dataset.lastSaved = String(data.quantity);
+    if (data.reload) { location.reload(); return; }
     const row = form.closest('.js-cart-row');
     const lineEl = row?.querySelector('.js-line-total');
     if (lineEl) lineEl.textContent = data.lineTotalText;

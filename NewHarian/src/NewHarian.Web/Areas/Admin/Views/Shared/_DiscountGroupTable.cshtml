@@ -1,0 +1,35 @@
+@model NewHarian.Web.Models.DiscountGroupTableModel
+@{
+    var g = Model.Group;
+}
+<table class="data-table discount-table" data-discount-group="@g.Id">
+    <thead>
+        <tr>
+            <th>Sản phẩm</th>
+            @foreach (var t in g.Tiers)
+            {
+                <th>@t.Range</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var p in g.Products)
+    {
+        <tr>
+            <td>@p.Name</td>
+            @foreach (var t in g.Tiers)
+            {
+                var hasDefault = g.Rates.TryGetValue((t.Id, p.ProductId), out var def);
+                if (Model.Overrides is not null && Model.Overrides.TryGetValue((t.Id, p.ProductId), out var own))
+                {
+                    <td data-override-cell><strong>@own.ToString("0.##")%</strong> <s class="muted">@(hasDefault ? def.ToString("0.##") + "%" : "-")</s></td>
+                }
+                else
+                {
+                    <td>@(hasDefault ? def.ToString("0.##") + "%" : "-")</td>
+                }
+            }
+        </tr>
+    }
+    </tbody>
+</table>

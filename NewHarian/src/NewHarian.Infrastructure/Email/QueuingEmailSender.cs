@@ -12,16 +12,28 @@ namespace NewHarian.Infrastructure.Email;
 public sealed class QueuingEmailSender(
     AppDbContext db,
     IWebHostEnvironment env,
-    ILogger<QueuingEmailSender> logger) : IEmailSender
+    ILogger<QueuingEmailSender> logger) : IEmailSender, ISensitiveEmailSender
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    public async Task SendAsync(
+    public Task SendAsync(
         string to,
         string subject,
         string htmlBody,
         CancellationToken cancellationToken = default,
         IReadOnlyList<EmailAttachment>? attachments = null)
+        => EnqueueAsync(to, subject, htmlBody, sensitive: false, attachments, cancellationToken);
+
+    public Task SendSensitiveAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
+        => EnqueueAsync(to, subject, htmlBody, sensitive: true, attachments: null, cancellationToken);
+
+    private async Task EnqueueAsync(
+        string to,
+        string subject,
+        string htmlBody,
+        bool sensitive,
+        IReadOnlyList<EmailAttachment>? attachments,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(to))
             throw new ArgumentException("Email recipient is required.", nameof(to));
@@ -31,6 +43,7 @@ public sealed class QueuingEmailSender(
             ToAddress = to.Trim(),
             Subject = subject?.Trim() ?? "",
             HtmlBody = htmlBody ?? "",
+            IsSensitive = sensitive,
             Status = EmailOutboxStatus.Pending,
             CreatedAt = DateTime.UtcNow,
             NextAttemptAt = DateTime.UtcNow,

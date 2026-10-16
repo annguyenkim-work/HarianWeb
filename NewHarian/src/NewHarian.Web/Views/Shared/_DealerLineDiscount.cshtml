@@ -1,0 +1,11 @@
+@model NewHarian.Application.Cart.PricedCartLine
+@if (Model.Unconfigured)
+{
+    <span class="muted" data-line-unconfigured>@Localizer["Checkout.DealerUnconfigured"] (0%)</span>
+}
+else
+{
+    <span data-line-percent="@Model.DiscountPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)">
+        @Model.DiscountTierLabel · CK @Model.DiscountPercent.ToString("0.##")% · -@Model.DiscountAmount.ToString("N0")đ
+    </span>
+}

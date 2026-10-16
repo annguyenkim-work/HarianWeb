@@ -1,0 +1,53 @@
+@model DealerCodeBoxModel
+
+<div class="dealer-code-box" data-dealer-code-box>
+    @if (Model.Dealer is not null)
+    {
+        <p data-dealer-active>
+            @Localizer["Checkout.DealerCode.Active"]
+            <strong>@Model.Dealer.BusinessName</strong> (@Localizer["Checkout.InvoiceTaxCode"] @Model.Dealer.TaxCode)
+        </p>
+        <form method="post" action="/checkout/dealer-code/remove" class="inline-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+            <button type="submit" class="btn-link" data-dealer-remove>@Localizer["Checkout.DealerCode.Remove"]</button>
+        </form>
+    }
+    else
+    {
+        <details @(Model.Error is null ? "" : "open")>
+            <summary>@Localizer["Checkout.DealerCode.Prompt"]</summary>
+            <form method="post" action="/checkout/dealer-code" class="dealer-code-form" data-dealer-code-form>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <label>
+                    @Localizer["Checkout.DealerCode.Label"]
+                    <input type="text" name="code" class="form-control" maxlength="40" autocomplete="off"
+                           autocapitalize="characters" spellcheck="false" placeholder="HRN-XXXX-XXXX-XXXX" required />
+                </label>
+                <button type="submit" class="btn-secondary">@Localizer["Checkout.DealerCode.Apply"]</button>
+                <p class="text-danger" data-dealer-code-error @(Model.Error is null ? "hidden" : "")>@Model.Error</p>
+            </form>
+        </details>
+    }
+</div>
+
+<script>
+(() => {
+  const form = document.currentScript.previousElementSibling.querySelector('[data-dealer-code-form]');
+  if (!form) return;
+  const errorEl = form.querySelector('[data-dealer-code-error]');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const res = await fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    });
+    const data = await res.json().catch(() => null);
+    if (data?.ok) { location.reload(); return; }
+    errorEl.textContent = data?.error || errorEl.textContent;
+    errorEl.hidden = false;
+  });
+})();
+</script>

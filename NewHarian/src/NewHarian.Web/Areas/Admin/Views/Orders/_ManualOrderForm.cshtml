@@ -17,10 +17,12 @@
         or OrderStatus.Shipped or OrderStatus.Delivered))
         Model.Status = OrderStatus.Delivered;
     var isDealer = Model.DealerId is > 0;
+    var canOverride = User.HasPermission(Permissions.Orders.OverrideDiscount);
 }
 
 <form asp-area="Admin" asp-controller="Orders" asp-action="Create" method="post" class="manual-order-form"
-      data-suggest-url="@Url.Action("SuggestVariants", "Products", new { area = "Admin" })">
+      data-suggest-url="@Url.Action("SuggestVariants", "Products", new { area = "Admin" })"
+      data-discount-url="/admin/orders/dealer-discount-preview">
     @Html.AntiForgeryToken()
     <h2>Thêm đơn hàng</h2>
 
@@ -72,7 +74,7 @@
             <input asp-for="CustomerPhone" class="form-control" required maxlength="30" />
         </label>
         <label class="detail-field">
-            <span class="detail-field__label">CCCD *</span>
+            <span class="detail-field__label">CCCD<span id="citizen-required-mark"> *</span></span>
             <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" />
         </label>
         <label class="detail-field">
@@ -87,25 +89,33 @@
         <label class="detail-field" id="dealer-select-wrap" hidden>
             <span class="detail-field__label">Đại lý</span>
             <select asp-for="DealerId" class="form-control" id="dealer-select">
-                <option value="">— Chọn đại lý —</option>
+                <option value="">Chọn</option>
                 @foreach (var d in (ViewBag.Dealers as IReadOnlyList<NewHarian.Application.Dealers.DealerOptionDto>) ?? [])
                 {
                     <option value="@d.Id"
+                            data-type="@d.BusinessType"
                             data-name="@d.FullName"
                             data-phone="@d.Phone"
                             data-email="@d.Email"
-                            data-address="@d.Address"
-                            data-province="@d.ProvinceCode"
-                            data-commune="@d.CommuneCode"
+                            data-address="@d.ShipAddress"
+                            data-province="@d.ShipProvinceCode"
+                            data-commune="@d.ShipCommuneCode"
                             data-citizenid="@d.CitizenId"
-                            data-percent="@d.DiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)">@d.FullName — @d.Phone</option>
+                            data-invoice-name="@d.BusinessName"
+                            data-invoice-taxcode="@d.TaxCode"
+                            data-invoice-address="@d.InvoiceAddress"
+                            data-invoice-email="@d.InvoiceEmail">@d.BusinessName (@d.TaxCode)</option>
                 }
             </select>
         </label>
-        <label class="detail-field" id="dealer-percent-wrap" hidden>
-            <span class="detail-field__label">Chiết khấu %</span>
-            <input asp-for="DealerDiscountPercent" type="number" min="0" max="100" step="0.01" class="form-control" />
-        </label>
+        <div class="detail-field detail-field--wide" id="dealer-invoice" hidden>
+            <span class="detail-field__label">Thông tin xuất hóa đơn (theo hồ sơ đại lý)</span>
+            <span class="detail-field__value">
+                <span data-invoice="name"></span> / MST <span data-invoice="taxcode"></span><br />
+                <span data-invoice="address"></span><br />
+                Email nhận hóa đơn: <span data-invoice="email"></span>
+            </span>
+        </div>
         <label class="detail-field detail-field--wide">
             @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
         </label>
@@ -137,10 +147,23 @@
                     <span>Đơn giá</span>
                     <input name="Lines[@i].UnitPrice" type="number" min="0" step="1" value="@(Model.Lines[i].UnitPrice?.ToString(System.Globalization.CultureInfo.InvariantCulture))" class="form-control js-sku-price" placeholder="Để trống = giá SP" />
                 </label>
+                @if (canOverride)
+                {
+                    <label class="js-dealer-only" hidden>
+                        <span>CK % sửa tay</span>
+                        <input name="Lines[@i].DiscountPercent" type="number" min="0" max="100" step="0.01" value="@(Model.Lines[i].DiscountPercent?.ToString(System.Globalization.CultureInfo.InvariantCulture))" class="form-control js-line-manual" placeholder="Tự động" />
+                    </label>
+                }
+                <span class="js-line-discount js-dealer-only muted" hidden></span>
                 <button type="button" class="btn-icon btn-icon--danger" data-remove-line title="Xóa dòng" aria-label="Xóa dòng"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
             </div>
         }
     </div>
+    <div id="dealer-discount-summary" class="js-dealer-only" hidden style="margin:0.5rem 0"></div>
+    @if (canOverride)
+    {
+        <p class="muted js-dealer-only" hidden>Sửa tay % chiết khấu dòng bắt buộc ghi chú nội bộ (lý do).</p>
+    }
     <p class="manual-order-form__hint muted">Gõ để tìm sản phẩm theo tên hoặc SKU. Mặc định trạng thái <strong>Hoàn thành</strong> (đã thanh toán Offline); có thể đổi trước khi tạo.</p>
     <button type="button" class="btn-secondary" id="btn-add-line">+ Thêm dòng</button>
     @if (User.HasPermission(Permissions.Orders.PreviewStockPick))
@@ -172,6 +195,14 @@
             <span>Đơn giá</span>
             <input name="Lines[__i__].UnitPrice" type="number" min="0" step="1" class="form-control js-sku-price" placeholder="Để trống = giá SP" />
         </label>
+        @if (canOverride)
+        {
+            <label class="js-dealer-only" hidden>
+                <span>CK % sửa tay</span>
+                <input name="Lines[__i__].DiscountPercent" type="number" min="0" max="100" step="0.01" class="form-control js-line-manual" placeholder="Tự động" />
+            </label>
+        }
+        <span class="js-line-discount js-dealer-only muted" hidden></span>
         <button type="button" class="btn-icon btn-icon--danger" data-remove-line title="Xóa dòng" aria-label="Xóa dòng"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
     </div>
 </template>

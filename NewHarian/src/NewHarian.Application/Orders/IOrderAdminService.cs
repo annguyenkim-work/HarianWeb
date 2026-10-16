@@ -22,7 +22,8 @@ public interface IOrderAdminService
         ManualOrderCreateRequest request,
         string? actorUserId = null,
         string? actorName = null,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        bool allowDiscountOverride = false);
     Task<(bool Ok, string? Error)> AdminUpdateStatusAsync(
         int id,
         OrderStatus status,

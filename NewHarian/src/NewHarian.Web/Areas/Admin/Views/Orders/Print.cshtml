@@ -4,6 +4,7 @@
 @{
     Layout = null;
     var title = $"Phiếu đơn {Model.OrderNumber}";
+    var hasLineDiscount = Model.Items.Any(i => i.DiscountSource != NewHarian.Domain.Enums.DealerDiscountSource.None);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -85,9 +86,16 @@
                 <div class="value">@(Model.DealerName ?? $"#{Model.DealerId}")
                     @if (Model.DealerDiscountPercent is not null)
                     {
-                        <text> (−@(Model.DealerDiscountPercent.Value.ToString("0.##"))%)</text>
+                        <text> (-@(Model.DealerDiscountPercent.Value.ToString("0.##"))%)</text>
                     }
                 </div>
+            </div>
+        }
+        @if (Model.Invoice is not null)
+        {
+            <div style="grid-column: 1 / -1" data-print-invoice>
+                <div class="label">Thông tin xuất hóa đơn</div>
+                <div class="value">@Model.Invoice.BuyerName / MST @Model.Invoice.TaxCode / @Model.Invoice.Address / @(Model.Invoice.Email ?? "-")</div>
             </div>
         }
         <div>
@@ -120,6 +128,12 @@
                 <th class="num">SL</th>
                 <th class="num">Đơn giá</th>
                 <th class="num">Thành tiền</th>
+                @if (hasLineDiscount)
+                {
+                    <th>Mức</th>
+                    <th class="num">CK %</th>
+                    <th class="num">Tiền CK</th>
+                }
             </tr>
         </thead>
         <tbody>
@@ -132,6 +146,12 @@
                 <td class="num">@i.Quantity</td>
                 <td class="num">@i.UnitPrice.ToString("N0")đ</td>
                 <td class="num">@i.LineTotal.ToString("N0")đ</td>
+                @if (hasLineDiscount)
+                {
+                    <td>@(i.DiscountTierLabel ?? "-")</td>
+                    <td class="num" data-print-line-percent>@i.DiscountPercent.ToString("0.##")%</td>
+                    <td class="num">@i.DiscountAmount.ToString("N0")đ</td>
+                }
             </tr>
         }
         </tbody>
@@ -141,7 +161,7 @@
         <div>SP: @Model.SubTotal.ToString("N0")đ
             @if (Model.DiscountAmount > 0)
             {
-                <text> − chiết khấu @Model.DiscountAmount.ToString("N0")đ</text>
+                <text> - chiết khấu @Model.DiscountAmount.ToString("N0")đ</text>
             }
             + ship @Model.ShippingFee.ToString("N0")đ</div>
         <div><strong>Tổng: @Model.Total.ToString("N0")đ</strong></div>
