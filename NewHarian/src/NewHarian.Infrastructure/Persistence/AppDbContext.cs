@@ -62,6 +62,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
+    public DbSet<PageViewDaily> PageViewDaily => Set<PageViewDaily>();
+    public DbSet<ProductViewDaily> ProductViewDaily => Set<ProductViewDaily>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -578,6 +580,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.EmergencyContactPhone).HasMaxLength(20);
             e.Property(x => x.HrNotes).HasMaxLength(2000);
             e.HasOne<ApplicationUser>().WithOne().HasForeignKey<EmployeeProfile>(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<PageViewDaily>(e =>
+        {
+            e.ToTable("PageViewDaily");
+            e.HasIndex(x => new { x.Date, x.PageKind }).IsUnique();
+            e.Property(x => x.ViewCount).HasDefaultValue(0L);
+        });
+
+        builder.Entity<ProductViewDaily>(e =>
+        {
+            e.ToTable("ProductViewDaily");
+            e.HasIndex(x => new { x.Date, x.ProductId }).IsUnique();
+            e.Property(x => x.ViewCount).HasDefaultValue(0L);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

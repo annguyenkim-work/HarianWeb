@@ -1,0 +1,151 @@
+@model NewHarian.Application.Analytics.AdminAnalyticsDto
+@using System.Text.Json
+@using NewHarian.Application.Analytics
+@{
+    ViewData["Title"] = "Thống kê truy cập";
+    var startVal = Model.Range.Start.ToString("yyyy-MM-dd");
+    var endVal = Model.Range.End.ToString("yyyy-MM-dd");
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var dayLabels = Model.PageViewsByDay.Select(x => x.Date.ToString("dd/MM")).ToList();
+    var dayValues = Model.PageViewsByDay.Select(x => x.Views).ToList();
+}
+
+<div class="admin-toolbar">
+    <h1>Thống kê truy cập</h1>
+    <p class="muted" style="margin:0">Lượt xem trang guest (không đếm unique)</p>
+</div>
+
+<form method="get" class="dash-range filter-bar filter-bar--row" data-analytics-filter>
+    <label>Từ
+        <input type="date" name="start" value="@startVal" class="form-control" required />
+    </label>
+    <label>Đến
+        <input type="date" name="end" value="@endVal" class="form-control" required />
+    </label>
+    <button type="submit" class="btn-secondary">Tìm kiếm</button>
+</form>
+
+<div class="dash-kpi-grid">
+    <div class="dash-kpi" data-kpi="total-pageviews">
+        <span class="dash-kpi__label">Tổng lượt xem trang</span>
+        <span class="dash-kpi__value">@Model.TotalPageViews.ToString("N0")</span>
+        <span class="dash-kpi__hint">Mọi trang guest public trong khoảng ngày</span>
+    </div>
+    <div class="dash-kpi" data-kpi="product-detail-views">
+        <span class="dash-kpi__label">Lượt xem chi tiết SP</span>
+        <span class="dash-kpi__value">@Model.TotalProductDetailViews.ToString("N0")</span>
+        <span class="dash-kpi__hint">Trang chi tiết sản phẩm</span>
+    </div>
+</div>
+
+<div class="dash-charts">
+    <section class="dash-chart-card dash-chart-card--wide">
+        <div class="dash-chart-card__head">
+            <div>
+                <h2>Lượt xem theo ngày</h2>
+                <p class="muted">Tổng pageviews mỗi ngày (giờ VN)</p>
+            </div>
+        </div>
+        <canvas id="analytics-pageviews-chart" height="100" aria-label="Biểu đồ lượt xem theo ngày"></canvas>
+    </section>
+</div>
+
+<section class="admin-panel" style="margin-top:1.5rem">
+    <h2>Theo loại trang</h2>
+    @if (Model.ByPageKind.Count == 0)
+    {
+        <p class="muted">Chưa có dữ liệu trong khoảng ngày này.</p>
+    }
+    else
+    {
+        <table class="data-table" data-page-kind-table>
+            <thead>
+                <tr>
+                    <th>Loại trang</th>
+                    <th>Lượt xem</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var row in Model.ByPageKind)
+            {
+                <tr data-page-kind="@row.PageKind">
+                    <td>@row.Label</td>
+                    <td>@row.Views.ToString("N0")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</section>
+
+<section class="admin-panel" style="margin-top:1.5rem">
+    <h2>Top sản phẩm theo lượt xem</h2>
+    @if (Model.TopProducts.Count == 0)
+    {
+        <p class="muted">Chưa có lượt xem chi tiết sản phẩm trong khoảng ngày này.</p>
+    }
+    else
+    {
+        <table class="data-table" data-top-products-table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Sản phẩm</th>
+                    <th>Lượt xem</th>
+                </tr>
+            </thead>
+            <tbody>
+            @{ var rank = 1; }
+            @foreach (var p in Model.TopProducts)
+            {
+                <tr data-product-id="@p.ProductId">
+                    <td>@rank</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(p.Slug) && !string.IsNullOrEmpty(p.CategorySlug))
+                        {
+                            <a href="/products/@p.CategorySlug/@p.Slug" target="_blank" rel="noopener">@p.Name</a>
+                        }
+                        else
+                        {
+                            @p.Name
+                        }
+                    </td>
+                    <td>@p.Views.ToString("N0")</td>
+                </tr>
+                rank++;
+            }
+            </tbody>
+        </table>
+    }
+</section>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script>
+(() => {
+  const labels = @Html.Raw(JsonSerializer.Serialize(dayLabels, jsonOpts));
+  const values = @Html.Raw(JsonSerializer.Serialize(dayValues, jsonOpts));
+  const canvas = document.getElementById('analytics-pageviews-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Lượt xem',
+        data: values,
+        borderColor: '#2c5f4a',
+        backgroundColor: 'rgba(44,95,74,0.12)',
+        fill: true,
+        tension: 0.25
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+})();
+</script>
+}

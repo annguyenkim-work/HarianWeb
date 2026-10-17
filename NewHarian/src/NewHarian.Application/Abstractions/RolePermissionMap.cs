@@ -23,6 +23,7 @@ public static class RolePermissionMap
 
             [AppRoles.SalesManager] = Set(
                 Permissions.Dashboard.ViewRevenue,
+                Permissions.Analytics.View,
                 Permissions.Orders.View,
                 Permissions.Orders.Create,
                 Permissions.Orders.Import,
