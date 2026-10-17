@@ -37,7 +37,7 @@ else
                     else if (soon) { <span class="muted"> (sắp hết)</span> }
                 </td>
                 <td>@lot.QuantityOnHand</td>
-                <td>@lot.UnitCost.ToString("N0")đ</td>
+                <td>@MoneyFormat.Vnd(lot.UnitCost)</td>
                 <td class="actions">
                     @if (canAdjust)
                     {

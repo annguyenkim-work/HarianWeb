@@ -91,6 +91,7 @@
   const open = async (id) => {
     const res = await fetch('@Url.Action("Detail")?id=' + id);
     body.innerHTML = await res.text();
+    window.MoneyFormat?.bind(body);
     modal.hidden = false;
   };
 
@@ -105,14 +106,16 @@
     const notes = body.querySelector('[name="internalNotes"]')?.value ?? '';
     if (btn.dataset.action !== 'status') return;
     const citizenId = body.querySelector('[name="citizenId"]')?.value ?? '';
-    const amount = body.querySelector('[name="amount"]')?.value ?? '';
+    const amountInput = body.querySelector('[name="amount"]');
+    const amountRaw = amountInput?.value ?? '';
+    const amountParsed = amountRaw.trim() === '' ? null : window.MoneyFormat?.parse(amountRaw);
     if (btn.dataset.status === 'Completed') {
       const digits = citizenId.replace(/\D/g, '');
       if (digits.length !== 9 && digits.length !== 12) {
         adminToast.error('Vui lòng nhập CCCD / CMND (9 hoặc 12 chữ số) khi hoàn thành dịch vụ.');
         return;
       }
-      if (amount === '') {
+      if (amountRaw.trim() === '' || amountParsed == null) {
         adminToast.error('Vui lòng nhập thành tiền khi hoàn thành dịch vụ.');
         return;
       }
@@ -123,7 +126,7 @@
     fd.append('internalNotes', notes);
     fd.append('status', btn.dataset.status);
     fd.append('citizenId', citizenId);
-    fd.append('amount', amount);
+    fd.append('amount', amountParsed == null ? '' : String(amountParsed));
     const res = await fetch('@Url.Action("UpdateStatus")', { method: 'POST', body: fd });
     const json = await res.json();
     if (json.ok) adminToast.reloadWith(json.message);

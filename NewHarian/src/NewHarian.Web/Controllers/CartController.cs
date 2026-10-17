@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using NewHarian.Application.Cart;
 using NewHarian.Application.Dealers;
+using NewHarian.Application.Formatting;
 using NewHarian.Web.Models;
 
 namespace NewHarian.Web.Controllers;
@@ -36,7 +37,7 @@ public class CartController(
             ok = true,
             count = snapshot.DistinctCount,
             subTotal = snapshot.SubTotal,
-            subTotalText = snapshot.SubTotal.ToString("N0") + "đ",
+            subTotalText = MoneyFormat.Vnd(snapshot.SubTotal),
             cartUrl = Url.Action(nameof(Index), "Cart")
         });
     }
@@ -57,9 +58,9 @@ public class CartController(
             ok = true,
             quantity = line?.Quantity ?? quantity,
             lineTotal = line?.LineTotal ?? 0,
-            lineTotalText = (line?.LineTotal ?? 0).ToString("N0") + "đ",
+            lineTotalText = MoneyFormat.Vnd(line?.LineTotal ?? 0),
             subTotal = snapshot.SubTotal,
-            subTotalText = snapshot.SubTotal.ToString("N0") + "đ",
+            subTotalText = MoneyFormat.Vnd(snapshot.SubTotal),
             // Dealer tiers depend on the whole group quantity: the page re-renders every line's discount.
             reload = isDealer
         });

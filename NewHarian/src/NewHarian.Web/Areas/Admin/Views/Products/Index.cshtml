@@ -79,7 +79,7 @@
             <td>@p.NameVi</td>
             <td>@p.Status</td>
             <td>@p.VariantCount</td>
-            <td>@(p.FromPrice?.ToString("N0") is string priceText ? $"{priceText}đ" : "-")</td>
+            <td>@(p.FromPrice is decimal fp ? MoneyFormat.Vnd(fp) : "-")</td>
             <td class="actions">
                 @if (canEdit)
                 {
@@ -412,6 +412,7 @@
 
     bindOrderButtons(form);
     syncVariantRows(form);
+    window.MoneyFormat?.bind(form);
 
     form.querySelector('#main-image-input')?.addEventListener('change', async () => {
       const input = form.querySelector('#main-image-input');
@@ -527,7 +528,7 @@
         <input name="Variants[${idx}].Sku" class="form-control" required />
         <input name="Variants[${idx}].VariantLabel" class="form-control col-variant-size" />
         ${colorSelectHtml(form, idx)}
-        <input name="Variants[${idx}].Price" type="number" step="1000" class="form-control" required />
+        <input name="Variants[${idx}].Price" type="text" inputmode="numeric" autocomplete="off" class="form-control js-money-input" data-money-input required />
         <input type="number" class="form-control col-variant-stock" value="0" readonly title="Tồn tổng (từ kho lô)" />
         ${variantImageCellHtml(idx)}
         <label class="col-variant-flag" title="Default"><input type="radio" name="defaultVariant" value="${idx}" class="variant-default-radio" ${idx === 0 ? 'checked' : ''} /></label>
@@ -539,6 +540,7 @@
       applyVariantMode();
       syncVariantRows(form);
       bindOrderButtons(form);
+      window.MoneyFormat?.bind(row);
     });
 
     form.querySelector('#variants-list')?.addEventListener('change', (e) => {
@@ -548,6 +550,7 @@
     form.querySelector('#btn-preview-product')?.addEventListener('click', async () => {
       if (window.tinymce) tinymce.triggerSave();
       syncVariantRows(form);
+      window.MoneyFormat?.prepareForm(form);
       const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
       const fd = new FormData(form);
       if (token && !fd.get('__RequestVerificationToken')) {
@@ -566,6 +569,7 @@
       e.preventDefault();
       if (window.tinymce) tinymce.triggerSave();
       syncVariantRows(form);
+      window.MoneyFormat?.prepareForm(form);
       const res = await fetch(`${editBase}/Save`, { method: 'POST', body: new FormData(form) });
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('application/json')) {

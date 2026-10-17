@@ -63,7 +63,7 @@ else
                             <input type="number" name="quantity" value="@i.Quantity" min="1" class="qty-input" />
                         </form>
                     </td>
-                    <td class="js-line-total">@i.LineTotal.ToString("N0")đ</td>
+                    <td class="js-line-total">@i.LineTotal.ToString("N0") VNĐ</td>
                     @if (Model.IsDealer)
                     {
                         <td data-line-discount>
@@ -83,11 +83,11 @@ else
         </table>
 
         <aside class="cart-summary">
-            <p><strong>@Localizer["Cart.Subtotal"]:</strong> <span id="cart-subtotal">@Model.SubTotal.ToString("N0")đ</span></p>
+            <p><strong>@Localizer["Cart.Subtotal"]:</strong> <span id="cart-subtotal">@Model.SubTotal.ToString("N0") VNĐ</span></p>
             @if (Model.IsDealer)
             {
-                <p>@Localizer["Checkout.DealerDiscount"]: <span id="cart-discount" data-cart-discount>-@Model.DiscountAmount.ToString("N0")đ</span></p>
-                <p><strong>@Localizer["Checkout.Total"]:</strong> <span id="cart-net" data-cart-net>@Model.NetSubTotal.ToString("N0")đ</span></p>
+                <p>@Localizer["Checkout.DealerDiscount"]: <span id="cart-discount" data-cart-discount>-@Model.DiscountAmount.ToString("N0") VNĐ</span></p>
+                <p><strong>@Localizer["Checkout.Total"]:</strong> <span id="cart-net" data-cart-net>@Model.NetSubTotal.ToString("N0") VNĐ</span></p>
             }
             <p class="muted">@Localizer["Cart.ShipHint"]</p>
             <partial name="_DealerCodeBox" model="dealerBox" />

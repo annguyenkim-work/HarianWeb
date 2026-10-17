@@ -57,7 +57,7 @@ public sealed class ServiceBookingJourneyTests(E2EFixture fx)
                 "Hoàn thành dịch vụ"
             ]);
             await Expect(bookings.Modal).ToContainTextAsync("001234567890");
-            await Expect(bookings.Modal).ToContainTextAsync(new Regex(@"350[.,]000đ"));
+            await Expect(bookings.Modal).ToContainTextAsync(new Regex(@"350[.,]000\s*VNĐ"));
             await Expect(bookings.Modal.Locator(".order-actions button")).ToHaveCountAsync(0);
         });
     }

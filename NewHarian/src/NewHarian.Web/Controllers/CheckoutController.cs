@@ -6,6 +6,7 @@ using Microsoft.Extensions.Localization;
 using NewHarian.Application.Address;
 using NewHarian.Application.Cart;
 using NewHarian.Application.Dealers;
+using NewHarian.Application.Formatting;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
 using NewHarian.Application.Shipping;
@@ -82,12 +83,12 @@ public class CheckoutController(
         return Json(new
         {
             fee,
-            feeText = fee.ToString("N0") + "đ",
+            feeText = MoneyFormat.Vnd(fee),
             isFree,
             subTotal = priced.SubTotal,
-            subTotalText = priced.SubTotal.ToString("N0") + "đ",
+            subTotalText = MoneyFormat.Vnd(priced.SubTotal),
             total,
-            totalText = total.ToString("N0") + "đ"
+            totalText = MoneyFormat.Vnd(total)
         });
     }
 

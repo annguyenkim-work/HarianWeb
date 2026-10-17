@@ -233,7 +233,7 @@ public class DealerAccessCodeIntegrationTests : IClassFixture<DealerCodeWebAppli
         Assert.Contains(shop.Dealer.BusinessName, cart);
         Assert.Contains("data-line-percent=\"25\"", cart);
         Assert.Contains("data-line-percent=\"22\"", cart);
-        Assert.Contains("-595.000đ", cart);
+        Assert.Contains("-595.000 VNĐ", cart);
 
         var checkout = WebUtility.HtmlDecode(await guest.GetStringAsync("/checkout"));
         Assert.Contains("value=\"Lê Liên Hệ\"", checkout);
@@ -248,7 +248,7 @@ public class DealerAccessCodeIntegrationTests : IClassFixture<DealerCodeWebAppli
         Assert.EndsWith("/checkout/confirm", draft.RequestMessage!.RequestUri!.AbsolutePath, StringComparison.OrdinalIgnoreCase);
         var confirm = WebUtility.HtmlDecode(await draft.Content.ReadAsStringAsync());
         Assert.Contains("data-confirm-discount", confirm);
-        Assert.Contains("-595.000đ", confirm);
+        Assert.Contains("-595.000 VNĐ", confirm);
 
         var submit = await guest.PostAsync("/checkout/submit", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = token }));
         var placed = submit.RequestMessage!.RequestUri!.AbsolutePath.Contains("/checkout/success/", StringComparison.OrdinalIgnoreCase);

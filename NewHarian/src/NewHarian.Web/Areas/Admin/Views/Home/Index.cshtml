@@ -20,7 +20,7 @@
     var bookingGmvLabels = (Model.BookingGmvByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
     var bookingGmvValues = (Model.BookingGmvByDay ?? []).Select(x => x.Amount).ToList();
     var bookingCountTotal = (Model.BookingsByDay ?? []).Sum(x => x.Total);
-    string Vnd(decimal v) => v.ToString("N0") + "đ";
+    string Vnd(decimal v) => MoneyFormat.Vnd(v);
 }
 
 <div class="admin-toolbar">

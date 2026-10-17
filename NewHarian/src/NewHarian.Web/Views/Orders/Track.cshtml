@@ -51,12 +51,12 @@
         <ul>
             @foreach (var i in order.Items)
             {
-                <li>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} ({i.VariantLabel})") × @i.Quantity - @i.LineTotal.ToString("N0")đ</li>
+                <li>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} ({i.VariantLabel})") × @i.Quantity - @i.LineTotal.ToString("N0") VNĐ</li>
             }
         </ul>
-        <p>@Localizer["Cart.Subtotal"]: @order.SubTotal.ToString("N0")đ</p>
-        <p>@Localizer["Checkout.Shipping"]: @order.ShippingFee.ToString("N0")đ</p>
-        <p><strong>@Localizer["Checkout.Total"]: @order.Total.ToString("N0")đ</strong></p>
+        <p>@Localizer["Cart.Subtotal"]: @order.SubTotal.ToString("N0") VNĐ</p>
+        <p>@Localizer["Checkout.Shipping"]: @order.ShippingFee.ToString("N0") VNĐ</p>
+        <p><strong>@Localizer["Checkout.Total"]: @order.Total.ToString("N0") VNĐ</strong></p>
 
         @if (order.Status == NewHarian.Domain.Enums.OrderStatus.PendingPayment
              && order.PaymentMethod == NewHarian.Domain.Enums.PaymentMethod.BankTransfer)

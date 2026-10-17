@@ -25,6 +25,7 @@ public sealed class AnalyticsJourneyTests(E2EFixture fx)
                     E2ETestData.ProductName, E2ETestData.CategorySlug, E2ETestData.ProductSlug);
                 await Expect(page.GetByRole(AriaRole.Heading, new() { Name = E2ETestData.ProductName, Level = 1 }))
                     .ToBeVisibleAsync();
+                await Expect(page.Locator("#variant-price")).ToHaveTextAsync("150.000 VNĐ");
             });
         }
 

@@ -42,23 +42,23 @@ public sealed class DealerCodeOrderJourneyTests(E2EFixture fx)
                 await Expect(cart.DealerCode.Active).ToContainTextAsync(dealer.BusinessName);
                 await Expect(cart.LineDiscount(coral.Sku)).ToContainTextAsync("CK 25%");
                 await Expect(cart.LineDiscount(mau.Sku)).ToContainTextAsync("CK 22%");
-                await Expect(cart.Discount).ToHaveTextAsync("-595.000đ");
+                await Expect(cart.Discount).ToHaveTextAsync("-595.000 VNĐ");
 
                 await cart.ProceedToCheckoutAsync();
                 var checkout = new CheckoutPage(page);
                 await Expect(page.Locator("#CustomerName")).ToHaveValueAsync("Lê Liên Hệ");
                 await Expect(page.Locator("#CitizenId")).Not.ToHaveAttributeAsync("required", "");
                 await Expect(checkout.Invoice).ToContainTextAsync(dealer.TaxCode);
-                await Expect(checkout.Summary).ToContainTextAsync("-595.000đ");
+                await Expect(checkout.Summary).ToContainTextAsync("-595.000 VNĐ");
                 await checkout.ContinueWithPrefillAsync(E2EDealerData.ProvinceCode, E2EDealerData.CommuneCode, GuestPayment.Cod);
 
-                await Expect(page.Locator("[data-confirm-discount]")).ToHaveTextAsync("-595.000đ");
+                await Expect(page.Locator("[data-confirm-discount]")).ToHaveTextAsync("-595.000 VNĐ");
                 await Expect(page.Locator("[data-dealer-invoice]")).ToContainTextAsync(dealer.BusinessName);
                 await checkout.PlaceOrderAsync();
 
                 var success = new CheckoutSuccessPage(page);
                 orderNo = await success.OrderNumberAsync();
-                await Expect(success.Discount).ToHaveTextAsync("-595.000đ");
+                await Expect(success.Discount).ToHaveTextAsync("-595.000 VNĐ");
 
                 await detail.AddAsync(E2ETestData.CategorySlug, coral.Slug, coral.Name, 1);
                 await cart.GotoAsync();

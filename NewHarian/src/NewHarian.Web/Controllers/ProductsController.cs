@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Analytics;
 using NewHarian.Application.Catalog;
+using NewHarian.Application.Formatting;
 using NewHarian.Domain.Enums;
 
 namespace NewHarian.Web.Controllers;
@@ -96,7 +97,7 @@ public class ProductsController(ICatalogService catalog) : Controller
             sku = v.Sku,
             label = v.Label,
             price = v.Price,
-            priceText = v.Price.ToString("N0") + "đ",
+            priceText = MoneyFormat.Vnd(v.Price),
             colorMeaning = v.ColorMeaning,
             gallerySlideIndex = v.GallerySlideIndex
         });

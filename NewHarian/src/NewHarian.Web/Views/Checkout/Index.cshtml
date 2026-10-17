@@ -66,7 +66,7 @@
             {
                 var i = line.Item;
                 <li data-summary-sku="@i.Sku">
-                    @i.DisplayName × @i.Quantity - @i.LineTotal.ToString("N0")đ
+                    @i.DisplayName × @i.Quantity - @i.LineTotal.ToString("N0") VNĐ
                     @if (priced.IsDealer)
                     {
                         <br /><small><partial name="_DealerLineDiscount" model="line" /></small>
@@ -74,14 +74,14 @@
                 </li>
             }
         </ul>
-        <p>@Localizer["Cart.Subtotal"]: <span id="sum-subtotal">@priced.SubTotal.ToString("N0")đ</span></p>
+        <p>@Localizer["Cart.Subtotal"]: <span id="sum-subtotal">@priced.SubTotal.ToString("N0") VNĐ</span></p>
         @if (priced.IsDealer)
         {
-            <p>@Localizer["Checkout.DealerDiscount"]: <span id="sum-discount" data-sum-discount>-@priced.DiscountAmount.ToString("N0")đ</span></p>
+            <p>@Localizer["Checkout.DealerDiscount"]: <span id="sum-discount" data-sum-discount>-@priced.DiscountAmount.ToString("N0") VNĐ</span></p>
         }
         <p>@Localizer["Checkout.Shipping"]: <span id="sum-ship">-</span></p>
-        <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total">@priced.NetSubTotal.ToString("N0")đ</span></strong></p>
-        <p class="muted">@Localizer["Checkout.FreeHint"] @threshold.ToString("N0")đ</p>
+        <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total">@priced.NetSubTotal.ToString("N0") VNĐ</span></strong></p>
+        <p class="muted">@Localizer["Checkout.FreeHint"] @threshold.ToString("N0") VNĐ</p>
     </aside>
 </div>
 

@@ -2,7 +2,7 @@
 @{ ViewData["Title"] = "Shipping"; Layout = "_AdminLayout"; }
 <div class="admin-toolbar"><h1>Phí vận chuyển theo tỉnh</h1></div>
 <table class="data-table">
-<thead><tr><th>Mã</th><th>Tỉnh</th><th>Phí (đ)</th><th>Active</th><th></th></tr></thead>
+<thead><tr><th>Mã</th><th>Tỉnh</th><th>Phí (VNĐ)</th><th>Active</th><th></th></tr></thead>
 <tbody>
 @foreach (var r in Model) {
 <tr>
@@ -11,7 +11,8 @@
 <input type="hidden" name="provinceId" value="@r.ProvinceId" />
 <td>@r.Code</td>
 <td>@r.Name</td>
-<td><input name="fee" type="number" step="1000" value="@r.Fee" class="form-control" style="width:8rem" /></td>
+<td><input name="fee" value="@MoneyFormat.Vnd(r.Fee)" type="text" inputmode="numeric" autocomplete="off"
+               class="form-control js-money-input" data-money-input style="width:10rem" /></td>
 <td><input type="hidden" name="isActive" value="false" /><input name="isActive" type="checkbox" value="true" checked="@r.IsActive" /></td>
 <td><button type="submit" class="btn-secondary">Lưu</button></td>
 </form>

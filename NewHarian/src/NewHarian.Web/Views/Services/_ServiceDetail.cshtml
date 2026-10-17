@@ -73,7 +73,7 @@
                     <div class="variant-options">
                         @foreach (var v in Model.Variants)
                         {
-                            var priceText = hidePrice ? "" : $"{v.Price.ToString("N0")}đ";
+                            var priceText = hidePrice ? "" : MoneyFormat.Vnd(v.Price);
                             var hasSize = !string.IsNullOrWhiteSpace(v.SizeLabel);
                             var hasColor = !string.IsNullOrWhiteSpace(v.ColorName);
                             var useChip = hasSize || hasColor;
@@ -109,7 +109,7 @@
                     }
                     else
                     {
-                        <p class="price" id="variant-price">@(defaultVariant?.Price.ToString("N0") ?? "-")đ</p>
+                        <p class="price" id="variant-price">@(defaultVariant is { } dv ? MoneyFormat.Vnd(dv.Price) : "-")</p>
                     }
                     <p class="muted" id="variant-sku">SKU: @(defaultVariant?.Sku)</p>
                 </div>
@@ -177,7 +177,7 @@
                         }
                         else if (r.FromPrice is decimal price)
                         {
-                            <p class="price">@price.ToString("N0")đ</p>
+                            <p class="price">@price.ToString("N0") VNĐ</p>
                         }
                     </div>
                 </a>
