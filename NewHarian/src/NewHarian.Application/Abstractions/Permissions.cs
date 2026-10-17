@@ -13,6 +13,11 @@ public static class Permissions
         public const string ViewRevenue = "Dashboard.ViewRevenue";
     }
 
+    public static class Analytics
+    {
+        public const string View = "Analytics.View";
+    }
+
     public static class Help
     {
         public const string View = "Help.View";

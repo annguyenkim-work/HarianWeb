@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using NewHarian.Application.Analytics;
 using NewHarian.Application.Catalog;
 using NewHarian.Domain.Enums;
 
@@ -68,7 +69,11 @@ public class ProductsController(ICatalogService catalog) : Controller
     public async Task<IActionResult> Detail(string categorySlug, string productSlug, CancellationToken ct)
     {
         var product = await catalog.GetProductAsync(categorySlug, productSlug, Lang, ct);
-        if (product is not null) return View(product);
+        if (product is not null)
+        {
+            HttpContext.Items[PageViewClassifier.ProductIdItemKey] = product.Id;
+            return View(product);
+        }
 
         // Not a physical product — maybe it's a service with the same slug.
         var service = await catalog.GetServiceAsync(categorySlug, productSlug, Lang, ct);

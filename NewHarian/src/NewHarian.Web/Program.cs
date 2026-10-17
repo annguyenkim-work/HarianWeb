@@ -101,6 +101,7 @@ app.UseRateLimiter();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<NewHarian.Web.Middleware.PageViewMiddleware>();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {

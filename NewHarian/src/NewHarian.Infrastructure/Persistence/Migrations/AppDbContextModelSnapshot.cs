@@ -1698,6 +1698,33 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.ToTable("PageTranslations");
                 });
 
+            modelBuilder.Entity("NewHarian.Domain.Entities.PageViewDaily", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("PageKind")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ViewCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date", "PageKind")
+                        .IsUnique();
+
+                    b.ToTable("PageViewDaily", (string)null);
+                });
+
             modelBuilder.Entity("NewHarian.Domain.Entities.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -1916,6 +1943,35 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ProductVariants");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.ProductViewDaily", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ViewCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("Date", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ProductViewDaily", (string)null);
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.Service", b =>
@@ -3082,6 +3138,17 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Navigation("ColorDefinition");
 
                     b.Navigation("Image");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.ProductViewDaily", b =>
+                {
+                    b.HasOne("NewHarian.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Product");
                 });

@@ -17,6 +17,7 @@ public static class AdminNavigation
     [
         new("Vận hành",
         [
+            new("Thống kê truy cập", "Analytics", "Index", Permissions.Analytics.View),
             new("Danh mục", "Categories", "Index", Permissions.Categories.View),
             new("Sản phẩm", "Products", "Index", Permissions.Products.View),
             new("Dịch vụ", "ServiceProducts", "Index", Permissions.Services.View),

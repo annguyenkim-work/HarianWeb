@@ -61,6 +61,7 @@ public class RolePermissionMapTests
     [InlineData(Permissions.CmsPages.EditMeta, new[] { AppRoles.SuperAdmin, AppRoles.HrManager })]
     [InlineData(Permissions.Menus.Manage, new[] { AppRoles.SuperAdmin, AppRoles.HrManager })]
     [InlineData(Permissions.Dashboard.ViewRevenue, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager })]
+    [InlineData(Permissions.Analytics.View, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager })]
     [InlineData(Permissions.Users.Manage, new[] { AppRoles.SuperAdmin })]
     [InlineData(Permissions.Employees.View, new[] { AppRoles.SuperAdmin, AppRoles.HrManager, AppRoles.HrStaff })]
     [InlineData(Permissions.Employees.Manage, new[] { AppRoles.SuperAdmin, AppRoles.HrManager })]
