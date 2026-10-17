@@ -19,7 +19,7 @@ public static class EmailTemplateDefaults
             <p>{{ShippingAddress}}, {{ProvinceName}}</p>
             <p>PT thanh toán: {{PaymentMethod}}</p>
             <p>{{OrderLinesHtml}}</p>
-            <p>Tạm tính {{SubTotal}}đ + Ship {{ShippingFee}}đ = <strong>{{Total}}đ</strong></p>
+            <p>Tạm tính {{SubTotal}} VNĐ + Ship {{ShippingFee}} VNĐ = <strong>{{Total}} VNĐ</strong></p>
             {{BankBlockHtml}}
             """),
 
@@ -33,7 +33,7 @@ public static class EmailTemplateDefaults
             <p>{{ShippingAddress}}, {{ProvinceName}}</p>
             <p>PT: {{PaymentMethod}}</p>
             <p>{{OrderLinesHtml}}</p>
-            <p>Tạm tính {{SubTotal}}đ + Ship {{ShippingFee}}đ = <strong>{{Total}}đ</strong></p>
+            <p>Tạm tính {{SubTotal}} VNĐ + Ship {{ShippingFee}} VNĐ = <strong>{{Total}} VNĐ</strong></p>
             """),
 
         T(EmailTemplateCodes.OrderCancelStaff, "Đơn hàng - khách hủy (staff)",

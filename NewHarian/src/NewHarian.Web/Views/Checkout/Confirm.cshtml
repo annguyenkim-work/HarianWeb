@@ -78,18 +78,18 @@
             {
                 <td data-line-discount><partial name="_DealerLineDiscount" model="line" /></td>
             }
-            <td>@i.LineTotal.ToString("N0")đ</td>
+            <td>@i.LineTotal.ToString("N0") VNĐ</td>
         </tr>
     }
     </tbody>
     <tfoot>
-        <tr><td colspan="@colspan">@Localizer["Cart.Subtotal"]</td><td>@priced.SubTotal.ToString("N0")đ</td></tr>
+        <tr><td colspan="@colspan">@Localizer["Cart.Subtotal"]</td><td>@priced.SubTotal.ToString("N0") VNĐ</td></tr>
         @if (priced.IsDealer)
         {
-            <tr><td colspan="@colspan">@Localizer["Checkout.DealerDiscount"]</td><td data-confirm-discount>-@priced.DiscountAmount.ToString("N0")đ</td></tr>
+            <tr><td colspan="@colspan">@Localizer["Checkout.DealerDiscount"]</td><td data-confirm-discount>-@priced.DiscountAmount.ToString("N0") VNĐ</td></tr>
         }
-        <tr><td colspan="@colspan">@Localizer["Checkout.Shipping"]</td><td>@(isFree ? Localizer["Checkout.FreeShip"].ToString() : fee.ToString("N0") + "đ")</td></tr>
-        <tr><td colspan="@colspan"><strong>@Localizer["Checkout.Total"]</strong></td><td><strong data-confirm-total>@total.ToString("N0")đ</strong></td></tr>
+        <tr><td colspan="@colspan">@Localizer["Checkout.Shipping"]</td><td>@(isFree ? Localizer["Checkout.FreeShip"].ToString() : fee.ToString("N0") + " VNĐ")</td></tr>
+        <tr><td colspan="@colspan"><strong>@Localizer["Checkout.Total"]</strong></td><td><strong data-confirm-total>@total.ToString("N0") VNĐ</strong></td></tr>
     </tfoot>
 </table>
 

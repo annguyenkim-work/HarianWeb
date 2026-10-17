@@ -53,13 +53,13 @@
         <span class="detail-field__label">Thành tiền</span>
         @if (canEditFields)
         {
-            <input name="amount" type="number" min="0" step="1000" class="form-control"
-                   value="@(Model.Amount?.ToString(System.Globalization.CultureInfo.InvariantCulture))" placeholder="VNĐ" />
+            <input name="amount" value="@MoneyFormat.Vnd(Model.Amount)" type="text" inputmode="numeric" autocomplete="off"
+                   class="form-control js-money-input" data-money-input placeholder="VNĐ" />
             <span class="muted">Bắt buộc khi hoàn thành</span>
         }
         else
         {
-            <span class="detail-field__value">@(Model.Amount is decimal amt ? $"{amt.ToString("N0")}đ" : "-")</span>
+            <span class="detail-field__value">@(Model.Amount is decimal amt ? MoneyFormat.Vnd(amt) : "-")</span>
         }
     </div>
     <div class="detail-field detail-field--wide">

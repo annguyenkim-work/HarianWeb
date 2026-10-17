@@ -124,7 +124,7 @@
                 }
                 <br /><span class="muted">@o.CustomerEmail</span>
             </td>
-            <td>@o.Total.ToString("N0")đ</td>
+            <td>@MoneyFormat.Vnd(o.Total)</td>
             <td>@OrderSourceLabels.Vi(o.Source)</td>
             <td>@o.PaymentMethod</td>
             <td class="col-status">@o.Status</td>
@@ -262,7 +262,7 @@
   function wireDealerDiscount(form) {
     const url = form.dataset.discountUrl;
     const summary = form.querySelector('#dealer-discount-summary');
-    const fmt = (n) => Number(n || 0).toLocaleString('vi-VN');
+    const fmt = (n) => window.MoneyFormat?.format(Number(n || 0)) || (Number(n || 0).toLocaleString('vi-VN') + ' VNĐ');
     let timer = null;
 
     async function refresh() {
@@ -270,12 +270,16 @@
       const rows = [...form.querySelectorAll('#manual-order-lines .manual-order-line')];
       rows.forEach(r => { const s = r.querySelector('.js-line-discount'); if (s) s.textContent = ''; });
       if (!dealerId || !url) { if (summary) summary.innerHTML = ''; return; }
-      const lines = rows.map(r => ({
-        sku: r.querySelector('.js-sku-input')?.value?.trim() || '',
-        quantity: Number(r.querySelector('input[name*="Quantity"]')?.value || 0),
-        unitPrice: r.querySelector('.js-sku-price')?.value ? Number(r.querySelector('.js-sku-price').value) : null,
-        discountPercent: r.querySelector('.js-line-manual')?.value ? Number(r.querySelector('.js-line-manual').value) : null
-      }));
+      const lines = rows.map(r => {
+        const priceRaw = r.querySelector('.js-sku-price')?.value?.trim() || '';
+        const price = priceRaw ? window.MoneyFormat?.parse(priceRaw) : null;
+        return {
+          sku: r.querySelector('.js-sku-input')?.value?.trim() || '',
+          quantity: Number(r.querySelector('input[name*="Quantity"]')?.value || 0),
+          unitPrice: price,
+          discountPercent: r.querySelector('.js-line-manual')?.value ? Number(r.querySelector('.js-line-manual').value) : null
+        };
+      });
       try {
         const res = await fetch(url, {
           method: 'POST',
@@ -291,11 +295,11 @@
           span.classList.toggle('text-warning', !!l.unconfigured);
           if (l.error) span.textContent = l.error;
           else if (l.unconfigured) span.textContent = 'Chưa có chiết khấu đại lý (0%)';
-          else span.textContent = `${l.tierLabel || '-'} · CK ${l.percent}% · -${fmt(l.amount)}đ (${l.source})`;
+          else span.textContent = `${l.tierLabel || '-'} · CK ${l.percent}% · -${fmt(l.amount)} (${l.source})`;
           span.dataset.percent = l.percent;
         });
         if (summary) {
-          summary.innerHTML = `Tạm tính <strong>${fmt(data.subTotal)}đ</strong> · Chiết khấu <strong>-${fmt(data.discount)}đ</strong> · Tổng <strong data-discount-total>${fmt(data.total)}đ</strong>`;
+          summary.innerHTML = `Tạm tính <strong>${fmt(data.subTotal)}</strong> · Chiết khấu <strong>-${fmt(data.discount)}</strong> · Tổng <strong data-discount-total>${fmt(data.total)}</strong>`;
         }
       } catch {
         if (summary) summary.innerHTML = '<span class="text-danger">Không tính được chiết khấu.</span>';
@@ -312,6 +316,7 @@
     window.HarianAddress?.bindAll();
     const form = createBody.querySelector('form');
     if (!form) return;
+    window.MoneyFormat?.bind(form);
     window.AdminSkuSuggest.wire(form, { mode: 'sku' });
     const refreshDiscount = wireDealerDiscount(form);
     const applyDealer = wireDealerPicker(form, refreshDiscount);
@@ -404,6 +409,7 @@
       if (!tpl || !wrap) return;
       wrap.insertAdjacentHTML('beforeend', tpl.innerHTML.replaceAll('__i__', '0'));
       reindexLines(wrap);
+      window.MoneyFormat?.bind(wrap);
       applyDealer();
     });
 
@@ -421,6 +427,7 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      window.MoneyFormat?.prepareForm(form);
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('application/json')) {

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NewHarian.Application.Formatting;
 using NewHarian.Application.Payments;
 using NewHarian.Infrastructure.Persistence;
 
@@ -37,7 +38,7 @@ public sealed class BankTransferDisplayService(AppDbContext db, IVietQrService v
             BankBranch: branch,
             AccountHolderName: holder,
             QrSrc: qr,
-            AmountText: $"{amount:N0}đ",
+            AmountText: MoneyFormat.Vnd(amount),
             TransferContent: orderNumber);
     }
 }

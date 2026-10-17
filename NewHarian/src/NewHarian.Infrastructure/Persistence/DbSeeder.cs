@@ -978,6 +978,11 @@ public static class DbSeeder
                 row.BodyHtml = row.BodyHtml.TrimEnd() + "\n<p>CCCD: {{CitizenId}}</p>";
                 changed = true;
             }
+            if (row.BodyHtml.Contains("}}đ", StringComparison.Ordinal))
+            {
+                row.BodyHtml = row.BodyHtml.Replace("}}đ", "}} VNĐ", StringComparison.Ordinal);
+                changed = true;
+            }
             if (changed) row.UpdatedAt = DateTime.UtcNow;
         }
 

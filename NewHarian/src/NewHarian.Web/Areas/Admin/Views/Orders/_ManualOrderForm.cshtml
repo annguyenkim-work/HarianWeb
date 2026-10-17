@@ -145,7 +145,8 @@
                 </label>
                 <label>
                     <span>Đơn giá</span>
-                    <input name="Lines[@i].UnitPrice" type="number" min="0" step="1" value="@(Model.Lines[i].UnitPrice?.ToString(System.Globalization.CultureInfo.InvariantCulture))" class="form-control js-sku-price" placeholder="Để trống = giá SP" />
+                    <input name="Lines[@i].UnitPrice" value="@MoneyFormat.Vnd(Model.Lines[i].UnitPrice)" type="text" inputmode="numeric" autocomplete="off"
+                           class="form-control js-sku-price js-money-input" data-money-input placeholder="Để trống = giá SP" />
                 </label>
                 @if (canOverride)
                 {
@@ -193,7 +194,7 @@
         </label>
         <label>
             <span>Đơn giá</span>
-            <input name="Lines[__i__].UnitPrice" type="number" min="0" step="1" class="form-control js-sku-price" placeholder="Để trống = giá SP" />
+            <input name="Lines[__i__].UnitPrice" type="text" inputmode="numeric" autocomplete="off" class="form-control js-sku-price js-money-input" data-money-input placeholder="Để trống = giá SP" />
         </label>
         @if (canOverride)
         {

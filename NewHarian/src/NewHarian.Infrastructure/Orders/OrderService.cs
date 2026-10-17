@@ -6,6 +6,7 @@ using NewHarian.Application.Admin;
 using NewHarian.Application.Cart;
 using NewHarian.Application.Dealers;
 using NewHarian.Application.Email;
+using NewHarian.Application.Formatting;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
 using NewHarian.Application.Inventory;
@@ -155,7 +156,7 @@ public partial class OrderService(
             await notifications.PublishAsync(
                 AdminNotificationTypes.OrderCreated,
                 dealer is null ? $"Đơn hàng mới {order.OrderNumber}" : $"Đơn đại lý mới {order.OrderNumber}",
-                $"{dealer?.BusinessName ?? order.CustomerName} · {order.Total:N0}đ",
+                $"{dealer?.BusinessName ?? order.CustomerName} · {MoneyFormat.Vnd(order.Total)}",
                 $"/admin/Orders?q={Uri.EscapeDataString(order.OrderNumber)}",
                 "Order",
                 order.Id.ToString(),
@@ -519,7 +520,7 @@ public partial class OrderService(
                 status,
                 messageVi: dealer is null
                     ? $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) - {statusLabel}"
-                    : $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) - đại lý {dealer.BusinessName} (CK {discountAmount:N0}đ) - {statusLabel}",
+                    : $"Tạo đơn thủ công ({OrderSourceLabels.Vi(request.Source)}) - đại lý {dealer.BusinessName} (CK {MoneyFormat.Vnd(discountAmount)}) - {statusLabel}",
                 ct: ct);
 
             await audit.WriteAsync(
@@ -788,10 +789,10 @@ public partial class OrderService(
                     ?? "info@harian.local";
 
         var lines = string.Join("<br/>", order.Items.Select(i =>
-            $"{EmailTemplateService.Enc(i.ProductName)} ({EmailTemplateService.Enc(i.VariantLabel)}) × {i.Quantity} = {i.LineTotal:N0}đ"
+            $"{EmailTemplateService.Enc(i.ProductName)} ({EmailTemplateService.Enc(i.VariantLabel)}) × {i.Quantity} = {MoneyFormat.Vnd(i.LineTotal)}"
             + (i.DiscountSource == DealerDiscountSource.None
                 ? ""
-                : $" (CK {i.DiscountPercent:0.##}%: -{i.DiscountAmount:N0}đ)")));
+                : $" (CK {i.DiscountPercent:0.##}%: -{MoneyFormat.Vnd(i.DiscountAmount)})")));
         if (dealer is not null)
             lines += DealerOrderEmailBlock(order, dealer);
 
@@ -804,7 +805,7 @@ public partial class OrderService(
                 $"<p>Ngân hàng: {EmailTemplateService.Enc(bank.BankName)}<br/>" +
                 $"Chủ TK: {EmailTemplateService.Enc(bank.AccountHolderName)}<br/>" +
                 $"STK: {EmailTemplateService.Enc(bank.BankAccount)}<br/>Chi nhánh: {EmailTemplateService.Enc(bank.BankBranch)}<br/>" +
-                $"Số tiền: <strong>{order.Total:N0}đ</strong><br/>Nội dung: <strong>{EmailTemplateService.Enc(order.OrderNumber)}</strong></p>";
+                $"Số tiền: <strong>{MoneyFormat.Vnd(order.Total)}</strong><br/>Nội dung: <strong>{EmailTemplateService.Enc(order.OrderNumber)}</strong></p>";
             if (!string.IsNullOrWhiteSpace(bank.QrSrc))
                 bankBlock += $"<p><img src=\"{bank.QrSrc}\" alt=\"QR chuyển khoản\" style=\"max-width:240px;height:auto;margin-top:8px\" /></p>";
         }
@@ -843,7 +844,7 @@ public partial class OrderService(
 
     private static string DealerOrderEmailBlock(Order order, Dealer dealer) =>
         $"<br/><br/><strong>Đơn đại lý: {EmailTemplateService.Enc(dealer.BusinessName)}</strong>"
-        + $"<br/>Chiết khấu đại lý: -{order.DiscountAmount:N0}đ"
+        + $"<br/>Chiết khấu đại lý: -{MoneyFormat.Vnd(order.DiscountAmount)}"
         + "<br/><strong>Thông tin xuất hóa đơn</strong>"
         + $"<br/>Tên đơn vị: {EmailTemplateService.Enc(order.InvoiceBuyerName)}"
         + $"<br/>MST: {EmailTemplateService.Enc(order.InvoiceTaxCode)}"

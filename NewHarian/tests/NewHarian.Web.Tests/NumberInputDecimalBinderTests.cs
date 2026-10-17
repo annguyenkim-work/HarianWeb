@@ -1,3 +1,4 @@
+using NewHarian.Application.Formatting;
 using NewHarian.Web.ModelBinding;
 
 namespace NewHarian.Web.Tests;
@@ -27,5 +28,16 @@ public class NumberInputDecimalBinderTests
     public void Other_shapes_fall_back_to_culture_binder(string? raw)
     {
         Assert.False(NumberInputDecimalBinder.TryParseNumberInput(raw, out _));
+    }
+
+    [Theory]
+    [InlineData("1.500.000 VNĐ", 1_500_000)]
+    [InlineData("1500000", 1_500_000)]
+    [InlineData("12.000.000", 12_000_000)]
+    public void Money_ui_strings_parse_via_MoneyFormat(string raw, decimal expected)
+    {
+        Assert.False(NumberInputDecimalBinder.TryParseNumberInput(raw, out _));
+        Assert.True(MoneyFormat.TryParse(raw, out var value));
+        Assert.Equal(expected, value);
     }
 }

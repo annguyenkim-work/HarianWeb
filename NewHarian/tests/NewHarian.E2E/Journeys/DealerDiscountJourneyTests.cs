@@ -40,11 +40,16 @@ public sealed class DealerDiscountJourneyTests(E2EFixture fx)
                 await Expect(form.CitizenRequiredMark).ToBeHiddenAsync();
                 await form.SetLineAsync(0, coral.Sku, 15);
                 await form.SetLineAsync(1, mau.Sku, 10);
+                await Expect(form.LinePrice(0)).ToHaveValueAsync("100.000 VNĐ");
+                await form.SetUnitPriceAsync(0, "1500000");
+                await Expect(form.LinePrice(0)).ToHaveValueAsync("1.500.000 VNĐ");
+                await form.SetUnitPriceAsync(0, "100000");
+                await Expect(form.LinePrice(0)).ToHaveValueAsync("100.000 VNĐ");
 
                 await Expect(form.LineDiscount(0)).ToContainTextAsync(": 20-50");
                 await Expect(form.LineDiscount(0)).ToContainTextAsync("CK 25%");
                 await Expect(form.LineDiscount(1)).ToContainTextAsync("CK 22.5%");
-                await Expect(form.Summary).ToContainTextAsync("-600.000đ");
+                await Expect(form.Summary).ToContainTextAsync("-600.000 VNĐ");
                 await Expect(form.ManualPercentInputs.First).ToBeVisibleAsync();
 
                 orderNo = await form.SubmitAsync();

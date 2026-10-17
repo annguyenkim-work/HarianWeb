@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Catalog;
+using NewHarian.Application.Formatting;
 using NewHarian.Domain.Entities;
 using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Persistence;
@@ -411,7 +412,7 @@ public class AdminProductService(
         decimal price)
     {
         var label = string.IsNullOrWhiteSpace(variantLabel) ? name : $"{name} - {variantLabel}";
-        var display = $"{label} ({sku}) · {price:N0}đ";
+        var display = $"{label} ({sku}) · {MoneyFormat.Vnd(price)}";
         return new VariantSuggestDto(id, sku, name, variantLabel, price, display);
     }
 }

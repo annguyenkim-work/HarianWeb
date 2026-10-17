@@ -123,6 +123,16 @@ public sealed class AdminManualOrderForm(IPage page)
         await line.Locator("input[name$='.Quantity']").FillAsync(quantity.ToString());
     }
 
+    public ILocator LinePrice(int index) => Lines.Nth(index).Locator(".js-sku-price");
+
+    public async Task SetUnitPriceAsync(int index, string rawDigits)
+    {
+        var price = LinePrice(index);
+        await price.ClickAsync();
+        await price.FillAsync(rawDigits);
+        await price.BlurAsync();
+    }
+
     /// <summary>Submits; the page reloads filtered by the new order. Returns its number.</summary>
     public async Task<string> SubmitAsync()
     {

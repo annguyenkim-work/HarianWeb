@@ -195,7 +195,8 @@
                         }
                     }
                 </select>
-                <input asp-for="Variants[i].Price" type="number" step="1000" class="form-control" />
+                <input name="Variants[@i].Price" value="@MoneyFormat.Vnd(Model.Variants[i].Price)"
+                       type="text" inputmode="numeric" autocomplete="off" class="form-control js-money-input" data-money-input required />
                 @if (!isService)
                 {
                     <input type="number" class="form-control col-variant-stock" value="@Model.Variants[i].StockQuantity" readonly title="Tồn tổng (từ kho lô)" />

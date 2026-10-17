@@ -144,13 +144,13 @@
                 <td>@name</td>
                 <td>@i.Sku</td>
                 <td class="num">@i.Quantity</td>
-                <td class="num">@i.UnitPrice.ToString("N0")đ</td>
-                <td class="num">@i.LineTotal.ToString("N0")đ</td>
+                <td class="num">@i.UnitPrice.ToString("N0") VNĐ</td>
+                <td class="num">@i.LineTotal.ToString("N0") VNĐ</td>
                 @if (hasLineDiscount)
                 {
                     <td>@(i.DiscountTierLabel ?? "-")</td>
                     <td class="num" data-print-line-percent>@i.DiscountPercent.ToString("0.##")%</td>
-                    <td class="num">@i.DiscountAmount.ToString("N0")đ</td>
+                    <td class="num">@i.DiscountAmount.ToString("N0") VNĐ</td>
                 }
             </tr>
         }
@@ -158,13 +158,13 @@
     </table>
 
     <div class="totals">
-        <div>SP: @Model.SubTotal.ToString("N0")đ
+        <div>SP: @Model.SubTotal.ToString("N0") VNĐ
             @if (Model.DiscountAmount > 0)
             {
-                <text> - chiết khấu @Model.DiscountAmount.ToString("N0")đ</text>
+                <text> - chiết khấu @Model.DiscountAmount.ToString("N0") VNĐ</text>
             }
-            + ship @Model.ShippingFee.ToString("N0")đ</div>
-        <div><strong>Tổng: @Model.Total.ToString("N0")đ</strong></div>
+            + ship @Model.ShippingFee.ToString("N0") VNĐ</div>
+        <div><strong>Tổng: @Model.Total.ToString("N0") VNĐ</strong></div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Notes))

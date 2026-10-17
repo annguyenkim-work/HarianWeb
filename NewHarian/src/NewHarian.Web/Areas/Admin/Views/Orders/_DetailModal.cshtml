@@ -29,7 +29,7 @@
         <div class="detail-field">
             <span class="detail-field__label">Chiết khấu</span>
             <span class="detail-field__value" data-order-discount>@if (Model.DealerDiscountPercent is not null)
-                {<text>@Model.DealerDiscountPercent.Value.ToString("0.##")% </text>}-@Model.DiscountAmount.ToString("N0")đ</span>
+                {<text>@Model.DealerDiscountPercent.Value.ToString("0.##")% </text>}-@Model.DiscountAmount.ToString("N0") VNĐ</span>
         </div>
     }
     @if (Model.Invoice is not null)
@@ -69,13 +69,13 @@
     </div>
     <div class="detail-field detail-field--wide">
         <span class="detail-field__label">Tổng</span>
-        <span class="detail-field__value"><strong>@Model.Total.ToString("N0")đ</strong>
-            <span class="muted">(SP @Model.SubTotal.ToString("N0")đ
+        <span class="detail-field__value"><strong>@Model.Total.ToString("N0") VNĐ</strong>
+            <span class="muted">(SP @Model.SubTotal.ToString("N0") VNĐ
             @if (Model.DiscountAmount > 0)
             {
-                <text> − CK @Model.DiscountAmount.ToString("N0")đ</text>
+                <text> − CK @Model.DiscountAmount.ToString("N0") VNĐ</text>
             }
-            + ship @Model.ShippingFee.ToString("N0")đ)</span>
+            + ship @Model.ShippingFee.ToString("N0") VNĐ)</span>
         </span>
     </div>
 </div>
@@ -83,10 +83,10 @@
 <ul class="order-detail-items">
 @foreach (var i in Model.Items)
 {
-    <li data-order-line="@i.Sku">@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}") (@i.Sku) × @i.Quantity = @i.LineTotal.ToString("N0")đ
+    <li data-order-line="@i.Sku">@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}") (@i.Sku) × @i.Quantity = @i.LineTotal.ToString("N0") VNĐ
         @if (i.DiscountSource != NewHarian.Domain.Enums.DealerDiscountSource.None)
         {
-            <span class="muted" data-line-discount>· @(i.DiscountTierLabel ?? "-") · CK @i.DiscountPercent.ToString("0.##")% (-@i.DiscountAmount.ToString("N0")đ, @NewHarian.Web.Areas.Admin.DealerLabels.Source(i.DiscountSource))</span>
+            <span class="muted" data-line-discount>· @(i.DiscountTierLabel ?? "-") · CK @i.DiscountPercent.ToString("0.##")% (-@i.DiscountAmount.ToString("N0") VNĐ, @NewHarian.Web.Areas.Admin.DealerLabels.Source(i.DiscountSource))</span>
         }
     </li>
 }

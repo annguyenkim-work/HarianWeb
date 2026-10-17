@@ -38,7 +38,10 @@
 
     <label>Mã lô (tuỳ chọn) <input asp-for="LotCode" class="form-control" maxlength="100" /></label>
     <label>Hạn sử dụng <input asp-for="ExpiryDate" type="date" class="form-control" required /></label>
-    <label>Giá vốn / đơn vị <input asp-for="UnitCost" type="number" step="1000" min="0" class="form-control" required /></label>
+    <label>Giá vốn / đơn vị
+        <input name="UnitCost" value="@MoneyFormat.Vnd(Model.UnitCost)" type="text" inputmode="numeric" autocomplete="off"
+               class="form-control js-money-input" data-money-input required />
+    </label>
     <label>Số lượng <input asp-for="Quantity" type="number" min="1" class="form-control" required /></label>
     <label>Ghi chú <input asp-for="Notes" class="form-control" maxlength="1000" /></label>
 

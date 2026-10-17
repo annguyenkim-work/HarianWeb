@@ -107,6 +107,7 @@
         if (input) input.value = option.dataset.sku || '';
         if (priceInput && option.dataset.price !== undefined && option.dataset.price !== '') {
           priceInput.value = String(Math.round(Number(option.dataset.price)));
+          window.MoneyFormat?.refresh(priceInput);
         }
         input?.dispatchEvent(new Event('change', { bubbles: true }));
       }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Catalog;
+using NewHarian.Application.Formatting;
 using NewHarian.Domain.Enums;
 using NewHarian.Web.Authorization;
 using System.Globalization;
@@ -61,7 +62,8 @@ public class ServiceBookingsController(IServiceBookingService bookings, IStatusH
         decimal? parsedAmount = null;
         if (!string.IsNullOrWhiteSpace(amount))
         {
-            if (!decimal.TryParse(amount, NumberStyles.Number, CultureInfo.InvariantCulture, out var v)
+            if (!MoneyFormat.TryParse(amount, out var v)
+                && !decimal.TryParse(amount, NumberStyles.Number, CultureInfo.InvariantCulture, out v)
                 && !decimal.TryParse(amount, NumberStyles.Number, CultureInfo.GetCultureInfo("vi-VN"), out v))
                 return this.JsonFail("Thành tiền không hợp lệ.");
             parsedAmount = v;

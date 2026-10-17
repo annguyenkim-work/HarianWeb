@@ -26,7 +26,7 @@
     <div class="dash-kpi-grid">
         <div class="dash-kpi">
             <span class="dash-kpi__label">Giá trị kho</span>
-            <span class="dash-kpi__value">@summary.TotalValue.ToString("N0")đ</span>
+            <span class="dash-kpi__value">@MoneyFormat.Vnd(summary.TotalValue)</span>
             <span class="dash-kpi__hint">Σ SL × giá vốn lô</span>
         </div>
         <div class="dash-kpi">
@@ -130,6 +130,7 @@
   function bindForm() {
     const form = body.querySelector('form');
     if (!form) return;
+    window.MoneyFormat?.bind(form);
     window.AdminSkuSuggest.wire(form, { mode: 'variantId', portalRoot: body });
 
     form.querySelectorAll('[data-close], [data-close-inventory-modal]').forEach(btn => {
@@ -152,6 +153,7 @@
         form.querySelector('.js-sku-input')?.focus();
         return;
       }
+      window.MoneyFormat?.prepareForm(form);
       const fd = new FormData(form);
       const res = await fetch(form.action, {
         method: 'POST',
