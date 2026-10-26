@@ -4,4 +4,4 @@ namespace NewHarian.Web.Models;
 
 public record DiscountGroupTableModel(
     DealerDiscountGroupDto Group,
-    IReadOnlyDictionary<(int TierId, int ProductId), decimal>? Overrides = null);
+    IReadOnlyDictionary<(int TierId, int ProductVariantId), decimal>? Overrides = null);

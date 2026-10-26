@@ -41,9 +41,11 @@ public class PermissionScopeTests : IClassFixture<NewHarianWebApplicationFactory
         var hr = await TestUsers.LoggedInClientAsync(_factory, AppRoles.HrManager);
         var hrDashboard = await hr.GetStringAsync("/admin");
         Assert.Contains("Hồ sơ ứng tuyển mới", hrDashboard);
+        Assert.Contains("data-ops-strip", hrDashboard);
         Assert.DoesNotContain("Đơn chờ xử lý", hrDashboard);
         Assert.DoesNotContain("Giá trị kho", hrDashboard);
-        Assert.DoesNotContain("chart-gmv", hrDashboard);
+        Assert.DoesNotContain("data-commerce-kpis", hrDashboard);
+        Assert.DoesNotContain("chart-orders-trend", hrDashboard);
 
         var hrHelp = await hr.GetStringAsync("/admin/Help");
         Assert.Contains("id=\"ho-so\"", hrHelp);
@@ -58,6 +60,13 @@ public class PermissionScopeTests : IClassFixture<NewHarianWebApplicationFactory
         Assert.Contains("Đơn chờ xử lý", salesDashboard);
         Assert.DoesNotContain("Giá trị kho", salesDashboard);
         Assert.DoesNotContain("Hồ sơ ứng tuyển mới", salesDashboard);
+        Assert.DoesNotContain("data-commerce-kpis", salesDashboard);
+
+        var salesManager = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SalesManager);
+        var smDashboard = await salesManager.GetStringAsync("/admin");
+        Assert.Contains("data-commerce-kpis", smDashboard);
+        Assert.Contains("chart-orders-trend", smDashboard);
+        Assert.Contains("Đơn chờ xử lý", smDashboard);
 
         var warehouse = await TestUsers.LoggedInClientAsync(_factory, AppRoles.WarehouseManager);
         Assert.Contains("Giá trị kho", await warehouse.GetStringAsync("/admin"));

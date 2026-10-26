@@ -15,7 +15,7 @@
         <table class="data-table discount-table">
             <thead>
                 <tr>
-                    <th>Sản phẩm</th>
+                    <th>SKU</th>
                     @foreach (var t in g.Tiers)
                     {
                         <th>@t.Range</th>
@@ -23,20 +23,20 @@
                 </tr>
             </thead>
             <tbody>
-            @foreach (var p in g.Products)
+            @foreach (var s in g.Skus)
             {
                 <tr>
-                    <td>@p.Name</td>
+                    <td>@s.Label</td>
                     @foreach (var t in g.Tiers)
                     {
-                        var def = g.Rates.TryGetValue((t.Id, p.ProductId), out var d) ? d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "";
-                        var own = Model.Overrides.TryGetValue((t.Id, p.ProductId), out var o) ? o.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "";
+                        var def = g.Rates.TryGetValue((t.Id, s.ProductVariantId), out var d) ? d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "";
+                        var own = Model.Overrides.TryGetValue((t.Id, s.ProductVariantId), out var o) ? o.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "";
                         <td>
                             <input type="hidden" name="Cells[@i].TierId" value="@t.Id" />
-                            <input type="hidden" name="Cells[@i].ProductId" value="@p.ProductId" />
+                            <input type="hidden" name="Cells[@i].ProductVariantId" value="@s.ProductVariantId" />
                             <input type="number" name="Cells[@i].Percent" value="@own" placeholder="@def" min="0" max="100" step="0.01"
                                    class="form-control" style="max-width:6rem" data-override-input
-                                   aria-label="@p.Name @t.Range" />
+                                   aria-label="@s.Label @t.Range" />
                         </td>
                         i++;
                     }

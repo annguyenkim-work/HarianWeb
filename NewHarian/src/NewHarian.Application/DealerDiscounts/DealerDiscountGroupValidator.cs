@@ -14,11 +14,11 @@ public static class DealerDiscountGroupValidator
         if (!GuestValidation.HasLength(g.Name, 2, NameMax))
             return "Tên nhóm phải từ 2-200 ký tự.";
 
-        var products = g.ProductIds ?? [];
-        if (products.Count == 0)
-            return "Chọn ít nhất 1 sản phẩm.";
-        if (products.Distinct().Count() != products.Count)
-            return "Sản phẩm bị chọn trùng.";
+        var variants = g.ProductVariantIds ?? [];
+        if (variants.Count == 0)
+            return "Chọn ít nhất 1 SKU.";
+        if (variants.Distinct().Count() != variants.Count)
+            return "SKU bị chọn trùng.";
 
         var tiers = g.Tiers ?? [];
         if (tiers.Count == 0)
@@ -43,10 +43,10 @@ public static class DealerDiscountGroupValidator
             if (t.MaxQuantity is int max && max < t.MinQuantity)
                 return $"Mức {i + 1}: 'Đến' phải lớn hơn hoặc bằng 'Từ'.";
 
-            foreach (var pid in products)
+            foreach (var vid in variants)
             {
-                if (t.Percents is null || !t.Percents.TryGetValue(pid, out var p) || p is null)
-                    return $"Mức {i + 1}: nhập đủ % cho mọi sản phẩm.";
+                if (t.Percents is null || !t.Percents.TryGetValue(vid, out var p) || p is null)
+                    return $"Mức {i + 1}: nhập đủ % cho mọi SKU.";
                 if (!IsPercent(p.Value))
                     return $"Mức {i + 1}: % phải từ 0 đến 100, tối đa 2 chữ số thập phân.";
             }

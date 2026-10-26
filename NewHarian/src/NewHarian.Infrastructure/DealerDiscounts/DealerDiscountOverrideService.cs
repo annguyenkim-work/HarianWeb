@@ -38,11 +38,11 @@ public sealed class DealerDiscountOverrideService(
             }
 
             var existing = await db.DealerDiscountOverrides.Where(o => o.DealerId == input.DealerId).ToListAsync(ct);
-            var before = existing.Select(o => new { o.TierId, o.ProductId, o.Percent }).ToList();
+            var before = existing.Select(o => new { o.TierId, o.ProductVariantId, o.Percent }).ToList();
             var now = DateTime.UtcNow;
             foreach (var cell in input.Cells)
             {
-                var row = existing.FirstOrDefault(o => o.TierId == cell.TierId && o.ProductId == cell.ProductId);
+                var row = existing.FirstOrDefault(o => o.TierId == cell.TierId && o.ProductVariantId == cell.ProductVariantId);
                 if (cell.Percent is null)
                 {
                     if (row is not null)
@@ -59,7 +59,7 @@ public sealed class DealerDiscountOverrideService(
                     {
                         DealerId = input.DealerId,
                         TierId = cell.TierId,
-                        ProductId = cell.ProductId
+                        ProductVariantId = cell.ProductVariantId
                     };
                     db.DealerDiscountOverrides.Add(row);
                     existing.Add(row);
@@ -74,7 +74,7 @@ public sealed class DealerDiscountOverrideService(
 
             await db.SaveChangesAsync(ct);
             await audit.WriteAsync("Dealer.DiscountOverridesSaved", "Dealer", input.DealerId.ToString(),
-                before, existing.Select(o => new { o.TierId, o.ProductId, o.Percent }).ToList(), ct);
+                before, existing.Select(o => new { o.TierId, o.ProductVariantId, o.Percent }).ToList(), ct);
             logger.LogInformation("SaveDealerDiscountOverrides Done DealerId={DealerId} Count={Count}", input.DealerId, existing.Count);
             return (true, null);
         }
@@ -91,16 +91,16 @@ public sealed class DealerDiscountOverrideService(
             return "Không tìm thấy đại lý.";
         if (input.Cells.Any(c => c.Percent is decimal p && !DealerDiscountGroupValidator.IsPercent(p)))
             return "% phải từ 0 đến 100, tối đa 2 chữ số thập phân.";
-        if (input.Cells.GroupBy(c => (c.TierId, c.ProductId)).Any(g => g.Count() > 1))
+        if (input.Cells.GroupBy(c => (c.TierId, c.ProductVariantId)).Any(g => g.Count() > 1))
             return "Ô chiết khấu bị trùng.";
 
         var tierIds = input.Cells.Select(c => c.TierId).Distinct().ToList();
         var validCells = await db.DealerDiscountTiers.AsNoTracking()
             .Where(t => tierIds.Contains(t.Id))
-            .SelectMany(t => t.Group.Products.Select(p => new { TierId = t.Id, p.ProductId }))
+            .SelectMany(t => t.Group.Variants.Select(v => new { TierId = t.Id, v.ProductVariantId }))
             .ToListAsync(ct);
-        var valid = validCells.Select(x => (x.TierId, x.ProductId)).ToHashSet();
-        return input.Cells.All(c => valid.Contains((c.TierId, c.ProductId)))
+        var valid = validCells.Select(x => (x.TierId, x.ProductVariantId)).ToHashSet();
+        return input.Cells.All(c => valid.Contains((c.TierId, c.ProductVariantId)))
             ? null
             : "Bảng chiết khấu đã thay đổi. Vui lòng mở lại.";
     }

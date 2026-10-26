@@ -16,41 +16,41 @@ public sealed class AdminDealerDiscountService(
     public async Task<DealerDiscountOverviewDto> GetOverviewAsync(CancellationToken ct = default)
     {
         var groups = await DealerDiscountQueries.LoadGroupsAsync(db, ct);
-        var grouped = groups.SelectMany(g => g.Products.Select(p => p.ProductId)).ToHashSet();
-        var products = await db.Products.AsNoTracking()
-            .Include(p => p.Translations)
-            .Where(p => p.Status == ProductStatus.Published)
-            .OrderBy(p => p.SortOrder).ThenBy(p => p.Id)
+        var grouped = groups.SelectMany(g => g.Skus.Select(s => s.ProductVariantId)).ToHashSet();
+        var variants = await db.ProductVariants.AsNoTracking()
+            .Include(v => v.Product).ThenInclude(p => p.Translations)
+            .Where(v => v.IsActive && v.Product.Status == ProductStatus.Published)
+            .OrderBy(v => v.Product.SortOrder).ThenBy(v => v.ProductId).ThenBy(v => v.Id)
             .ToListAsync(ct);
-        var unconfigured = products
-            .Where(p => !grouped.Contains(p.Id))
-            .Select(p => new DealerDiscountProductDto(p.Id, DealerDiscountQueries.ProductName(p)))
+        var unconfigured = variants
+            .Where(v => !grouped.Contains(v.Id))
+            .Select(DealerDiscountQueries.ToSkuDto)
             .ToList();
         return new DealerDiscountOverviewDto(groups, unconfigured);
     }
 
-    public async Task<IReadOnlyList<DealerDiscountProductOptionDto>> ListProductOptionsAsync(int? groupId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<DealerDiscountSkuOptionDto>> ListSkuOptionsAsync(int? groupId, CancellationToken ct = default)
     {
-        var products = await db.Products.AsNoTracking()
-            .Include(p => p.Translations)
-            .Where(p => p.Status != ProductStatus.Archived)
-            .OrderBy(p => p.SortOrder).ThenBy(p => p.Id)
+        var variants = await db.ProductVariants.AsNoTracking()
+            .Include(v => v.Product).ThenInclude(p => p.Translations)
+            .Where(v => v.IsActive && v.Product.Status != ProductStatus.Archived)
+            .OrderBy(v => v.Product.SortOrder).ThenBy(v => v.ProductId).ThenBy(v => v.Id)
             .ToListAsync(ct);
-        var membership = await db.DealerDiscountGroupProducts.AsNoTracking()
+        var membership = await db.DealerDiscountGroupVariants.AsNoTracking()
             .Where(x => groupId == null || x.GroupId != groupId)
-            .Select(x => new { x.ProductId, x.Group.Name })
-            .ToDictionaryAsync(x => x.ProductId, x => x.Name, ct);
-        return products
-            .Select(p => new DealerDiscountProductOptionDto(
-                p.Id, DealerDiscountQueries.ProductName(p), membership.GetValueOrDefault(p.Id)))
+            .Select(x => new { x.ProductVariantId, x.Group.Name })
+            .ToDictionaryAsync(x => x.ProductVariantId, x => x.Name, ct);
+        return variants
+            .Select(v => new DealerDiscountSkuOptionDto(
+                v.Id, DealerDiscountQueries.SkuLabel(v), v.Sku, membership.GetValueOrDefault(v.Id)))
             .ToList();
     }
 
-    public async Task<DealerDiscountGroupEditModel> GetGroupEditAsync(int? id, int? preselectProductId = null, CancellationToken ct = default)
+    public async Task<DealerDiscountGroupEditModel> GetGroupEditAsync(int? id, int? preselectVariantId = null, CancellationToken ct = default)
     {
         var model = new DealerDiscountGroupEditModel
         {
-            ProductOptions = await ListProductOptionsAsync(id, ct)
+            SkuOptions = await ListSkuOptionsAsync(id, ct)
         };
 
         if (id is int gid)
@@ -62,15 +62,15 @@ public sealed class AdminDealerDiscountService(
                 {
                     Id = g.Id,
                     Name = g.Name,
-                    ProductIds = g.Products.Select(p => p.ProductId).ToList(),
+                    ProductVariantIds = g.Skus.Select(s => s.ProductVariantId).ToList(),
                     Tiers = g.Tiers.Select(t => new DealerDiscountTierInput
                     {
                         Id = t.Id,
                         MinQuantity = t.MinQuantity,
                         MaxQuantity = t.MaxQuantity,
-                        Percents = g.Products.ToDictionary(
-                            p => p.ProductId,
-                            p => g.Rates.TryGetValue((t.Id, p.ProductId), out var v) ? (decimal?)v : null)
+                        Percents = g.Skus.ToDictionary(
+                            s => s.ProductVariantId,
+                            s => g.Rates.TryGetValue((t.Id, s.ProductVariantId), out var v) ? (decimal?)v : null)
                     }).ToList()
                 };
                 model.DealersWithOverrides = await db.DealerDiscountOverrides.AsNoTracking()
@@ -84,10 +84,11 @@ public sealed class AdminDealerDiscountService(
         {
             Tiers = [new DealerDiscountTierInput { MinQuantity = 1 }]
         };
-        if (preselectProductId is int pid && model.ProductOptions.Any(p => p.ProductId == pid && p.GroupName is null))
+        if (preselectVariantId is int vid
+            && model.SkuOptions.FirstOrDefault(s => s.ProductVariantId == vid && s.GroupName is null) is { } opt)
         {
-            model.Input.ProductIds.Add(pid);
-            model.Input.Name = model.ProductOptions.First(p => p.ProductId == pid).Name;
+            model.Input.ProductVariantIds.Add(vid);
+            model.Input.Name = opt.Sku;
         }
         return model;
     }
@@ -103,7 +104,7 @@ public sealed class AdminDealerDiscountService(
             if (err is null && input.Id is int id)
             {
                 group = await db.DealerDiscountGroups
-                    .Include(g => g.Products)
+                    .Include(g => g.Variants)
                     .Include(g => g.Tiers).ThenInclude(t => t.Rates)
                     .FirstOrDefaultAsync(g => g.Id == id, ct);
                 if (group is null) err = "Không tìm thấy nhóm.";
@@ -130,7 +131,7 @@ public sealed class AdminDealerDiscountService(
             }
             group.Name = input.Name;
 
-            await ApplyProductsAsync(group, input.ProductIds, ct);
+            await ApplyVariantsAsync(group, input.ProductVariantIds, ct);
             await ApplyTiersAsync(group, input, ct);
             await db.SaveChangesAsync(ct);
 
@@ -152,7 +153,7 @@ public sealed class AdminDealerDiscountService(
         try
         {
             var group = await db.DealerDiscountGroups
-                .Include(g => g.Products)
+                .Include(g => g.Variants)
                 .Include(g => g.Tiers).ThenInclude(t => t.Rates)
                 .FirstOrDefaultAsync(g => g.Id == id, ct);
             if (group is null)
@@ -212,38 +213,38 @@ public sealed class AdminDealerDiscountService(
         if (await db.DealerDiscountGroups.AnyAsync(g => g.Name.ToLower() == nameLower && g.Id != input.Id, ct))
             return "Tên nhóm đã tồn tại.";
 
-        var existing = await db.Products.AsNoTracking()
-            .Where(p => input.ProductIds.Contains(p.Id))
-            .Select(p => p.Id)
+        var existing = await db.ProductVariants.AsNoTracking()
+            .Where(v => input.ProductVariantIds.Contains(v.Id) && v.IsActive)
+            .Select(v => v.Id)
             .ToListAsync(ct);
-        if (existing.Count != input.ProductIds.Distinct().Count())
-            return "Sản phẩm không tồn tại.";
+        if (existing.Count != input.ProductVariantIds.Distinct().Count())
+            return "SKU không tồn tại hoặc đã tắt.";
 
-        var taken = await db.DealerDiscountGroupProducts.AsNoTracking()
+        var taken = await db.DealerDiscountGroupVariants.AsNoTracking()
             .Include(x => x.Group)
-            .Include(x => x.Product).ThenInclude(p => p.Translations)
-            .Where(x => input.ProductIds.Contains(x.ProductId) && x.GroupId != input.Id)
+            .Include(x => x.ProductVariant).ThenInclude(v => v.Product).ThenInclude(p => p.Translations)
+            .Where(x => input.ProductVariantIds.Contains(x.ProductVariantId) && x.GroupId != input.Id)
             .FirstOrDefaultAsync(ct);
         return taken is null
             ? null
-            : $"Sản phẩm '{DealerDiscountQueries.ProductName(taken.Product)}' đã thuộc nhóm '{taken.Group.Name}'.";
+            : $"SKU '{DealerDiscountQueries.SkuLabel(taken.ProductVariant)}' đã thuộc nhóm '{taken.Group.Name}'.";
     }
 
-    private async Task ApplyProductsAsync(DealerDiscountGroup group, List<int> productIds, CancellationToken ct)
+    private async Task ApplyVariantsAsync(DealerDiscountGroup group, List<int> variantIds, CancellationToken ct)
     {
-        var removed = group.Products.Where(p => !productIds.Contains(p.ProductId)).ToList();
+        var removed = group.Variants.Where(v => !variantIds.Contains(v.ProductVariantId)).ToList();
         if (removed.Count > 0)
         {
-            var removedIds = removed.Select(p => p.ProductId).ToList();
+            var removedIds = removed.Select(v => v.ProductVariantId).ToList();
             var tierIds = group.Tiers.Select(t => t.Id).ToList();
             db.DealerDiscountOverrides.RemoveRange(await db.DealerDiscountOverrides
-                .Where(o => tierIds.Contains(o.TierId) && removedIds.Contains(o.ProductId))
+                .Where(o => tierIds.Contains(o.TierId) && removedIds.Contains(o.ProductVariantId))
                 .ToListAsync(ct));
-            foreach (var p in removed)
-                group.Products.Remove(p);
+            foreach (var v in removed)
+                group.Variants.Remove(v);
         }
-        foreach (var pid in productIds.Where(pid => group.Products.All(p => p.ProductId != pid)))
-            group.Products.Add(new DealerDiscountGroupProduct { ProductId = pid });
+        foreach (var vid in variantIds.Where(vid => group.Variants.All(v => v.ProductVariantId != vid)))
+            group.Variants.Add(new DealerDiscountGroupVariant { ProductVariantId = vid });
     }
 
     private async Task ApplyTiersAsync(DealerDiscountGroup group, DealerDiscountGroupInput input, CancellationToken ct)
@@ -277,17 +278,17 @@ public sealed class AdminDealerDiscountService(
             tier.MaxQuantity = src.MaxQuantity;
             tier.SortOrder = i + 1;
 
-            foreach (var stale in tier.Rates.Where(r => !input.ProductIds.Contains(r.ProductId)).ToList())
+            foreach (var stale in tier.Rates.Where(r => !input.ProductVariantIds.Contains(r.ProductVariantId)).ToList())
             {
                 tier.Rates.Remove(stale);
                 db.DealerDiscountRates.Remove(stale);
             }
-            foreach (var pid in input.ProductIds)
+            foreach (var vid in input.ProductVariantIds)
             {
-                var percent = src.Percents[pid]!.Value;
-                var rate = tier.Rates.FirstOrDefault(r => r.ProductId == pid);
+                var percent = src.Percents[vid]!.Value;
+                var rate = tier.Rates.FirstOrDefault(r => r.ProductVariantId == vid);
                 if (rate is null)
-                    tier.Rates.Add(new DealerDiscountRate { ProductId = pid, Percent = percent });
+                    tier.Rates.Add(new DealerDiscountRate { ProductVariantId = vid, Percent = percent });
                 else
                     rate.Percent = percent;
             }
@@ -297,12 +298,12 @@ public sealed class AdminDealerDiscountService(
     private static object Snapshot(DealerDiscountGroup g) => new
     {
         g.Name,
-        Products = g.Products.Select(p => p.ProductId).OrderBy(x => x).ToList(),
+        Variants = g.Variants.Select(v => v.ProductVariantId).OrderBy(x => x).ToList(),
         Tiers = g.Tiers.OrderBy(t => t.SortOrder).Select(t => new
         {
             t.MinQuantity,
             t.MaxQuantity,
-            Rates = t.Rates.OrderBy(r => r.ProductId).Select(r => new { r.ProductId, r.Percent }).ToList()
+            Rates = t.Rates.OrderBy(r => r.ProductVariantId).Select(r => new { r.ProductVariantId, r.Percent }).ToList()
         }).ToList()
     };
 }

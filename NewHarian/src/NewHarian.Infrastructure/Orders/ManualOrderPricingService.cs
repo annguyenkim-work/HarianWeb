@@ -49,7 +49,7 @@ public sealed class ManualOrderPricingService(AppDbContext db, IDealerDiscountRe
 
         var valid = resolved.Where(r => r.Variant is not null).ToList();
         var inputs = valid.Select(r => new DiscountLineInput(
-                r.Variant!.ProductId,
+                r.Variant!.Id,
                 r.Line.Quantity,
                 (r.Line.UnitPrice ?? r.Variant.Price) * r.Line.Quantity,
                 allowManualDiscount ? r.Line.DiscountPercent : null))

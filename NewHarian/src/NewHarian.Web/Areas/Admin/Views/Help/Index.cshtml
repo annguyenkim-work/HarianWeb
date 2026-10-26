@@ -30,7 +30,7 @@
         @if (showInventory) { <li><a href="#kho">Kho</a></li> }
         @if (showBookings) { <li><a href="#dat-lich">Đặt lịch dịch vụ</a></li> }
         @if (showInquiries) { <li><a href="#lien-he">Liên hệ (Inquiries)</a></li> }
-        @if (showDealers) { <li><a href="#dai-ly">Đại lý</a></li> }
+        @if (showDealers) { <li><a href="#dai-ly">Đại lý &amp; chiết khấu</a></li> }
         @if (showApplications) { <li><a href="#ho-so">Hồ sơ ứng tuyển</a></li> }
         @if (showEmployees) { <li><a href="#nhan-vien">Nhân viên &amp; tài khoản</a></li> }
         @if (showCatalog) { <li><a href="#catalog">Danh mục / Sản phẩm / Dịch vụ / Màu</a></li> }
@@ -54,7 +54,7 @@
             <span class="help-flow__num">2</span>
             <div>
                 <strong>Vào Dashboard</strong>
-                <span>Sau khi đăng nhập bạn vào <code>/admin</code>. Menu và Dashboard chỉ hiện các mục thuộc vai trò của bạn.</span>
+                <span>Sau khi đăng nhập bạn vào <code>/admin</code>. Role có quyền doanh thu thấy KPI Doanh thu / Số đơn / AOV và biểu đồ; mọi role thấy strip <em>Cần xử lý</em> theo quyền của mình.</span>
             </div>
         </li>
     </ol>
@@ -62,7 +62,7 @@
         <strong>Vai trò</strong>
         <ul>
             <li><strong>@AppRoles.Label(AppRoles.SuperAdmin):</strong> toàn quyền, gồm Users và cấu hình website.</li>
-            <li><strong>@AppRoles.Label(AppRoles.SalesManager):</strong> đơn hàng (gồm hủy đơn, export), catalog, đặt lịch, liên hệ, đại lý, xem kho, biểu đồ doanh thu.</li>
+            <li><strong>@AppRoles.Label(AppRoles.SalesManager):</strong> đơn hàng (gồm hủy đơn, export), catalog, đặt lịch, liên hệ, đại lý / bảng chiết khấu theo SKU, xem kho, biểu đồ doanh thu.</li>
             <li><strong>@AppRoles.Label(AppRoles.SalesStaff):</strong> tạo / xử lý đơn (không hủy, không export), đặt lịch, liên hệ, xem catalog và đại lý.</li>
             <li><strong>@AppRoles.Label(AppRoles.WarehouseManager):</strong> toàn bộ kho (nhập, điều chỉnh, vị trí, cài đặt kho), giao đơn (Processing / Shipped / Delivered).</li>
             <li><strong>@AppRoles.Label(AppRoles.WarehouseStaff):</strong> nhập kho, xem lô và lịch sử kho, giao đơn.</li>
@@ -123,7 +123,7 @@
     }
     @if (User.HasPermission(Permissions.Orders.Create))
     {
-        <p class="muted">Đơn mới (web, tạo tay, import) bắt buộc <strong>CCCD</strong> (9 hoặc 12 chữ số) để xuất hóa đơn, và địa chỉ 3 trường: <strong>Tỉnh/Thành phố</strong> (mã <code>ProvinceCode</code> theo danh mục 34 tỉnh), <strong>Xã/Phường</strong> (<code>CommuneCode</code>), <strong>địa chỉ</strong> (số nhà, đường, 5-500 ký tự). File import Excel thêm cột <code>ProvinceCode</code> và <code>CommuneCode</code>. Đơn <strong>đại lý</strong> chỉ tạo tay: chọn loại khách Đại lý, prefill hồ sơ (kèm tỉnh/xã), chiết khấu % có thể sửa trên đơn (giảm tổng tiền).</p>
+        <p class="muted">Đơn mới (web, tạo tay, import) bắt buộc <strong>CCCD</strong> (9 hoặc 12 chữ số) để xuất hóa đơn, và địa chỉ 3 trường: <strong>Tỉnh/Thành phố</strong> (mã <code>ProvinceCode</code> theo danh mục 34 tỉnh), <strong>Xã/Phường</strong> (<code>CommuneCode</code>), <strong>địa chỉ</strong> (số nhà, đường, 5-500 ký tự). File import Excel thêm cột <code>ProvinceCode</code> và <code>CommuneCode</code>. Đơn <strong>đại lý</strong> chỉ tạo tay: chọn loại khách Đại lý, prefill hồ sơ (kèm tỉnh/xã); hệ thống tự áp chiết khấu <strong>theo SKU</strong> từ bảng mặc định / % riêng đại lý (xem <a href="#chiet-khau-dai-ly">Chiết khấu đại lý</a>). Staff có quyền có thể sửa tay % từng dòng (bắt buộc ghi chú nội bộ).</p>
     }
     <p class="muted">Gợi ý: luôn cập nhật <em>Ghi chú nội bộ</em> (đã gọi lúc nào, khách xác nhận gì) trước khi đổi trạng thái.</p>
 </section>
@@ -202,18 +202,56 @@
 
 @if (showDealers)
 {
-<section id="dai-ly" class="help-section admin-help-section">
-    <h2>Đại lý</h2>
+<section id="dai-ly" class="help-section admin-help-section help-section--highlight">
+    <h2>Đại lý &amp; chiết khấu</h2>
     <p>Menu <strong>Đại lý</strong> → <code>/admin/Dealers</code>. Khách đăng ký trên web ở trạng thái <code>Pending</code> (kèm CCCD).</p>
     @if (User.HasPermission(Permissions.Dealers.Approve))
     {
-        <p>Mở chi tiết: kiểm tra/sửa CCCD, nhập <strong>% chiết khấu</strong> → <strong>Duyệt</strong>, hoặc <strong>Từ chối</strong>. Đại lý đã duyệt: sửa CCCD / % / ghi chú nội bộ. Nút <strong>Thêm</strong> tạo thẳng đại lý <code>Approved</code> (CCCD bắt buộc).</p>
+        <p>Mở chi tiết: kiểm tra/sửa CCCD → <strong>Duyệt</strong> hoặc <strong>Từ chối</strong>. Đại lý đã duyệt: sửa hồ sơ / ghi chú nội bộ; chỉnh <strong>% riêng</strong> theo bảng SKU (không còn % chung cả hồ sơ). Nút <strong>Thêm</strong> tạo thẳng đại lý <code>Approved</code> (CCCD bắt buộc).</p>
     }
     else
     {
-        <p>Bạn xem được hồ sơ đại lý; duyệt / sửa chiết khấu do @AppRoles.Label(AppRoles.SalesManager) thực hiện.</p>
+        <p>Bạn xem được hồ sơ đại lý; duyệt và quản lý bảng chiết khấu do @AppRoles.Label(AppRoles.SalesManager) thực hiện.</p>
     }
-    <p>Đơn xuất đại lý: <strong>Đơn hàng → Thêm đơn</strong> → loại khách <em>Đại lý</em> → chọn hồ sơ đã duyệt (prefill tên/SĐT/email/địa chỉ/CCCD) → có thể đổi % trên đơn. Website không cho đại lý tự đặt hàng.</p>
+    <p>Đơn xuất đại lý: <strong>Đơn hàng → Thêm đơn</strong> → loại khách <em>Đại lý</em> → chọn hồ sơ đã duyệt (prefill tên/SĐT/email/địa chỉ/CCCD). Website / mã truy cập đại lý cũng áp cùng bảng CK theo SKU khi đặt hàng.</p>
+
+    <h3 id="chiet-khau-dai-ly">Chiết khấu đại lý (theo SKU)</h3>
+    <p>Menu <strong>Chiết khấu đại lý</strong> → <code>/admin/DealerDiscounts</code> (quyền <code>Dealers.ManageDiscounts</code> để sửa; role xem vẫn thấy bảng).</p>
+    <div class="help-callout">
+        <strong>Quy tắc tính</strong>
+        <ul>
+            <li><strong>Đơn vị cấu hình là SKU</strong> (biến thể / <code>ProductVariant</code>), không còn theo cả sản phẩm. Hai SKU cùng sản phẩm có thể khác %.</li>
+            <li><strong>Nhóm:</strong> nhiều SKU trong một nhóm. <strong>Số lượng cộng chung</strong> mọi SKU trong nhóm trên đơn/giỏ → chọn mức (tier), ví dụ 1-19 / 20-50 / Từ 51.</li>
+            <li><strong>% mặc định:</strong> từng ô (SKU × mức) trên bảng nhóm. Áp cho mọi đại lý trừ khi có % riêng.</li>
+            <li><strong>% riêng đại lý:</strong> trên chi tiết đại lý → <em>Sửa % riêng</em>. Ô trống = theo bảng mặc định. Badge <em>Có % riêng</em> trên danh sách Dealers.</li>
+            <li><strong>SKU chưa cấu hình:</strong> danh sách cảnh báo trên trang CK; đơn đại lý tính <strong>0%</strong> cho SKU đó.</li>
+            <li>Đổi bảng chỉ ảnh hưởng <strong>đơn tạo sau khi lưu</strong>; đơn cũ giữ snapshot % / số tiền đã ghi trên dòng.</li>
+        </ul>
+    </div>
+    <ol class="help-flow">
+        <li>
+            <span class="help-flow__num">1</span>
+            <div>
+                <strong>Tạo nhóm</strong>
+                <span>Thêm (+) → đặt tên nhóm → khai mức số lượng liên tiếp (mức đầu từ 1; mức cuối để trống Đến = trở lên) → tích các SKU → nhập đủ % mặc định cho mọi SKU × mức → Lưu.</span>
+            </div>
+        </li>
+        <li>
+            <span class="help-flow__num">2</span>
+            <div>
+                <strong>(Tuỳ chọn) % riêng theo đại lý</strong>
+                <span>Dealers → mở đại lý → Sửa % riêng → điền ô cần lệch so với mặc định → Lưu. Bỏ trống ô = theo mặc định.</span>
+            </div>
+        </li>
+        <li>
+            <span class="help-flow__num">3</span>
+            <div>
+                <strong>Đặt / tạo đơn đại lý</strong>
+                <span>Hệ thống chọn mức theo tổng SL nhóm, áp % từng dòng SKU. Sửa tay % dòng (nếu có quyền Override) bắt buộc ghi chú nội bộ.</span>
+            </div>
+        </li>
+    </ol>
+    <p class="muted">Một SKU chỉ thuộc một nhóm. Xóa mức hoặc bỏ SKU khỏi nhóm sẽ xóa % riêng đại lý gắn ô đó.</p>
 </section>
 }
 

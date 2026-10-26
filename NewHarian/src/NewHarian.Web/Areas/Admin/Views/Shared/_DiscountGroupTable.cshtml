@@ -5,7 +5,7 @@
 <table class="data-table discount-table" data-discount-group="@g.Id">
     <thead>
         <tr>
-            <th>Sản phẩm</th>
+            <th>SKU</th>
             @foreach (var t in g.Tiers)
             {
                 <th>@t.Range</th>
@@ -13,14 +13,14 @@
         </tr>
     </thead>
     <tbody>
-    @foreach (var p in g.Products)
+    @foreach (var s in g.Skus)
     {
         <tr>
-            <td>@p.Name</td>
+            <td>@s.Label</td>
             @foreach (var t in g.Tiers)
             {
-                var hasDefault = g.Rates.TryGetValue((t.Id, p.ProductId), out var def);
-                if (Model.Overrides is not null && Model.Overrides.TryGetValue((t.Id, p.ProductId), out var own))
+                var hasDefault = g.Rates.TryGetValue((t.Id, s.ProductVariantId), out var def);
+                if (Model.Overrides is not null && Model.Overrides.TryGetValue((t.Id, s.ProductVariantId), out var own))
                 {
                     <td data-override-cell><strong>@own.ToString("0.##")%</strong> <s class="muted">@(hasDefault ? def.ToString("0.##") + "%" : "-")</s></td>
                 }

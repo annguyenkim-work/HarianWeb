@@ -12,10 +12,10 @@ public sealed class DealerDiscountResolver(AppDbContext db) : IDealerDiscountRes
         var configs = groups.Select(g => new DiscountGroupConfig(
                 g.Id,
                 g.Name,
-                g.Products.Select(p => p.ProductId).ToList(),
+                g.Skus.Select(s => s.ProductVariantId).ToList(),
                 g.Tiers.Select(t => new DiscountTierConfig(
                         t.Id, t.MinQuantity, t.MaxQuantity,
-                        g.Rates.Where(r => r.Key.TierId == t.Id).ToDictionary(r => r.Key.ProductId, r => r.Value)))
+                        g.Rates.Where(r => r.Key.TierId == t.Id).ToDictionary(r => r.Key.ProductVariantId, r => r.Value)))
                     .ToList()))
             .ToList();
         return new DealerDiscountPolicy(configs, overrides);

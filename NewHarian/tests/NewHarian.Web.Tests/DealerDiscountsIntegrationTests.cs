@@ -31,8 +31,8 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
         {
             new("__RequestVerificationToken", token),
             new("Name", name),
-            new("ProductIds", coral.ToString()),
-            new("ProductIds", mau.ToString()),
+            new("ProductVariantIds", coral.ToString()),
+            new("ProductVariantIds", mau.ToString()),
         };
         var tiers = new (int Min, string Max, string Coral, string Mau)[] { (1, "19", "20", "18"), (20, "50", "25", "22.5"), (51, "", "30", "27") };
         for (var i = 0; i < tiers.Length; i++)
@@ -53,7 +53,7 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
             var group = await db.DealerDiscountGroups.Include(g => g.Tiers).ThenInclude(t => t.Rates).SingleAsync(g => g.Name == name);
             var tier2 = group.Tiers.Single(t => t.MinQuantity == 20);
             Assert.Equal(50, tier2.MaxQuantity);
-            Assert.Equal(22.5m, tier2.Rates.Single(r => r.ProductId == mau).Percent);
+            Assert.Equal(22.5m, tier2.Rates.Single(r => r.ProductVariantId == mau).Percent);
             Assert.Null(group.Tiers.Single(t => t.MinQuantity == 51).MaxQuantity);
         }
 
@@ -76,7 +76,7 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
         {
             ["__RequestVerificationToken"] = token,
             ["Name"] = "Second " + DealerTestData.Suffix(),
-            ["ProductIds"] = coral.ToString(),
+            ["ProductVariantIds"] = coral.ToString(),
             ["Tiers[0].MinQuantity"] = "1",
             ["Tiers[0].MaxQuantity"] = "",
             [$"Tiers[0].Percents[{coral}]"] = "5",
@@ -120,7 +120,7 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             Assert.False(await db.DealerDiscountGroups.AnyAsync(g => g.Id == first));
-            Assert.False(await db.DealerDiscountGroupProducts.AnyAsync(g => g.ProductId == p1));
+            Assert.False(await db.DealerDiscountGroupVariants.AnyAsync(g => g.ProductVariantId == p1));
         }
     }
 
@@ -162,9 +162,9 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
             DealerId = dealer.Id,
             Cells =
             [
-                new() { TierId = tiers[0].Id, ProductId = a, Percent = 15 },
-                new() { TierId = tiers[2].Id, ProductId = a, Percent = 35 },
-                new() { TierId = tiers[0].Id, ProductId = b, Percent = 12 },
+                new() { TierId = tiers[0].Id, ProductVariantId = a, Percent = 15 },
+                new() { TierId = tiers[2].Id, ProductVariantId = a, Percent = 35 },
+                new() { TierId = tiers[0].Id, ProductVariantId = b, Percent = 12 },
             ],
         }, null);
         Assert.True(saved.Ok, saved.Error);
@@ -174,7 +174,7 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
         Assert.Equal(1, edit.DealersWithOverrides);
 
         var input = edit.Input;
-        input.ProductIds = [a];
+        input.ProductVariantIds = [a];
         input.Tiers = input.Tiers.Take(2).ToList();
         input.Tiers[1].MaxQuantity = null;
         foreach (var t in input.Tiers) t.Percents.Remove(b);
@@ -186,11 +186,11 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
         var left = await verify.ServiceProvider.GetRequiredService<AppDbContext>().DealerDiscountOverrides
             .Where(o => o.DealerId == dealer.Id).ToListAsync();
         var cell = Assert.Single(left);
-        Assert.Equal((tiers[0].Id, a, 15m), (cell.TierId, cell.ProductId, cell.Percent));
+        Assert.Equal((tiers[0].Id, a, 15m), (cell.TierId, cell.ProductVariantId, cell.Percent));
     }
 
     [Fact]
-    public async Task Overview_flags_published_products_without_group()
+    public async Task Overview_flags_published_skus_without_group()
     {
         var (lonely, _) = await DealerTestData.ProductAsync(_factory, "Lonely", 1000m);
         var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SalesManager);
@@ -198,6 +198,20 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
         var html = WebUtility.HtmlDecode(await client.GetStringAsync("/admin/DealerDiscounts"));
 
         Assert.Contains("data-unconfigured", html);
-        Assert.Contains($"data-product-id=\"{lonely}\"", html);
+        Assert.Contains($"data-variant-id=\"{lonely}\"", html);
+        Assert.Contains("SKU chưa có chiết khấu đại lý", html);
+    }
+
+    [Fact]
+    public async Task Help_documents_sku_based_dealer_discounts()
+    {
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SalesManager);
+        var help = WebUtility.HtmlDecode(await client.GetStringAsync("/admin/Help"));
+
+        Assert.Contains("id=\"dai-ly\"", help);
+        Assert.Contains("id=\"chiet-khau-dai-ly\"", help);
+        Assert.Contains("theo SKU", help);
+        Assert.Contains("/admin/DealerDiscounts", help);
+        Assert.Contains("Số lượng cộng chung", help);
     }
 }
