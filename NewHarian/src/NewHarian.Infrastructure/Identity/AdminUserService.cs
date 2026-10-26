@@ -81,24 +81,31 @@ public sealed class AdminUserService(
 
     private async Task<(bool Ok, string? Error, string? Id)> CreateAsync(AdminUserSaveRequest request, CancellationToken ct)
     {
-        var email = request.Email.Trim();
-        if (string.IsNullOrWhiteSpace(email)) return (false, "Email bắt buộc.", null);
         if (string.IsNullOrWhiteSpace(request.Password)) return (false, "Mật khẩu bắt buộc khi tạo user.", null);
-        if (await users.FindByEmailAsync(email) is not null) return (false, "Email đã được dùng cho user khác.", null);
 
         var (role, roleError) = UserRolePolicy.Validate(request.Role, currentRoles: []);
         if (role is null) return (false, roleError, null);
 
+        string email;
         string fullName;
         if (request.EmployeeProfileId is int profileId)
         {
             var profile = await db.EmployeeProfiles.FirstOrDefaultAsync(p => p.Id == profileId, ct);
             if (profile is null) return (false, "Không tìm thấy nhân viên để gắn.", null);
             if (!string.IsNullOrEmpty(profile.UserId)) return (false, "Nhân viên đã được gắn tài khoản khác.", null);
+            email = profile.PersonalEmail?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(email))
+                return (false, "Nhân viên chưa có email cá nhân. Cập nhật Email cá nhân trên hồ sơ trước khi tạo tài khoản.", null);
             fullName = profile.FullName;
         }
         else
+        {
+            email = request.Email.Trim();
+            if (string.IsNullOrWhiteSpace(email)) return (false, "Email bắt buộc.", null);
             fullName = string.IsNullOrWhiteSpace(request.FullName) ? email : request.FullName.Trim();
+        }
+
+        if (await users.FindByEmailAsync(email) is not null) return (false, "Email đã được dùng cho user khác.", null);
 
         var user = new ApplicationUser
         {

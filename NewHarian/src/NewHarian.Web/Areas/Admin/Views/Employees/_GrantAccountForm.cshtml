@@ -14,7 +14,8 @@
     <div class="form-grid form-grid--2">
         <label>
             Email *
-            <input asp-for="Email" type="email" class="form-control" required />
+            <input asp-for="Email" type="email" class="form-control" readonly tabindex="-1" />
+            <small class="form-hint">Lấy từ Email cá nhân trên hồ sơ nhân viên.</small>
         </label>
         <label>
             Mật khẩu *

@@ -75,13 +75,17 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
     {
         using var scope = await ScopeAsync();
         var service = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
-        var (_, _, id) = await service.SaveAsync(new EmployeeProfileForm { FullName = "Trần Hải Hà" }, EmployeeEditScope.Hr, null);
         var email = $"grant-{Guid.NewGuid():N}@test.local";
+        var (_, _, id) = await service.SaveAsync(new EmployeeProfileForm
+        {
+            FullName = "Trần Hải Hà",
+            PersonalEmail = email
+        }, EmployeeEditScope.Hr, null);
 
         var (ok, error) = await service.GrantAccountAsync(new GrantEmployeeAccountRequest
         {
             ProfileId = id!.Value,
-            Email = email,
+            Email = "ignored-different@test.local",
             Password = TestUsers.Password,
             Role = AppRoles.SalesStaff,
             IsActive = true
@@ -93,6 +97,26 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Equal(email, stored.Email);
         Assert.Equal("HaTH", stored.EmployeeCode);
         Assert.Contains(AppRoles.SalesStaff, stored.Roles);
+    }
+
+    [Fact]
+    public async Task Grant_account_rejects_when_personal_email_missing()
+    {
+        using var scope = await ScopeAsync();
+        var service = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+        var (_, _, id) = await service.SaveAsync(new EmployeeProfileForm { FullName = "Lê Văn Không Mail" }, EmployeeEditScope.Hr, null);
+
+        var (ok, error) = await service.GrantAccountAsync(new GrantEmployeeAccountRequest
+        {
+            ProfileId = id!.Value,
+            Email = "anything@test.local",
+            Password = TestUsers.Password,
+            Role = AppRoles.SalesStaff,
+            IsActive = true
+        }, "admin-1");
+
+        Assert.False(ok);
+        Assert.Contains("email cá nhân", error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
+using NewHarian.Application.Hr;
 using NewHarian.Infrastructure.Identity;
 
 namespace NewHarian.Web.Tests;
@@ -69,6 +70,61 @@ public class AdminUserServiceTests : IClassFixture<NewHarianWebApplicationFactor
         var (ok, _, _) = await service.SaveAsync(request, actorUserId: null);
 
         Assert.False(ok);
+    }
+
+    [Fact]
+    public async Task Create_linked_to_employee_uses_personal_email_not_posted_email()
+    {
+        using var scope = await ScopeAsync();
+        var sp = scope.ServiceProvider;
+        var employees = sp.GetRequiredService<IAdminEmployeeService>();
+        var users = sp.GetRequiredService<IAdminUserService>();
+        var personalEmail = $"nv-mail-{Guid.NewGuid():N}@test.local";
+        var (_, _, profileId) = await employees.SaveAsync(new EmployeeProfileForm
+        {
+            FullName = "Phạm Thị Mail",
+            PersonalEmail = personalEmail
+        }, EmployeeEditScope.Hr, null);
+
+        var (ok, error, id) = await users.SaveAsync(new AdminUserSaveRequest
+        {
+            Email = "wrong-posted@test.local",
+            Password = TestUsers.Password,
+            Role = AppRoles.SalesStaff,
+            IsActive = true,
+            EmployeeProfileId = profileId
+        }, actorUserId: null);
+
+        Assert.True(ok, error);
+        var stored = (await users.GetForEditAsync(id!))!;
+        Assert.Equal(personalEmail, stored.Email);
+        Assert.Equal(profileId, stored.EmployeeProfileId);
+        Assert.Equal("Phạm Thị Mail", stored.FullName);
+    }
+
+    [Fact]
+    public async Task Create_linked_to_employee_rejects_missing_personal_email()
+    {
+        using var scope = await ScopeAsync();
+        var sp = scope.ServiceProvider;
+        var employees = sp.GetRequiredService<IAdminEmployeeService>();
+        var users = sp.GetRequiredService<IAdminUserService>();
+        var (_, _, profileId) = await employees.SaveAsync(new EmployeeProfileForm
+        {
+            FullName = "Không Có Mail"
+        }, EmployeeEditScope.Hr, null);
+
+        var (ok, error, _) = await users.SaveAsync(new AdminUserSaveRequest
+        {
+            Email = "fallback@test.local",
+            Password = TestUsers.Password,
+            Role = AppRoles.SalesStaff,
+            IsActive = true,
+            EmployeeProfileId = profileId
+        }, actorUserId: null);
+
+        Assert.False(ok);
+        Assert.Contains("email cá nhân", error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

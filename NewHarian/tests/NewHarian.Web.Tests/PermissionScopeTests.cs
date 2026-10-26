@@ -48,6 +48,8 @@ public class PermissionScopeTests : IClassFixture<NewHarianWebApplicationFactory
         var hrHelp = await hr.GetStringAsync("/admin/Help");
         Assert.Contains("id=\"ho-so\"", hrHelp);
         Assert.Contains("id=\"posts\"", hrHelp);
+        Assert.Contains("id=\"nhan-vien\"", hrHelp);
+        Assert.Contains("/admin/Employees", hrHelp, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("id=\"don-hang\"", hrHelp);
         Assert.DoesNotContain("id=\"cai-dat\"", hrHelp);
 

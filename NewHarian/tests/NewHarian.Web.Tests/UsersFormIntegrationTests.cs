@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
+using NewHarian.Application.Hr;
 using NewHarian.Infrastructure.Identity;
 
 namespace NewHarian.Web.Tests;
@@ -25,6 +26,28 @@ public class UsersFormIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Contains("name=\"Role\"", html);
         Assert.DoesNotContain("type=\"checkbox\" name=\"Roles\"", html);
         Assert.DoesNotContain($"value=\"{AppRoles.LegacyStaff}\"", html);
+    }
+
+    [Fact]
+    public async Task New_user_form_employee_options_include_personal_email_data()
+    {
+        var email = $"link-ui-{Guid.NewGuid():N}@test.local";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var employees = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+            await employees.SaveAsync(new EmployeeProfileForm
+            {
+                FullName = "Đặng Văn Link",
+                PersonalEmail = email
+            }, EmployeeEditScope.Hr, null);
+        }
+
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SuperAdmin);
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync("/admin/Users/Edit"));
+
+        Assert.Contains("data-employee-link", html);
+        Assert.Contains($"data-email=\"{email}\"", html);
+        Assert.Contains("data-fullname=\"Đặng Văn Link\"", html);
     }
 
     [Fact]

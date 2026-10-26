@@ -192,10 +192,13 @@ public sealed class AdminEmployeeService(
             var profile = await db.EmployeeProfiles.FirstOrDefaultAsync(p => p.Id == request.ProfileId, ct);
             if (profile is null) return GrantReject(request, "Không tìm thấy nhân viên.");
             if (!string.IsNullOrEmpty(profile.UserId)) return GrantReject(request, "Nhân viên đã có tài khoản.");
+            var email = profile.PersonalEmail?.Trim();
+            if (string.IsNullOrWhiteSpace(email))
+                return GrantReject(request, "Nhân viên chưa có email cá nhân. Cập nhật Email cá nhân trên hồ sơ trước khi cấp tài khoản.");
 
             var save = new AdminUserSaveRequest
             {
-                Email = request.Email,
+                Email = email,
                 Password = request.Password,
                 FullName = profile.FullName,
                 Role = request.Role,
@@ -221,7 +224,7 @@ public sealed class AdminEmployeeService(
         return await db.EmployeeProfiles.AsNoTracking()
             .Where(p => p.UserId == null || p.Id == includeProfileId)
             .OrderBy(p => p.EmployeeCode)
-            .Select(p => new EmployeeLinkOptionDto(p.Id, p.EmployeeCode, p.FullName))
+            .Select(p => new EmployeeLinkOptionDto(p.Id, p.EmployeeCode, p.FullName, p.PersonalEmail))
             .ToListAsync(ct);
     }
 
