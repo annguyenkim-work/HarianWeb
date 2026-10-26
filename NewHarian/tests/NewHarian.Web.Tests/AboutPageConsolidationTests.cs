@@ -106,6 +106,23 @@ public class AboutPageConsolidationTests : IClassFixture<NewHarianWebApplication
         Assert.DoesNotContain(items, i => i.ItemKey is "concept" or "quality" or "company" or "about-page");
     }
 
+    [Fact]
+    public async Task Public_header_nav_includes_flat_about()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var cms = scope.ServiceProvider.GetRequiredService<ICmsPageService>();
+        var nav = await cms.GetHeaderNavAsync("vi");
+
+        var about = Assert.Single(nav, i => i.ItemKey == "about");
+        Assert.Equal("/about", about.Url);
+        Assert.True(about.Children is null || about.Children.Count == 0);
+
+        var html = WebUtility.HtmlDecode(await _factory.CreateClient().GetStringAsync("/"));
+        Assert.Contains("href=\"/about\"", html);
+        Assert.DoesNotContain("href=\"/about/concept\"", html);
+        Assert.DoesNotContain("href=\"/about/quality\"", html);
+    }
+
     [Theory]
     [InlineData("about", "Giới thiệu")]
     [InlineData("company", "Giới thiệu")]

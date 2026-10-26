@@ -98,8 +98,10 @@ public sealed class CmsPageService(AppDbContext db, IMemoryCache cache) : ICmsPa
             .Select(c => c!)
             .ToList();
 
-        // Dropdown parent with no visible children → hide
-        if (string.Equals(i.ItemKey, "about", StringComparison.OrdinalIgnoreCase) && children.Count == 0)
+        // Dropdown parent with no URL and no children → hide. Flat /about (no children) stays visible.
+        if (children.Count == 0
+            && string.IsNullOrWhiteSpace(i.Url)
+            && string.Equals(i.ItemKey, "about", StringComparison.OrdinalIgnoreCase))
             return null;
 
         return new PublicMenuItemDto(t?.Label ?? i.Url, i.Url, i.SortOrder, i.ItemKey, children);
