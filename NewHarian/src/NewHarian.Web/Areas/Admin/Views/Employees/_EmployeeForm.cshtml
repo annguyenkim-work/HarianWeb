@@ -1,6 +1,9 @@
 @model NewHarian.Application.Hr.EmployeeProfileForm
+@using NewHarian.Application.Abstractions
 @{
     var canManage = User.HasPermission(Permissions.Employees.Manage);
+    var canGrantAccount = User.HasPermission(Permissions.Users.Manage) && Model.Id is not null && !Model.HasAccount;
+    var isNew = Model.Id is null && string.IsNullOrEmpty(Model.UserId);
     var fieldsData = new ViewDataDictionary(ViewData)
     {
         ["PersonalEditable"] = canManage,
@@ -11,17 +14,22 @@
 
 <form asp-area="Admin" asp-controller="Employees" asp-action="Save" method="post" id="employee-edit-form">
     @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="UserId" />
-    <h2>@(canManage ? "Sửa hồ sơ nhân viên" : "Hồ sơ nhân viên")</h2>
+    <h2>@(isNew ? "Thêm nhân viên" : canManage ? "Sửa hồ sơ nhân viên" : "Hồ sơ nhân viên")</h2>
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <partial name="_EmployeeProfileFields" model="Model" view-data="fieldsData" />
 
     <div class="modal__actions">
         <button type="button" data-close class="btn-secondary">@(canManage ? "Hủy" : "Đóng")</button>
+        @if (canGrantAccount)
+        {
+            <button type="button" class="btn-secondary" data-grant-account="@Model.Id">Cấp tài khoản</button>
+        }
         @if (canManage)
         {
-            <button type="submit" class="btn-primary">Lưu</button>
+            <button type="submit" class="btn-primary">@(isNew ? "Thêm" : "Lưu")</button>
         }
     </div>
 </form>

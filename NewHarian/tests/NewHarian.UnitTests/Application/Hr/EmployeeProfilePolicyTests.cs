@@ -139,14 +139,17 @@ public class EmployeeProfilePolicyTests
         posted.EmployeeCode = "NV9999";
         var stored = new EmployeeProfileForm
         {
-            UserId = "u1", Email = "real@x.local", EmployeeCode = "NV0001", Roles = ["HrStaff"],
+            Id = 7, UserId = "u1", Email = "real@x.local", EmployeeCode = "NV0001", Roles = ["HrStaff"],
+            HasAccount = true,
             HireDate = new DateOnly(2023, 6, 1), Status = EmployeeStatus.Active, HrNotes = "note"
         };
 
         EmployeeProfilePolicy.MergeReadOnly(posted, stored, EmployeeEditScope.Self);
 
+        Assert.Equal(7, posted.Id);
         Assert.Equal("real@x.local", posted.Email);
         Assert.Equal("NV0001", posted.EmployeeCode);
+        Assert.True(posted.HasAccount);
         Assert.Equal(["HrStaff"], posted.Roles);
         Assert.Equal(new DateOnly(2023, 6, 1), posted.HireDate);
         Assert.Null(posted.TerminationDate);

@@ -7,8 +7,8 @@
 }
 
 <div class="profile-meta" data-profile-meta>
-    <span>Mã NV: <strong data-employee-code>@(Model.EmployeeCode ?? "Chưa cấp")</strong></span>
-    <span>Email đăng nhập: <strong>@Model.Email</strong></span>
+    <span>Mã NV: <strong data-employee-code>@(Model.EmployeeCode ?? (Model.Id is null ? "Tự cấp khi lưu" : "Chưa cấp"))</strong></span>
+    <span>Tài khoản: <strong>@(Model.HasAccount ? (string.IsNullOrEmpty(Model.Email) ? "Đã gắn" : Model.Email) : "Chưa có tài khoản")</strong></span>
 </div>
 
 <fieldset class="form-section" data-section="personal" disabled="@(!personalEditable)">

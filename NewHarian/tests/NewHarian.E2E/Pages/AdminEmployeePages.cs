@@ -39,8 +39,9 @@ public sealed class AdminEmployeesPage(IPage page)
     public ILocator Form => page.Locator("#employee-edit-form");
     public EmployeeProfileFields Fields => new(Form);
     public AdminToasts Toasts { get; } = new(page);
+    public ILocator AddButton => page.Locator("#btn-add-employee");
 
-    public ILocator Row(string email) => page.Locator($"tr[data-employee-row=\"{email}\"]");
+    public ILocator Row(string emailOrCode) => page.Locator($"tr[data-employee-row=\"{emailOrCode}\"]");
 
     public async Task SearchAsync(string query)
     {
@@ -51,9 +52,18 @@ public sealed class AdminEmployeesPage(IPage page)
         await Expect(page.Locator("input[name=q]")).ToHaveValueAsync(query);
     }
 
-    public async Task OpenAsync(string email)
+    public async Task OpenAsync(string emailOrCode)
     {
-        await Row(email).Locator(".btn-open-employee").ClickAsync();
+        await Row(emailOrCode).Locator(".btn-open-employee").ClickAsync();
         await Expect(Form).ToBeVisibleAsync();
+    }
+
+    public async Task CreateAsync(string fullName)
+    {
+        await page.GotoAsync("/Admin/Employees");
+        await AddButton.ClickAsync();
+        await Expect(Form).ToBeVisibleAsync();
+        await Fields.FullName.FillAsync(fullName);
+        await Form.GetByRole(AriaRole.Button, new() { Name = "Thêm" }).ClickAsync();
     }
 }

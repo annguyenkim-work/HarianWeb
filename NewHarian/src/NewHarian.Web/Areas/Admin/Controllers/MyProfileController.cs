@@ -14,7 +14,7 @@ public class MyProfileController(IAdminEmployeeService employees) : Controller
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var model = await employees.GetAsync(CurrentUserId, ct);
+        var model = await employees.GetByUserIdAsync(CurrentUserId, ct);
         if (model is null) return NotFound();
         return View(model);
     }
@@ -24,14 +24,19 @@ public class MyProfileController(IAdminEmployeeService employees) : Controller
     public async Task<IActionResult> Index(EmployeeProfileForm model, CancellationToken ct)
     {
         model.UserId = CurrentUserId;
-        var (ok, error) = await employees.SaveAsync(model, EmployeeEditScope.Self, CurrentUserId, ct);
+        // Self cannot create a floating profile; Id comes from stored profile or remains null for legacy first save.
+        var storedBefore = await employees.GetByUserIdAsync(CurrentUserId, ct);
+        if (storedBefore is null) return NotFound();
+        model.Id = storedBefore.Id;
+
+        var (ok, error, _) = await employees.SaveAsync(model, EmployeeEditScope.Self, CurrentUserId, ct);
         if (ok)
         {
             this.FlashSuccess("Đã lưu hồ sơ của bạn.");
             return RedirectToAction(nameof(Index));
         }
 
-        var stored = await employees.GetAsync(CurrentUserId, ct);
+        var stored = await employees.GetByUserIdAsync(CurrentUserId, ct);
         if (stored is null) return NotFound();
         EmployeeProfilePolicy.MergeReadOnly(model, stored, EmployeeEditScope.Self);
         ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");

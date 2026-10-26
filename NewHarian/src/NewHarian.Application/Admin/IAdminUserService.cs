@@ -6,7 +6,9 @@ public sealed record AdminUserListItemDto(
     string FullName,
     bool IsActive,
     IReadOnlyList<string> Roles,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? EmployeeCode = null,
+    int? EmployeeProfileId = null);
 
 public sealed class AdminUserSaveRequest
 {
@@ -21,6 +23,8 @@ public sealed class AdminUserSaveRequest
     public string? Role { get; set; }
     /// <summary>Roles held before this edit, for display only; the service always re-reads them.</summary>
     public List<string> CurrentRoles { get; set; } = [];
+    /// <summary>Optional link to an employee profile (unlinked, or already linked to this user).</summary>
+    public int? EmployeeProfileId { get; set; }
 }
 
 /// <summary>Super Admin management of internal accounts: create, role, activate/deactivate, reset password.</summary>

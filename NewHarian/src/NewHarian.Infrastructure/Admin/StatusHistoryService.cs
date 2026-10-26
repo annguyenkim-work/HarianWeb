@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
+using NewHarian.Application.Hr;
 using NewHarian.Domain.Entities;
 using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Persistence;
@@ -13,6 +14,7 @@ namespace NewHarian.Infrastructure.Admin;
 public sealed class StatusHistoryService(
     AppDbContext db,
     IHttpContextAccessor http,
+    IStaffActorLabel actorLabel,
     ILogger<StatusHistoryService> logger) : IStatusHistoryService
 {
     public async Task AppendOrderAsync(
@@ -27,7 +29,7 @@ public sealed class StatusHistoryService(
     {
         try
         {
-            var (actorType, userId, actorName) = ResolveActor(actorIsGuest, guestActorName);
+            var (actorType, userId, actorName) = await ResolveActorAsync(actorIsGuest, guestActorName, ct);
             db.OrderHistories.Add(new OrderHistory
             {
                 OrderId = orderId,
@@ -61,7 +63,7 @@ public sealed class StatusHistoryService(
     {
         try
         {
-            var (actorType, userId, actorName) = ResolveActor(actorIsGuest, guestActorName);
+            var (actorType, userId, actorName) = await ResolveActorAsync(actorIsGuest, guestActorName, ct);
             db.ServiceBookingHistories.Add(new ServiceBookingHistory
             {
                 BookingId = bookingId,
@@ -102,7 +104,8 @@ public sealed class StatusHistoryService(
             .ToListAsync(ct);
     }
 
-    private (string ActorType, string? UserId, string? ActorName) ResolveActor(bool actorIsGuest, string? guestActorName)
+    private async Task<(string ActorType, string? UserId, string? ActorName)> ResolveActorAsync(
+        bool actorIsGuest, string? guestActorName, CancellationToken ct)
     {
         if (actorIsGuest)
             return ("Guest", null, string.IsNullOrWhiteSpace(guestActorName) ? "Khách" : guestActorName.Trim());
@@ -112,10 +115,7 @@ public sealed class StatusHistoryService(
             return ("System", null, "Hệ thống");
 
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        var name = user.FindFirstValue(ClaimTypes.Email)
-                   ?? user.FindFirstValue(ClaimTypes.Name)
-                   ?? user.Identity?.Name
-                   ?? userId;
+        var name = await actorLabel.ResolveAsync(userId, ct);
         var actorType = AppRoles.Assignable.Append(AppRoles.LegacyStaff).FirstOrDefault(user.IsInRole) ?? "Staff";
         return (actorType, userId, name);
     }

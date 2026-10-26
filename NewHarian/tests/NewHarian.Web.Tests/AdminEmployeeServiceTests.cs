@@ -9,7 +9,7 @@ using NewHarian.Infrastructure.Persistence;
 
 namespace NewHarian.Web.Tests;
 
-/// <summary>Own factory = own in-memory DB, so employee codes start at NV0001.</summary>
+/// <summary>Own factory = own in-memory DB for employee create/link/code flows.</summary>
 public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFactory>
 {
     private readonly NewHarianWebApplicationFactory _factory;
@@ -17,43 +17,82 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
     public AdminEmployeeServiceTests(NewHarianWebApplicationFactory factory) => _factory = factory;
 
     [Fact]
-    public async Task First_save_creates_one_profile_with_next_code_and_updates_full_name()
+    public async Task Hr_can_create_employee_without_account_and_gets_name_based_code()
+    {
+        using var scope = await ScopeAsync();
+        var service = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+
+        var (ok, error, id) = await service.SaveAsync(new EmployeeProfileForm
+        {
+            FullName = "Nguyễn Kim An",
+            Status = EmployeeStatus.Active
+        }, EmployeeEditScope.Hr, "hr-1");
+
+        Assert.True(ok, error);
+        Assert.NotNull(id);
+        var stored = (await service.GetByIdAsync(id!.Value))!;
+        Assert.Equal("AnNK", stored.EmployeeCode);
+        Assert.False(stored.HasAccount);
+        Assert.Null(stored.UserId);
+    }
+
+    [Fact]
+    public async Task Legacy_first_save_for_user_creates_profile_with_name_code()
     {
         using var scope = await ScopeAsync();
         var sp = scope.ServiceProvider;
         var service = sp.GetRequiredService<IAdminEmployeeService>();
         var userId = await NewUserAsync(sp, AppRoles.WarehouseStaff);
 
-        var form = (await service.GetAsync(userId))!;
-        Assert.Null(form.EmployeeCode);
+        var form = (await service.GetByUserIdAsync(userId))!;
+        Assert.Null(form.Id);
         form.FullName = "Nguyễn Văn Kho";
         form.Phone = "0909123456";
-        form.HireDate = new DateOnly(2026, 3, 1);
-        Assert.Equal((true, (string?)null), await service.SaveAsync(form, EmployeeEditScope.Hr, "hr-1"));
+        Assert.True((await service.SaveAsync(form, EmployeeEditScope.Hr, "hr-1")).Ok);
 
-        var again = (await service.GetAsync(userId))!;
-        Assert.Matches("^NV\\d{4}$", again.EmployeeCode);
-        Assert.Equal("Nguyễn Văn Kho", again.FullName);
-        Assert.Equal(new DateOnly(2026, 3, 1), again.HireDate);
-
-        Assert.True((await service.SaveAsync(again, EmployeeEditScope.Hr, "hr-1")).Ok);
-        var db = sp.GetRequiredService<AppDbContext>();
-        Assert.Equal(1, await db.EmployeeProfiles.CountAsync(p => p.UserId == userId));
-        Assert.Equal(again.EmployeeCode, (await service.GetAsync(userId))!.EmployeeCode);
+        var again = (await service.GetByUserIdAsync(userId))!;
+        Assert.Equal("KhoNV", again.EmployeeCode);
+        Assert.True(again.HasAccount);
+        Assert.Equal(1, await sp.GetRequiredService<AppDbContext>().EmployeeProfiles.CountAsync(p => p.UserId == userId));
     }
 
     [Fact]
-    public async Task Each_new_profile_gets_a_distinct_code()
+    public async Task Name_code_collision_gets_numeric_suffix()
     {
         using var scope = await ScopeAsync();
         var service = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
-        var a = await NewUserAsync(scope.ServiceProvider, AppRoles.SalesStaff);
-        var b = await NewUserAsync(scope.ServiceProvider, AppRoles.SalesStaff);
+        var tag = "Zz" + Guid.NewGuid().ToString("N")[..4];
+        var fullName = $"Nguyễn Kim {tag}";
+        var baseCode = EmployeeCodeGenerator.BaseFromFullName(fullName);
 
-        await service.SaveAsync((await service.GetAsync(a))!, EmployeeEditScope.Self, a);
-        await service.SaveAsync((await service.GetAsync(b))!, EmployeeEditScope.Self, b);
+        Assert.True((await service.SaveAsync(new EmployeeProfileForm { FullName = fullName }, EmployeeEditScope.Hr, null)).Ok);
+        var (_, _, id2) = await service.SaveAsync(new EmployeeProfileForm { FullName = fullName }, EmployeeEditScope.Hr, null);
+        Assert.Equal($"{baseCode}2", (await service.GetByIdAsync(id2!.Value))!.EmployeeCode);
+    }
 
-        Assert.NotEqual((await service.GetAsync(a))!.EmployeeCode, (await service.GetAsync(b))!.EmployeeCode);
+    [Fact]
+    public async Task Grant_account_links_user_to_profile()
+    {
+        using var scope = await ScopeAsync();
+        var service = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+        var (_, _, id) = await service.SaveAsync(new EmployeeProfileForm { FullName = "Trần Hải Hà" }, EmployeeEditScope.Hr, null);
+        var email = $"grant-{Guid.NewGuid():N}@test.local";
+
+        var (ok, error) = await service.GrantAccountAsync(new GrantEmployeeAccountRequest
+        {
+            ProfileId = id!.Value,
+            Email = email,
+            Password = TestUsers.Password,
+            Role = AppRoles.SalesStaff,
+            IsActive = true
+        }, "admin-1");
+
+        Assert.True(ok, error);
+        var stored = (await service.GetByIdAsync(id.Value))!;
+        Assert.True(stored.HasAccount);
+        Assert.Equal(email, stored.Email);
+        Assert.Equal("HaTH", stored.EmployeeCode);
+        Assert.Contains(AppRoles.SalesStaff, stored.Roles);
     }
 
     [Fact]
@@ -62,20 +101,21 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
         using var scope = await ScopeAsync();
         var service = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
         var userId = await NewUserAsync(scope.ServiceProvider, AppRoles.SalesStaff);
-        var hr = (await service.GetAsync(userId))!;
+        var hr = (await service.GetByUserIdAsync(userId))!;
+        hr.FullName = "Lê Thị Self";
         hr.HireDate = new DateOnly(2026, 2, 1);
         hr.Status = EmployeeStatus.Probation;
         hr.HrNotes = "ghi chú HR";
         await service.SaveAsync(hr, EmployeeEditScope.Hr, "hr-1");
 
-        var self = (await service.GetAsync(userId))!;
+        var self = (await service.GetByUserIdAsync(userId))!;
         self.Phone = "0912000111";
         self.HireDate = new DateOnly(2020, 1, 1);
         self.Status = EmployeeStatus.Active;
         self.HrNotes = "tự sửa";
         Assert.True((await service.SaveAsync(self, EmployeeEditScope.Self, userId)).Ok);
 
-        var stored = (await service.GetAsync(userId))!;
+        var stored = (await service.GetByUserIdAsync(userId))!;
         Assert.Equal("0912000111", stored.Phone);
         Assert.Equal(new DateOnly(2026, 2, 1), stored.HireDate);
         Assert.Equal(EmployeeStatus.Probation, stored.Status);
@@ -89,10 +129,10 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
         var sp = scope.ServiceProvider;
         var service = sp.GetRequiredService<IAdminEmployeeService>();
         var userId = await NewUserAsync(sp, AppRoles.HrStaff);
-        var form = (await service.GetAsync(userId))!;
+        var form = (await service.GetByUserIdAsync(userId))!;
         form.CitizenId = "123";
 
-        var (ok, error) = await service.SaveAsync(form, EmployeeEditScope.Self, userId);
+        var (ok, error, _) = await service.SaveAsync(form, EmployeeEditScope.Self, userId);
 
         Assert.False(ok);
         Assert.Equal(EmployeeProfilePolicy.CitizenIdInvalid, error);
@@ -105,39 +145,32 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
         using var scope = await ScopeAsync();
         var service = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
 
-        Assert.Null(await service.GetAsync("missing"));
-        var (ok, error) = await service.SaveAsync(new EmployeeProfileForm { UserId = "missing", FullName = "X" }, EmployeeEditScope.Hr, null);
+        Assert.Null(await service.GetByUserIdAsync("missing"));
+        var (ok, error, _) = await service.SaveAsync(
+            new EmployeeProfileForm { UserId = "missing", FullName = "X" }, EmployeeEditScope.Hr, null);
         Assert.False(ok);
         Assert.Equal("Không tìm thấy nhân viên.", error);
     }
 
     [Fact]
-    public async Task List_shows_internal_users_without_profile_and_filters_by_query_and_status()
+    public async Task List_includes_profiles_without_account_and_legacy_users()
     {
         using var scope = await ScopeAsync();
         var sp = scope.ServiceProvider;
         var service = sp.GetRequiredService<IAdminEmployeeService>();
         var noProfile = await NewUserAsync(sp, AppRoles.WarehouseManager);
-        var withProfile = await NewUserAsync(sp, AppRoles.SalesManager);
-        var form = (await service.GetAsync(withProfile))!;
-        form.Status = EmployeeStatus.OnLeave;
-        await service.SaveAsync(form, EmployeeEditScope.Hr, "hr-1");
-        var code = (await service.GetAsync(withProfile))!.EmployeeCode!;
+        var (_, _, profileId) = await service.SaveAsync(
+            new EmployeeProfileForm { FullName = "Văn Thị Thu Thủy", Status = EmployeeStatus.OnLeave },
+            EmployeeEditScope.Hr, null);
 
         var all = await service.ListAsync(null, null);
-        var bare = Assert.Single(all, r => r.UserId == noProfile);
-        Assert.Null(bare.EmployeeCode);
-        Assert.False(bare.IsPersonalComplete);
-        Assert.Equal([AppRoles.WarehouseManager], bare.Roles);
-
-        var byRoleLabel = await service.ListAsync(AppRoles.Label(AppRoles.WarehouseManager).ToUpperInvariant(), null);
-        Assert.Equal(noProfile, Assert.Single(byRoleLabel).UserId);
-
-        var byCode = await service.ListAsync(code, null);
-        Assert.Equal(withProfile, Assert.Single(byCode).UserId);
+        Assert.Contains(all, r => r.UserId == noProfile && r.ProfileId is null);
+        var orphan = Assert.Single(all, r => r.ProfileId == profileId);
+        Assert.Equal("ThuyVTT", orphan.EmployeeCode);
+        Assert.False(orphan.HasAccount);
 
         var onLeave = await service.ListAsync(null, EmployeeStatus.OnLeave);
-        Assert.Contains(onLeave, r => r.UserId == withProfile);
+        Assert.Contains(onLeave, r => r.ProfileId == profileId);
         Assert.DoesNotContain(onLeave, r => r.UserId == noProfile);
     }
 

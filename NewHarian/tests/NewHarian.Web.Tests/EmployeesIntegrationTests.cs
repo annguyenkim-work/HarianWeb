@@ -24,6 +24,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Contains("href=\"/admin/Employees\"", list, StringComparison.OrdinalIgnoreCase);
         Assert.Contains($"data-employee-row=\"{staffEmail}\"", list);
         Assert.Contains("Chưa bổ sung hồ sơ", list);
+        Assert.Contains("btn-add-employee", list);
 
         var form = WebUtility.HtmlDecode(await client.GetStringAsync($"/admin/Employees/Edit/{await UserIdAsync(staffEmail)}"));
         Assert.Contains("Sửa hồ sơ nhân viên", form);
@@ -32,8 +33,27 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.DoesNotContain("data-section=\"hr\" disabled", form);
         Assert.Contains("HrNotes", form);
         Assert.Matches("<input[^>]*value=\"Nhân viên Kho\"[^>]*readonly[^>]*data-employee-role", form);
-        Assert.DoesNotContain("name=\"Department\"", form);
-        Assert.DoesNotContain("name=\"Position\"", form);
+    }
+
+    [Fact]
+    public async Task Hr_manager_create_employee_without_account_assigns_name_code()
+    {
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.HrManager);
+        var token = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync("/admin/Employees/Create"))!;
+
+        var response = await client.PostAsync("/admin/Employees/Save", Form(token, null, null, new()
+        {
+            ["FullName"] = "Nguyễn Kim An",
+            ["Status"] = nameof(EmployeeStatus.Active),
+        }));
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("ok").GetBoolean(), await response.Content.ReadAsStringAsync());
+        Assert.Equal("Đã thêm nhân viên.", json.RootElement.GetProperty("message").GetString());
+
+        using var scope = _factory.Services.CreateScope();
+        var list = await scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>().ListAsync("AnNK", null);
+        Assert.Contains(list, r => r.EmployeeCode is not null && r.EmployeeCode.StartsWith("AnNK") && !r.HasAccount);
     }
 
     [Fact]
@@ -43,7 +63,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         var userId = await UserIdAsync(await TestUsers.EnsureUserAsync(_factory, AppRoles.SalesStaff));
         var token = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync($"/admin/Employees/Edit/{userId}"))!;
 
-        var response = await client.PostAsync("/admin/Employees/Save", Form(token, userId, new()
+        var response = await client.PostAsync("/admin/Employees/Save", Form(token, null, userId, new()
         {
             ["FullName"] = "Trần Thị Bán",
             ["HrNotes"] = "Thử việc 2 tháng",
@@ -56,8 +76,8 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Equal("Đã lưu hồ sơ nhân viên.", json.RootElement.GetProperty("message").GetString());
 
         using var scope = _factory.Services.CreateScope();
-        var stored = (await scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>().GetAsync(userId))!;
-        Assert.Matches("^NV\\d{4}$", stored.EmployeeCode);
+        var stored = (await scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>().GetByUserIdAsync(userId))!;
+        Assert.Equal("BanTT", stored.EmployeeCode);
         Assert.Equal(new DateOnly(2026, 9, 1), stored.HireDate);
         Assert.Equal("Thử việc 2 tháng", stored.HrNotes);
         Assert.Equal(EmployeeStatus.Probation, stored.Status);
@@ -70,7 +90,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         var userId = await UserIdAsync(await TestUsers.EnsureUserAsync(_factory, AppRoles.WarehouseManager));
         var token = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync($"/admin/Employees/Edit/{userId}"))!;
 
-        var response = await client.PostAsync("/admin/Employees/Save", Form(token, userId, new()
+        var response = await client.PostAsync("/admin/Employees/Save", Form(token, null, userId, new()
         {
             ["FullName"] = "Kho",
             ["Status"] = nameof(EmployeeStatus.Resigned),
@@ -100,7 +120,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         var token = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync("/admin/MyProfile"))!;
         using var request = new HttpRequestMessage(HttpMethod.Post, "/admin/Employees/Save")
         {
-            Content = Form(token, userId, new() { ["FullName"] = "X" })
+            Content = Form(token, null, userId, new() { ["FullName"] = "X" })
         };
         request.Headers.Add("Sec-Fetch-Mode", "cors");
         Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(request)).StatusCode);
@@ -133,7 +153,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.DoesNotContain("HrNotes", page);
         var token = AdminLoginHelper.ExtractRequestVerificationToken(page)!;
 
-        var response = await client.PostAsync("/admin/MyProfile", Form(token, "someone-else", new()
+        var response = await client.PostAsync("/admin/MyProfile", Form(token, null, "someone-else", new()
         {
             ["FullName"] = "Lê Văn Kho",
             ["Phone"] = "0912345678",
@@ -148,13 +168,14 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Contains("Đã lưu hồ sơ của bạn.", html);
 
         using var scope = _factory.Services.CreateScope();
-        var stored = (await scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>().GetAsync(userId))!;
+        var stored = (await scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>().GetByUserIdAsync(userId))!;
         Assert.Equal("Lê Văn Kho", stored.FullName);
         Assert.Equal("0912345678", stored.Phone);
         Assert.Equal(new DateOnly(1998, 4, 5), stored.DateOfBirth);
         Assert.Null(stored.HireDate);
         Assert.Null(stored.HrNotes);
         Assert.Equal(EmployeeStatus.Active, stored.Status);
+        Assert.Equal("KhoLV", stored.EmployeeCode);
     }
 
     [Fact]
@@ -163,7 +184,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SalesStaff);
         var token = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync("/admin/MyProfile"))!;
 
-        var response = await client.PostAsync("/admin/MyProfile", Form(token, "", new()
+        var response = await client.PostAsync("/admin/MyProfile", Form(token, null, "", new()
         {
             ["FullName"] = "Bán Hàng",
             ["Phone"] = "0912345678",
@@ -176,9 +197,10 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Contains("value=\"0912345678\"", html);
     }
 
-    private static FormUrlEncodedContent Form(string token, string userId, Dictionary<string, string> fields)
+    private static FormUrlEncodedContent Form(string token, int? id, string? userId, Dictionary<string, string> fields)
     {
-        fields["UserId"] = userId;
+        if (id is not null) fields["Id"] = id.Value.ToString();
+        if (userId is not null) fields["UserId"] = userId;
         fields["__RequestVerificationToken"] = token;
         return new FormUrlEncodedContent(fields);
     }

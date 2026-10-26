@@ -1,10 +1,12 @@
 @model AdminUserSaveRequest
 @using NewHarian.Application.Abstractions
+@using NewHarian.Application.Hr
 @{
     var isNew = Model.Id is null;
     var roleOptions = UserRolePolicy.Options(Model.CurrentRoles);
     var needsReview = UserRolePolicy.NeedsRoleReview(Model.CurrentRoles);
     var isLegacyOnly = !needsReview && Model.CurrentRoles.Contains(AppRoles.LegacyStaff);
+    var employeeOptions = ViewBag.EmployeeOptions as IReadOnlyList<EmployeeLinkOptionDto> ?? [];
 }
 
 <form asp-area="Admin" asp-controller="Users" asp-action="Save" method="post" id="user-edit-form">
@@ -32,6 +34,17 @@
         <label>
             Họ tên
             <input asp-for="FullName" class="form-control" />
+            <small class="form-hint">Khi gắn nhân viên, họ tên lấy từ hồ sơ NV.</small>
+        </label>
+        <label class="full">
+            Gắn nhân viên
+            <select asp-for="EmployeeProfileId" class="form-control">
+                <option value="">Không gắn</option>
+                @foreach (var opt in employeeOptions)
+                {
+                    <option value="@opt.Id" selected="@(Model.EmployeeProfileId == opt.Id)">@opt.EmployeeCode - @opt.FullName</option>
+                }
+            </select>
         </label>
         <label>
             @(isNew ? "Mật khẩu *" : "Mật khẩu mới")

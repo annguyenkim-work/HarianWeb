@@ -63,7 +63,7 @@
         {
             <tr>
                 <td style="white-space:nowrap">@row.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                <td><code>@(row.UserId ?? "-")</code></td>
+                <td>@row.ActorLabel</td>
                 <td>@row.Action</td>
                 <td>@row.EntityType #<strong>@row.EntityId</strong></td>
                 <td style="max-width:28rem;font-size:0.85rem;word-break:break-word">

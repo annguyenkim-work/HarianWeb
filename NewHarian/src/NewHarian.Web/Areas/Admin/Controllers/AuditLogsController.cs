@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
+using NewHarian.Application.Hr;
 using NewHarian.Infrastructure.Persistence;
 using NewHarian.Web.Areas.Admin;
 using NewHarian.Web.Authorization;
@@ -10,7 +11,7 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 /// <summary>Hidden audit trail — URL /admin/audit-logs (not linked in menu; for maintain/debug).</summary>
 [Area("Admin")]
 [HasPermission(Permissions.AuditLogs.View)]
-public class AuditLogsController(AppDbContext db) : Controller
+public class AuditLogsController(AppDbContext db, IStaffActorLabel actorLabel) : Controller
 {
     [HttpGet("/admin/audit-logs")]
     public async Task<IActionResult> Index(
@@ -42,12 +43,13 @@ public class AuditLogsController(AppDbContext db) : Controller
         var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
         if (page > totalPages) page = totalPages;
 
-        var items = await query
+        var raw = await query
             .OrderByDescending(e => e.CreatedAt)
             .ThenByDescending(e => e.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => new AuditLogRow(
+            .Select(e => new
+            {
                 e.Id,
                 e.CreatedAt,
                 e.UserId,
@@ -56,8 +58,18 @@ public class AuditLogsController(AppDbContext db) : Controller
                 e.EntityId,
                 e.OldValues,
                 e.NewValues,
-                e.IpAddress))
+                e.IpAddress
+            })
             .ToListAsync(ct);
+
+        var items = new List<AuditLogRow>(raw.Count);
+        foreach (var e in raw)
+        {
+            var actor = e.UserId is null ? "-" : await actorLabel.ResolveAsync(e.UserId, ct);
+            items.Add(new AuditLogRow(
+                e.Id, e.CreatedAt, e.UserId, actor, e.Action, e.EntityType, e.EntityId,
+                e.OldValues, e.NewValues, e.IpAddress));
+        }
 
         ViewBag.EntityType = entityType;
         ViewBag.Action = action;
@@ -81,6 +93,7 @@ public class AuditLogsController(AppDbContext db) : Controller
         long Id,
         DateTime CreatedAt,
         string? UserId,
+        string ActorLabel,
         string Action,
         string EntityType,
         string EntityId,

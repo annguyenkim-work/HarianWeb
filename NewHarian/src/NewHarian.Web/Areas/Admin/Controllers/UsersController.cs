@@ -2,13 +2,14 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
+using NewHarian.Application.Hr;
 using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [HasPermission(Permissions.Users.Manage)]
-public class UsersController(IAdminUserService users) : Controller
+public class UsersController(IAdminUserService users, IAdminEmployeeService employees) : Controller
 {
     public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
     {
@@ -20,11 +21,17 @@ public class UsersController(IAdminUserService users) : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(string? id, CancellationToken ct)
     {
+        AdminUserSaveRequest model;
         if (id is null)
-            return PartialView("_UserForm", new AdminUserSaveRequest());
+            model = new AdminUserSaveRequest();
+        else
+        {
+            var found = await users.GetForEditAsync(id, ct);
+            if (found is null) return NotFound();
+            model = found;
+        }
 
-        var model = await users.GetForEditAsync(id, ct);
-        if (model is null) return NotFound();
+        ViewBag.EmployeeOptions = await employees.ListLinkOptionsAsync(model.EmployeeProfileId, ct);
         return PartialView("_UserForm", model);
     }
 
@@ -37,6 +44,7 @@ public class UsersController(IAdminUserService users) : Controller
         {
             ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");
             model.Password = null;
+            ViewBag.EmployeeOptions = await employees.ListLinkOptionsAsync(model.EmployeeProfileId, ct);
             return PartialView("_UserForm", model);
         }
         return Json(new

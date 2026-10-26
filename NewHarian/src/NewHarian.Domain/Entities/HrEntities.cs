@@ -3,14 +3,16 @@ using NewHarian.Domain.Enums;
 namespace NewHarian.Domain.Entities;
 
 /// <summary>
-/// HR record of an internal account. One profile per user (unique <see cref="UserId"/>); full name lives on the user,
-/// and the user's role stands in for department / position.
+/// HR record. May exist before a login account (<see cref="UserId"/> null).
+/// Full name lives on the profile; when linked, it is synced to the Identity user.
 /// </summary>
 public class EmployeeProfile
 {
     public int Id { get; set; }
-    public string UserId { get; set; } = string.Empty;
+    /// <summary>Null until an AspNetUsers account is granted / linked.</summary>
+    public string? UserId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
 
     public DateOnly? DateOfBirth { get; set; }
     public EmployeeGender? Gender { get; set; }
