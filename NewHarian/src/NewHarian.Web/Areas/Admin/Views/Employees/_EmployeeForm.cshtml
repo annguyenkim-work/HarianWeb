@@ -4,9 +4,12 @@
     var canManage = User.HasPermission(Permissions.Employees.Manage);
     var canGrantAccount = User.HasPermission(Permissions.Users.Manage) && Model.Id is not null && !Model.HasAccount;
     var isNew = Model.Id is null && string.IsNullOrEmpty(Model.UserId);
+    // Create: HR may set initial PersonalEmail. Update: Super Admin (ChangeEmail) only.
+    var emailEditable = canManage && (isNew || User.HasPermission(Permissions.Employees.ChangeEmail));
     var fieldsData = new ViewDataDictionary(ViewData)
     {
         ["PersonalEditable"] = canManage,
+        ["EmailEditable"] = emailEditable,
         ["HrEditable"] = canManage,
         ["ShowHrNotes"] = true
     };

@@ -73,8 +73,12 @@ public sealed class AdminDealersPage(IPage page)
 
     public ILocator Action(string action) => Modal.Locator($"[data-action=\"{action}\"]");
 
+    /// <summary>aria-label is "{product} - {variant} ({sku}) {range}" from <c>SkuLabel</c>.</summary>
     public ILocator OverrideInput(string productName, string range)
-        => Modal.GetByLabel($"{productName} {range}", new() { Exact = true });
+        => Modal.Locator(
+            $"input[data-override-input][aria-label^='{CssAttr(productName)} - '][aria-label$='{CssAttr(" " + range)}']");
+
+    private static string CssAttr(string value) => value.Replace("\\", "\\\\").Replace("'", "\\'");
 }
 
 /// <summary>"Thêm đơn" modal on Admin/Orders.</summary>

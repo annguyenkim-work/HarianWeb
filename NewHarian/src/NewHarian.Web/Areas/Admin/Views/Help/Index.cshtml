@@ -324,11 +324,14 @@
     <h3>4. Hồ sơ của tôi</h3>
     <p>Mỗi nhân viên đã có tài khoản vào <strong>Hồ sơ của tôi</strong> (header) để tự cập nhật thông tin cá nhân. Phần công việc (ngày vào làm, trạng thái, ghi chú HR) chỉ HR sửa được.</p>
 
+    <h3>5. Đổi email nhân viên (Super Admin)</h3>
+    <p>Chỉ <strong>@AppRoles.Label(AppRoles.SuperAdmin)</strong> được đổi email: <em>Email cá nhân</em> trên hồ sơ NV (khi sửa hồ sơ đã có) và <em>email đăng nhập</em> trên Users. HR Manager khi thêm NV mới vẫn được nhập Email cá nhân lần đầu; sau đó trường khóa. Nhân viên không tự đổi email trên Hồ sơ của tôi. Đổi email đăng nhập trên Users sẽ cập nhật luôn Email cá nhân nếu user đã gắn NV (và ngược lại khi đổi Email cá nhân trên hồ sơ đã có tài khoản).</p>
+
     <h3>Ai làm gì</h3>
     <ul>
-        <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> thêm / sửa hồ sơ NV.</li>
+        <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> thêm / sửa hồ sơ NV (không đổi email sau khi đã tạo).</li>
         <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> chỉ xem hồ sơ.</li>
-        <li><strong>@AppRoles.Label(AppRoles.SuperAdmin):</strong> cấp tài khoản, gắn NV trên Users, toàn quyền.</li>
+        <li><strong>@AppRoles.Label(AppRoles.SuperAdmin):</strong> cấp tài khoản, gắn NV trên Users, đổi email NV / email đăng nhập.</li>
     </ul>
 </section>
 }

@@ -128,6 +128,42 @@ public class AdminUserServiceTests : IClassFixture<NewHarianWebApplicationFactor
     }
 
     [Fact]
+    public async Task Update_rejects_email_change_without_can_change_email()
+    {
+        using var scope = await ScopeAsync();
+        var service = scope.ServiceProvider.GetRequiredService<IAdminUserService>();
+        var (_, _, id) = await service.SaveAsync(NewUser("email-lock", AppRoles.SalesStaff), actorUserId: null);
+        var edit = (await service.GetForEditAsync(id!))!;
+        var original = edit.Email;
+        edit.Email = $"changed-{Guid.NewGuid():N}@test.local";
+
+        var (ok, error, _) = await service.SaveAsync(edit, actorUserId: "someone-else", canChangeEmail: false);
+
+        Assert.False(ok);
+        Assert.Equal("Chỉ Super Admin được đổi email.", error);
+        Assert.Equal(original, (await service.GetForEditAsync(id!))!.Email);
+    }
+
+    [Fact]
+    public async Task Update_changes_email_when_can_change_email()
+    {
+        using var scope = await ScopeAsync();
+        var service = scope.ServiceProvider.GetRequiredService<IAdminUserService>();
+        var um = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var (_, _, id) = await service.SaveAsync(NewUser("email-ok", AppRoles.SalesStaff), actorUserId: null);
+        var edit = (await service.GetForEditAsync(id!))!;
+        var next = $"changed-{Guid.NewGuid():N}@test.local";
+        edit.Email = next;
+
+        var (ok, error, _) = await service.SaveAsync(edit, actorUserId: "someone-else", canChangeEmail: true);
+
+        Assert.True(ok, error);
+        var user = await um.FindByIdAsync(id!);
+        Assert.Equal(next, user!.Email);
+        Assert.Equal(next, user.UserName);
+    }
+
+    [Fact]
     public async Task Super_admin_cannot_deactivate_or_demote_self()
     {
         using var scope = await ScopeAsync();

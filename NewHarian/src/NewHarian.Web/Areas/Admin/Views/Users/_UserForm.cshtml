@@ -3,6 +3,7 @@
 @using NewHarian.Application.Hr
 @{
     var isNew = Model.Id is null;
+    var canChangeEmail = User.HasPermission(Permissions.Employees.ChangeEmail);
     var roleOptions = UserRolePolicy.Options(Model.CurrentRoles);
     var needsReview = UserRolePolicy.NeedsRoleReview(Model.CurrentRoles);
     var isLegacyOnly = !needsReview && Model.CurrentRoles.Contains(AppRoles.LegacyStaff);
@@ -22,13 +23,18 @@
     <div class="form-grid form-grid--2 user-form">
         <label>
             Email *
-            @if (isNew)
+            @if (isNew || canChangeEmail)
             {
                 <input asp-for="Email" type="email" class="form-control" required data-user-email />
+                @if (!isNew)
+                {
+                    <small class="form-hint">Đổi email đăng nhập; nếu user gắn NV thì Email cá nhân trên hồ sơ cũng cập nhật.</small>
+                }
             }
             else
             {
                 <input asp-for="Email" class="form-control" readonly tabindex="-1" />
+                <small class="form-hint">Chỉ Super Admin được đổi email.</small>
             }
         </label>
         <label>

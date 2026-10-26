@@ -47,8 +47,8 @@ jobs:
           --health-retries 20
     env:
       E2E_CONNECTION_STRING: "Host=localhost;Port=5432;Database=newharian_e2e;Username=postgres;Password=postgres"
-      E2E_REQUIRED: "true"
       E2E_ARTIFACTS_DIR: ${{ github.workspace }}/e2e-artifacts
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

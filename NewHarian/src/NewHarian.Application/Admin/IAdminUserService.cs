@@ -35,5 +35,7 @@ public interface IAdminUserService
     Task<AdminUserSaveRequest?> GetForEditAsync(string id, CancellationToken ct = default);
 
     /// <param name="actorUserId">Signed-in Super Admin; cannot deactivate or demote themselves.</param>
-    Task<(bool Ok, string? Error, string? Id)> SaveAsync(AdminUserSaveRequest request, string? actorUserId, CancellationToken ct = default);
+    /// <param name="canChangeEmail">Only Super Admin may change login email on an existing user (and sync linked PersonalEmail).</param>
+    Task<(bool Ok, string? Error, string? Id)> SaveAsync(
+        AdminUserSaveRequest request, string? actorUserId, bool canChangeEmail = false, CancellationToken ct = default);
 }

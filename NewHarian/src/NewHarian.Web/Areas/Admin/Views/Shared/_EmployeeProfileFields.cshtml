@@ -2,6 +2,7 @@
 @using NewHarian.Application.Hr
 @{
     var personalEditable = ViewData["PersonalEditable"] as bool? ?? false;
+    var emailEditable = ViewData["EmailEditable"] as bool? ?? false;
     var hrEditable = ViewData["HrEditable"] as bool? ?? false;
     var showHrNotes = ViewData["ShowHrNotes"] as bool? ?? false;
 }
@@ -38,7 +39,18 @@
         </label>
         <label>
             Email cá nhân
-            <input asp-for="PersonalEmail" type="email" class="form-control" maxlength="200" />
+            @if (emailEditable)
+            {
+                <input asp-for="PersonalEmail" type="email" class="form-control" maxlength="200" />
+            }
+            else
+            {
+                <input asp-for="PersonalEmail" type="email" class="form-control" maxlength="200" readonly tabindex="-1" />
+                @if (personalEditable)
+                {
+                    <small class="form-hint">Chỉ Super Admin được đổi email.</small>
+                }
+            }
         </label>
         <label>
             CCCD

@@ -29,7 +29,9 @@ public class MyProfileController(IAdminEmployeeService employees) : Controller
         if (storedBefore is null) return NotFound();
         model.Id = storedBefore.Id;
 
-        var (ok, error, _) = await employees.SaveAsync(model, EmployeeEditScope.Self, CurrentUserId, ct);
+        var canChangeEmail = User.HasPermission(Permissions.Employees.ChangeEmail);
+        var (ok, error, _) = await employees.SaveAsync(
+            model, EmployeeEditScope.Self, CurrentUserId, canChangeEmail, ct);
         if (ok)
         {
             this.FlashSuccess("Đã lưu hồ sơ của bạn.");
@@ -38,7 +40,7 @@ public class MyProfileController(IAdminEmployeeService employees) : Controller
 
         var stored = await employees.GetByUserIdAsync(CurrentUserId, ct);
         if (stored is null) return NotFound();
-        EmployeeProfilePolicy.MergeReadOnly(model, stored, EmployeeEditScope.Self);
+        EmployeeProfilePolicy.MergeReadOnly(model, stored, EmployeeEditScope.Self, lockPersonalEmail: !canChangeEmail);
         ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");
         return View(model);
     }

@@ -157,6 +157,8 @@ public static class Permissions
     {
         public const string View = "Employees.View";
         public const string Manage = "Employees.Manage";
+        /// <summary>Change PersonalEmail on an existing employee profile (and related admin UX). Super Admin only.</summary>
+        public const string ChangeEmail = "Employees.ChangeEmail";
     }
 
     /// <summary>Self-service "Hồ sơ của tôi": personal fields of the signed-in user's own employee profile.</summary>

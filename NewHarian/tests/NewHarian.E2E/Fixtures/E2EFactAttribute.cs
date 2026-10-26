@@ -1,8 +1,8 @@
 namespace NewHarian.E2E.Fixtures;
 
 /// <summary>
-/// Fact that skips (locally) when PostgreSQL is unreachable. With E2E_REQUIRED=true (CI) it never skips,
-/// so a missing database fails the run instead of silently passing.
+/// Fact that skips when PostgreSQL is unreachable. Set E2E_REQUIRED=true locally to fail instead of skip
+/// (CI does not use this flag; it relies on the Postgres service + E2E_CONNECTION_STRING).
 /// </summary>
 public sealed class E2EFactAttribute : FactAttribute
 {

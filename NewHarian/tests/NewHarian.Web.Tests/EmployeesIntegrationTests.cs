@@ -33,6 +33,82 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.DoesNotContain("data-section=\"hr\" disabled", form);
         Assert.Contains("HrNotes", form);
         Assert.Matches("<input[^>]*value=\"Nhân viên Kho\"[^>]*readonly[^>]*data-employee-role", form);
+        Assert.Contains("Chỉ Super Admin được đổi email.", form);
+        Assert.Matches("name=\"PersonalEmail\"[^>]*readonly|readonly[^>]*name=\"PersonalEmail\"", form);
+    }
+
+    [Fact]
+    public async Task Hr_manager_cannot_change_personal_email_on_existing_profile()
+    {
+        int profileId;
+        var original = $"hr-lock-{Guid.NewGuid():N}@test.local";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var employees = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+            var (_, _, id) = await employees.SaveAsync(new EmployeeProfileForm
+            {
+                FullName = "Email Lock HR",
+                PersonalEmail = original,
+                Status = EmployeeStatus.Active
+            }, EmployeeEditScope.Hr, null, canChangeEmail: true);
+            profileId = id!.Value;
+        }
+
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.HrManager);
+        var token = AdminLoginHelper.ExtractRequestVerificationToken(
+            await client.GetStringAsync($"/admin/Employees/Edit/{profileId}"))!;
+
+        var response = await client.PostAsync("/admin/Employees/Save", Form(token, profileId, null, new()
+        {
+            ["FullName"] = "Email Lock HR",
+            ["PersonalEmail"] = $"hacked-{Guid.NewGuid():N}@test.local",
+            ["Status"] = nameof(EmployeeStatus.Active),
+        }));
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("ok").GetBoolean(), await response.Content.ReadAsStringAsync());
+
+        using var verify = _factory.Services.CreateScope();
+        var stored = (await verify.ServiceProvider.GetRequiredService<IAdminEmployeeService>().GetByIdAsync(profileId))!;
+        Assert.Equal(original, stored.PersonalEmail);
+    }
+
+    [Fact]
+    public async Task Super_admin_can_change_personal_email_on_existing_profile()
+    {
+        int profileId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var employees = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+            var (_, _, id) = await employees.SaveAsync(new EmployeeProfileForm
+            {
+                FullName = "Email Unlock SA",
+                PersonalEmail = $"sa-old-{Guid.NewGuid():N}@test.local",
+                Status = EmployeeStatus.Active
+            }, EmployeeEditScope.Hr, null, canChangeEmail: true);
+            profileId = id!.Value;
+        }
+
+        var next = $"sa-new-{Guid.NewGuid():N}@test.local";
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SuperAdmin);
+        var editHtml = WebUtility.HtmlDecode(await client.GetStringAsync($"/admin/Employees/Edit/{profileId}"));
+        Assert.DoesNotContain("Chỉ Super Admin được đổi email.", editHtml);
+        Assert.DoesNotMatch("name=\"PersonalEmail\"[^>]*readonly|readonly[^>]*name=\"PersonalEmail\"", editHtml);
+        var token = AdminLoginHelper.ExtractRequestVerificationToken(editHtml)!;
+
+        var response = await client.PostAsync("/admin/Employees/Save", Form(token, profileId, null, new()
+        {
+            ["FullName"] = "Email Unlock SA",
+            ["PersonalEmail"] = next,
+            ["Status"] = nameof(EmployeeStatus.Active),
+        }));
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("ok").GetBoolean(), await response.Content.ReadAsStringAsync());
+
+        using var verify = _factory.Services.CreateScope();
+        var stored = (await verify.ServiceProvider.GetRequiredService<IAdminEmployeeService>().GetByIdAsync(profileId))!;
+        Assert.Equal(next, stored.PersonalEmail);
     }
 
     [Fact]
@@ -174,12 +250,15 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Contains("data-section=\"hr\" disabled", page);
         Assert.DoesNotContain("data-section=\"personal\" disabled", page);
         Assert.DoesNotContain("HrNotes", page);
+        Assert.Contains("Chỉ Super Admin được đổi email.", page);
+        Assert.Matches("name=\"PersonalEmail\"[^>]*readonly|readonly[^>]*name=\"PersonalEmail\"", page);
         var token = AdminLoginHelper.ExtractRequestVerificationToken(page)!;
 
         var response = await client.PostAsync("/admin/MyProfile", Form(token, null, "someone-else", new()
         {
             ["FullName"] = "Lê Văn Kho",
             ["Phone"] = "0912345678",
+            ["PersonalEmail"] = $"self-hack-{Guid.NewGuid():N}@test.local",
             ["DateOfBirth"] = "1998-04-05",
             ["HireDate"] = "2020-01-01",
             ["HrNotes"] = "tự sửa",
@@ -199,6 +278,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Null(stored.HrNotes);
         Assert.Equal(EmployeeStatus.Active, stored.Status);
         Assert.Equal("KhoLV", stored.EmployeeCode);
+        Assert.Null(stored.PersonalEmail);
     }
 
     [Fact]

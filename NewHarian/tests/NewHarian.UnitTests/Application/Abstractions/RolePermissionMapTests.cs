@@ -65,6 +65,7 @@ public class RolePermissionMapTests
     [InlineData(Permissions.Users.Manage, new[] { AppRoles.SuperAdmin })]
     [InlineData(Permissions.Employees.View, new[] { AppRoles.SuperAdmin, AppRoles.HrManager, AppRoles.HrStaff })]
     [InlineData(Permissions.Employees.Manage, new[] { AppRoles.SuperAdmin, AppRoles.HrManager })]
+    [InlineData(Permissions.Employees.ChangeEmail, new[] { AppRoles.SuperAdmin })]
     [InlineData(Permissions.Products.SuggestVariants, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager, AppRoles.SalesStaff, AppRoles.WarehouseManager, AppRoles.WarehouseStaff, AppRoles.LegacyStaff })]
     public void Sensitive_permissions_match_role_matrix(string permission, string[] expectedRoles)
     {

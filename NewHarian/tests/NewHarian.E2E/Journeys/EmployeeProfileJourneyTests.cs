@@ -30,6 +30,7 @@ public sealed class EmployeeProfileJourneyTests(E2EFixture fx)
                 await Expect(profile.Fields.Status).ToBeDisabledAsync();
                 await Expect(profile.Fields.HrNotes).ToHaveCountAsync(0);
                 await Expect(profile.Fields.Phone).ToBeEnabledAsync();
+                await Expect(profile.Fields.PersonalEmail).ToHaveAttributeAsync("readonly", "");
 
                 await profile.Fields.Phone.FillAsync(phone);
                 await profile.Fields.CitizenId.FillAsync("123");
@@ -60,6 +61,7 @@ public sealed class EmployeeProfileJourneyTests(E2EFixture fx)
             await employees.OpenAsync(email);
             await Expect(employees.Fields.Phone).ToHaveValueAsync(phone);
             await Expect(employees.Fields.Role).ToHaveValueAsync(AppRoles.Label(AppRoles.WarehouseStaff));
+            await Expect(employees.Fields.PersonalEmail).ToHaveAttributeAsync("readonly", "");
             await employees.Fields.HireDate.FillAsync("2026-01-05");
             await employees.Fields.Status.SelectOptionAsync("Probation");
             await employees.Fields.HrNotes.FillAsync(hrNote);
@@ -72,6 +74,43 @@ public sealed class EmployeeProfileJourneyTests(E2EFixture fx)
             await employees.OpenAsync(email);
             await Expect(employees.Fields.HireDate).ToHaveValueAsync("2026-01-05");
             await Expect(employees.Fields.HrNotes).ToHaveValueAsync(hrNote);
+        });
+    }
+
+    [E2EFact]
+    [Trait("Priority", "P0")]
+    public async Task Super_admin_can_change_employee_personal_email()
+    {
+        var tag = "Em" + new string(Enumerable.Range(0, 4).Select(_ => (char)('a' + Random.Shared.Next(26))).ToArray());
+        var fullName = $"Phạm Email {tag}";
+        var expectedCode = EmployeeCodeGenerator.BaseFromFullName(fullName);
+        var oldEmail = $"{tag.ToLowerInvariant()}-old@e2e.local";
+        var newEmail = $"{tag.ToLowerInvariant()}-new@e2e.local";
+
+        await using (var hr = await fx.NewRoleContextAsync(AppRoles.HrManager))
+        {
+            await fx.RunAsync(hr, "Hr_creates_employee_with_email", async page =>
+            {
+                var employees = new AdminEmployeesPage(page);
+                await employees.CreateAsync(fullName, oldEmail);
+                await employees.Toasts.ExpectSuccessAsync("Đã thêm nhân viên.");
+            });
+        }
+
+        await using var admin = await fx.NewRoleContextAsync(AppRoles.SuperAdmin);
+        await fx.RunAsync(admin, nameof(Super_admin_can_change_employee_personal_email), async page =>
+        {
+            var employees = new AdminEmployeesPage(page);
+            await employees.SearchAsync(tag);
+            await employees.OpenAsync(expectedCode);
+            await Expect(employees.Fields.PersonalEmail).ToHaveValueAsync(oldEmail);
+            await Expect(employees.Fields.PersonalEmail).Not.ToHaveAttributeAsync("readonly", "");
+            await employees.Fields.PersonalEmail.FillAsync(newEmail);
+            await employees.Fields.SaveButton.ClickAsync();
+            await employees.Toasts.ExpectSuccessAsync("Đã lưu hồ sơ nhân viên.");
+
+            await employees.OpenAsync(expectedCode);
+            await Expect(employees.Fields.PersonalEmail).ToHaveValueAsync(newEmail);
         });
     }
 
