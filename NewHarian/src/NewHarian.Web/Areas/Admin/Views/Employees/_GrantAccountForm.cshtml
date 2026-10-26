@@ -1,0 +1,40 @@
+@model NewHarian.Application.Hr.GrantEmployeeAccountRequest
+@using NewHarian.Application.Abstractions
+@using NewHarian.Application.Admin
+@{
+    var roleOptions = UserRolePolicy.Options([]);
+}
+
+<form asp-area="Admin" asp-controller="Employees" asp-action="GrantAccount" method="post" id="grant-account-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ProfileId" />
+    <h2>Cấp tài khoản</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-grid form-grid--2">
+        <label>
+            Email *
+            <input asp-for="Email" type="email" class="form-control" required />
+        </label>
+        <label>
+            Mật khẩu *
+            <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" required />
+        </label>
+        <label>
+            Role *
+            <select asp-for="Role" class="form-control" required>
+                <option value="">Chọn</option>
+                @foreach (var role in roleOptions)
+                {
+                    <option value="@role" selected="@(Model.Role == role)">@AppRoles.Label(role)</option>
+                }
+            </select>
+        </label>
+        <label class="full"><input asp-for="IsActive" /> Đang hoạt động</label>
+    </div>
+
+    <div class="modal__actions">
+        <button type="button" data-close class="btn-secondary">Hủy</button>
+        <button type="submit" class="btn-primary">Cấp tài khoản</button>
+    </div>
+</form>

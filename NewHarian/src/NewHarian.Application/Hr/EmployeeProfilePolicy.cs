@@ -106,10 +106,12 @@ public static class EmployeeProfilePolicy
     /// </summary>
     public static void MergeReadOnly(EmployeeProfileForm posted, EmployeeProfileForm stored, EmployeeEditScope scope)
     {
+        posted.Id = stored.Id;
         posted.UserId = stored.UserId;
         posted.Email = stored.Email;
         posted.EmployeeCode = stored.EmployeeCode;
         posted.Roles = stored.Roles;
+        posted.HasAccount = stored.HasAccount;
 
         if (scope == EmployeeEditScope.Hr) return;
 

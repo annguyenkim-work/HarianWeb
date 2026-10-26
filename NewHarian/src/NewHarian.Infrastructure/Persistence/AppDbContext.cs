@@ -569,9 +569,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
         builder.Entity<EmployeeProfile>(e =>
         {
-            e.HasIndex(x => x.UserId).IsUnique();
+            e.HasIndex(x => x.UserId).IsUnique().HasFilter("\"UserId\" IS NOT NULL");
             e.HasIndex(x => x.EmployeeCode).IsUnique();
             e.Property(x => x.EmployeeCode).HasMaxLength(20);
+            e.Property(x => x.FullName).HasMaxLength(200).IsRequired();
             e.Property(x => x.Phone).HasMaxLength(20);
             e.Property(x => x.PersonalEmail).HasMaxLength(200);
             e.Property(x => x.Address).HasMaxLength(500);
@@ -579,7 +580,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.EmergencyContactName).HasMaxLength(200);
             e.Property(x => x.EmergencyContactPhone).HasMaxLength(20);
             e.Property(x => x.HrNotes).HasMaxLength(2000);
-            e.HasOne<ApplicationUser>().WithOne().HasForeignKey<EmployeeProfile>(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<ApplicationUser>().WithOne().HasForeignKey<EmployeeProfile>(x => x.UserId)
+                .IsRequired(false).OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<PageViewDaily>(e =>

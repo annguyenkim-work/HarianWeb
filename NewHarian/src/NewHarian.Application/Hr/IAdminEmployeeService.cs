@@ -10,23 +10,30 @@ public enum EmployeeEditScope
 }
 
 public sealed record EmployeeListItemDto(
-    string UserId,
+    int? ProfileId,
+    string? UserId,
     string Email,
     string FullName,
     IReadOnlyList<string> Roles,
     bool IsActive,
     string? EmployeeCode,
     EmployeeStatus? Status,
-    bool IsPersonalComplete);
+    bool IsPersonalComplete,
+    bool HasAccount);
+
+public sealed record EmployeeLinkOptionDto(int Id, string EmployeeCode, string FullName);
 
 public sealed class EmployeeProfileForm
 {
-    public string UserId { get; set; } = string.Empty;
+    /// <summary>Null = create new profile (HR).</summary>
+    public int? Id { get; set; }
+    public string? UserId { get; set; }
 
     // Read-only, shown for context; never applied on save.
     public string Email { get; set; } = string.Empty;
     public string? EmployeeCode { get; set; }
     public List<string> Roles { get; set; } = [];
+    public bool HasAccount { get; set; }
 
     public string FullName { get; set; } = string.Empty;
     public DateOnly? DateOfBirth { get; set; }
@@ -44,15 +51,32 @@ public sealed class EmployeeProfileForm
     public string? HrNotes { get; set; }
 }
 
+public sealed class GrantEmployeeAccountRequest
+{
+    public int ProfileId { get; set; }
+    public string Email { get; set; } = "";
+    public string Password { get; set; } = "";
+    public string? Role { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
 public interface IAdminEmployeeService
 {
-    /// <summary>Every internal account, with its profile when one exists.</summary>
     Task<IReadOnlyList<EmployeeListItemDto>> ListAsync(string? q, EmployeeStatus? status, CancellationToken ct = default);
 
-    /// <summary>Null when the user does not exist. A user without a profile yet gets an empty form.</summary>
-    Task<EmployeeProfileForm?> GetAsync(string userId, CancellationToken ct = default);
+    Task<EmployeeProfileForm?> GetByIdAsync(int id, CancellationToken ct = default);
 
-    /// <summary>Creates the profile on first save (auto employee code). Self scope ignores HR fields.</summary>
-    Task<(bool Ok, string? Error)> SaveAsync(
+    /// <summary>By login user id (MyProfile / legacy). Null when the user does not exist.</summary>
+    Task<EmployeeProfileForm?> GetByUserIdAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>Creates when <see cref="EmployeeProfileForm.Id"/> is null; updates otherwise. Self scope ignores HR fields.</summary>
+    Task<(bool Ok, string? Error, int? Id)> SaveAsync(
         EmployeeProfileForm form, EmployeeEditScope scope, string? actorUserId, CancellationToken ct = default);
+
+    /// <summary>Creates an Identity user and links it to the profile.</summary>
+    Task<(bool Ok, string? Error)> GrantAccountAsync(
+        GrantEmployeeAccountRequest request, string? actorUserId, CancellationToken ct = default);
+
+    /// <summary>Profiles with no account, plus <paramref name="includeProfileId"/> when editing a linked user.</summary>
+    Task<IReadOnlyList<EmployeeLinkOptionDto>> ListLinkOptionsAsync(int? includeProfileId, CancellationToken ct = default);
 }

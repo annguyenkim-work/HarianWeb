@@ -43,7 +43,8 @@ public sealed class EmployeeProfileJourneyTests(E2EFixture fx)
                 await profile.Fields.SaveButton.ClickAsync();
 
                 await profile.Toasts.ExpectSuccessAsync("Đã lưu hồ sơ của bạn.");
-                await Expect(profile.Fields.EmployeeCode).ToHaveTextAsync(new System.Text.RegularExpressions.Regex(@"^NV\d{4}$"));
+                var expectedCode = EmployeeCodeGenerator.BaseFromFullName($"E2E {AppRoles.Label(AppRoles.WarehouseStaff)}");
+                await Expect(profile.Fields.EmployeeCode).ToHaveTextAsync(new System.Text.RegularExpressions.Regex($"^{expectedCode}\\d*$"));
                 code = await profile.Fields.EmployeeCode.InnerTextAsync();
             });
         }
@@ -89,6 +90,48 @@ public sealed class EmployeeProfileJourneyTests(E2EFixture fx)
             await Expect(employees.Fields.HireDate).ToBeDisabledAsync();
             await Expect(employees.Fields.SaveButton).ToHaveCountAsync(0);
             await Expect(employees.Dialog.GetByRole(AriaRole.Button, new() { Name = "Đóng" })).ToBeVisibleAsync();
+        });
+    }
+
+    [E2EFact]
+    public async Task Hr_manager_creates_employee_then_super_admin_grants_account()
+    {
+        var tag = "Ua" + new string(Enumerable.Range(0, 4).Select(_ => (char)('a' + Random.Shared.Next(26))).ToArray());
+        var fullName = $"Nguyễn Kim {tag}";
+        var expectedCode = EmployeeCodeGenerator.BaseFromFullName(fullName);
+        var email = $"{tag.ToLowerInvariant()}@e2e.local";
+
+        await using (var hr = await fx.NewRoleContextAsync(AppRoles.HrManager))
+        {
+            await fx.RunAsync(hr, "Hr_creates_employee_without_account", async page =>
+            {
+                var employees = new AdminEmployeesPage(page);
+                await employees.CreateAsync(fullName);
+                await employees.Toasts.ExpectSuccessAsync("Đã thêm nhân viên.");
+                await employees.SearchAsync(tag);
+                await Expect(employees.Row(expectedCode)).ToContainTextAsync("Chưa có tài khoản");
+                await Expect(employees.Row(expectedCode)).ToContainTextAsync(expectedCode);
+            });
+        }
+
+        await using var admin = await fx.NewRoleContextAsync(AppRoles.SuperAdmin);
+        await fx.RunAsync(admin, "Super_admin_grants_account", async page =>
+        {
+            var employees = new AdminEmployeesPage(page);
+            await employees.SearchAsync(tag);
+            await employees.OpenAsync(expectedCode);
+            await page.Locator("[data-grant-account]").ClickAsync();
+            var grant = page.Locator("#grant-account-form");
+            await Expect(grant).ToBeVisibleAsync();
+            await grant.Locator("input[name=Email]").FillAsync(email);
+            await grant.Locator("input[name=Password]").FillAsync(E2ETestData.UserPassword);
+            await grant.Locator("select[name=Role]").SelectOptionAsync(AppRoles.SalesStaff);
+            await grant.GetByRole(AriaRole.Button, new() { Name = "Cấp tài khoản" }).ClickAsync();
+            await employees.Toasts.ExpectSuccessAsync("Đã cấp tài khoản cho nhân viên.");
+
+            await employees.SearchAsync(email);
+            await Expect(employees.Row(email)).ToContainTextAsync(expectedCode);
+            await Expect(employees.Row(email).Locator("[data-no-account]")).ToHaveCountAsync(0);
         });
     }
 }

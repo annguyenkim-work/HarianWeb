@@ -3,13 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Catalog;
+using NewHarian.Application.Hr;
 using NewHarian.Application.Inventory;
 using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-public class InventoryController(IInventoryService inventory, IAdminProductService products) : Controller
+public class InventoryController(IInventoryService inventory, IAdminProductService products, IStaffActorLabel actorLabel) : Controller
 {
     [HasPermission(Permissions.Inventory.View)]
     public async Task<IActionResult> Index(CancellationToken ct = default)
@@ -80,7 +81,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
     [HasPermission(Permissions.Inventory.Receive)]
     public async Task<IActionResult> Receive(StockLotReceiveRequest model, CancellationToken ct)
     {
-        var (ok, error, _) = await inventory.ReceiveLotAsync(model, ActorUserId(), ActorName(), ct);
+        var (ok, error, _) = await inventory.ReceiveLotAsync(model, ActorUserId(), await ActorNameAsync(ct), ct);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Không nhập được lô.");
@@ -111,7 +112,7 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
     [HasPermission(Permissions.Inventory.Adjust)]
     public async Task<IActionResult> Adjust(StockLotAdjustRequest model, CancellationToken ct)
     {
-        var (ok, error) = await inventory.AdjustLotAsync(model, ActorUserId(), ActorName(), ct);
+        var (ok, error) = await inventory.AdjustLotAsync(model, ActorUserId(), await ActorNameAsync(ct), ct);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Không điều chỉnh được.");
@@ -141,5 +142,5 @@ public class InventoryController(IInventoryService inventory, IAdminProductServi
     }
 
     private string? ActorUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
-    private string? ActorName() => User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Email);
+    private Task<string> ActorNameAsync(CancellationToken ct) => actorLabel.ResolveAsync(ActorUserId(), ct);
 }

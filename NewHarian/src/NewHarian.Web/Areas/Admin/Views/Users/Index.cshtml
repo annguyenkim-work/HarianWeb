@@ -12,6 +12,7 @@
     <thead>
         <tr>
             <th>Email</th>
+            <th>Mã NV</th>
             <th>Họ tên</th>
             <th>Role</th>
             <th>Trạng thái</th>
@@ -23,6 +24,7 @@
     {
         <tr>
             <td>@u.Email</td>
+            <td>@(u.EmployeeCode ?? "-")</td>
             <td>@(string.IsNullOrWhiteSpace(u.FullName) ? "-" : u.FullName)</td>
             <td>
                 @(u.Roles.Count == 0 ? "-" : string.Join(", ", u.Roles.Select(AppRoles.Label)))

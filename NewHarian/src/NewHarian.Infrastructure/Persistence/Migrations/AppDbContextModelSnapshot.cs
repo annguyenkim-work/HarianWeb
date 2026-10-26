@@ -932,6 +932,11 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int?>("Gender")
                         .HasColumnType("integer");
 
@@ -963,7 +968,6 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -972,7 +976,8 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
 
                     b.ToTable("EmployeeProfiles");
                 });
@@ -2918,8 +2923,7 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.HasOne("NewHarian.Infrastructure.Identity.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("NewHarian.Domain.Entities.EmployeeProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.HomeSlide", b =>
