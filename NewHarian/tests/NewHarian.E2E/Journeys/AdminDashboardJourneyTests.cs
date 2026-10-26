@@ -22,7 +22,14 @@ public sealed class AdminDashboardJourneyTests(E2EFixture fx)
             await Expect(page.Locator("[data-kpi=in-progress]")).ToBeVisibleAsync();
             await Expect(page.Locator("[data-kpi=aov]")).ToBeVisibleAsync();
             await Expect(page.GetByText("Đơn đang xử lý")).ToBeVisibleAsync();
+            await Expect(page.Locator("[data-dash-hero]")).ToBeVisibleAsync();
+            await Expect(page.Locator("[data-dash-insight]")).ToBeVisibleAsync();
             await Expect(page.Locator("#chart-orders-trend")).ToBeVisibleAsync();
+            await Expect(page.Locator("#chart-revenue-category")).ToBeVisibleAsync();
+            await Expect(page.Locator("#chart-top-products")).ToBeVisibleAsync();
+            await Expect(page.Locator("#chart-revenue-source")).ToBeVisibleAsync();
+            await Expect(page.Locator("[data-inventory-status]")).ToBeVisibleAsync();
+            await Expect(page.GetByText("Tình trạng kho hàng")).ToBeVisibleAsync();
             await Expect(page.Locator("[data-ops-strip]")).ToBeVisibleAsync();
             await Expect(page.GetByRole(AriaRole.Link, new() { Name = "7 ngày" })).ToBeVisibleAsync();
             await Expect(page.GetByRole(AriaRole.Link, new() { Name = "30 ngày" })).ToBeVisibleAsync();

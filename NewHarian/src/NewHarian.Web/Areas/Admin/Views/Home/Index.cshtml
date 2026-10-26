@@ -14,10 +14,13 @@
     var trendLabels = (Model.OrdersTrendByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
     var trendRevenue = (Model.OrdersTrendByDay ?? []).Select(x => x.Revenue).ToList();
     var trendOrders = (Model.OrdersTrendByDay ?? []).Select(x => x.OrderCount).ToList();
+    // Horizontal bars: Chart.js draws bottom→top, so reverse for rank #1 on top.
     var topProductLabels = (Model.TopProducts ?? []).Select(x => x.Label).Reverse().ToList();
     var topProductValues = (Model.TopProducts ?? []).Select(x => x.Amount).Reverse().ToList();
-    var categoryLabels = (Model.RevenueByCategory ?? []).Select(x => x.Label).Reverse().ToList();
-    var categoryValues = (Model.RevenueByCategory ?? []).Select(x => x.Amount).Reverse().ToList();
+    // Vertical category bars: natural order (largest first from service).
+    var categoryLabels = (Model.RevenueByCategory ?? []).Select(x => x.Label).ToList();
+    var categoryValues = (Model.RevenueByCategory ?? []).Select(x => x.Amount).ToList();
+    var hasInventoryCard = Model.Inventory is not null;
     var orderLabels = (Model.OrdersByStatus ?? []).Select(x => x.Label).ToList();
     var orderValues = (Model.OrdersByStatus ?? []).Select(x => x.Count).ToList();
     var revenueSourceLabels = (Model.RevenueBySource ?? []).Select(x => x.Label).ToList();
@@ -162,45 +165,47 @@
 
 @if (showRevenue)
 {
-    <div class="dash-charts">
-        <section class="dash-chart-card dash-chart-card--wide dash-chart-card--compact">
+    <div class="dash-charts dash-charts--hero" data-dash-hero>
+        <section class="dash-chart-card dash-chart-card--hero">
             <div class="dash-chart-card__head">
                 <div>
-                    <h2>Doanh thu và số đơn theo ngày</h2>
-                    <p class="muted">Doanh thu: Confirmed / Processing / Shipped / Delivered · Số đơn: mọi trạng thái</p>
+                    <h2>Xu hướng doanh thu theo thời gian</h2>
+                    <p class="muted">Doanh thu đã xác nhận · Số đơn tạo trong kỳ</p>
                 </div>
                 <div class="dash-chart-total">
                     <span class="dash-chart-total__label">Tổng GMV</span>
                     <span class="dash-chart-total__value">@Vnd(Model.OrderGmvTotal)</span>
                 </div>
             </div>
-            <canvas id="chart-orders-trend" height="100"></canvas>
+            <canvas id="chart-orders-trend" height="140"></canvas>
         </section>
 
-        <section class="dash-chart-card dash-chart-card--compact">
-            <h2>Top 10 sản phẩm</h2>
+        <section class="dash-chart-card dash-chart-card--hero">
+            <h2>Cơ cấu doanh thu theo danh mục</h2>
+            <p class="muted">Theo danh mục sản phẩm (đơn đã xác nhận)</p>
+            <canvas id="chart-revenue-category" height="140"></canvas>
+            @if (Model.RevenueByCategory is null || Model.RevenueByCategory.Count == 0)
+            {
+                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
+            }
+        </section>
+    </div>
+
+    <div class="dash-charts dash-charts--insight" data-dash-insight>
+        <section class="dash-chart-card">
+            <h2>Top sản phẩm bán chạy</h2>
             <p class="muted">Theo doanh thu dòng (đơn đã xác nhận)</p>
-            <canvas id="chart-top-products" height="110"></canvas>
+            <canvas id="chart-top-products" height="160"></canvas>
             @if (Model.TopProducts is null || Model.TopProducts.Count == 0)
             {
                 <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
             }
         </section>
 
-        <section class="dash-chart-card dash-chart-card--compact">
-            <h2>Doanh thu theo danh mục</h2>
-            <p class="muted">Theo danh mục sản phẩm</p>
-            <canvas id="chart-revenue-category" height="110"></canvas>
-            @if (Model.RevenueByCategory is null || Model.RevenueByCategory.Count == 0)
-            {
-                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
-            }
-        </section>
-
-        <section class="dash-chart-card dash-chart-card--compact">
+        <section class="dash-chart-card">
             <div class="dash-chart-card__head">
                 <div>
-                    <h2>Doanh thu theo nguồn</h2>
+                    <h2>Thu nhập theo kênh bán hàng</h2>
                     <p class="muted">Website / Cửa hàng / Shopee / TikTok</p>
                 </div>
                 <div class="dash-chart-total">
@@ -208,55 +213,114 @@
                     <span class="dash-chart-total__value">@Vnd(Model.OrderRevenueBySourceTotal)</span>
                 </div>
             </div>
-            <canvas id="chart-revenue-source" height="100"></canvas>
+            <div class="dash-chart-donut">
+                <canvas id="chart-revenue-source" height="160"></canvas>
+            </div>
             @if (Model.RevenueBySource is null || Model.RevenueBySource.Count == 0)
             {
                 <p class="muted">Không có doanh thu ghi nhận trong khoảng đã chọn.</p>
             }
         </section>
 
-        <section class="dash-chart-card dash-chart-card--compact">
-            <h2>Phương thức thanh toán</h2>
-            <p class="muted">Doanh thu đơn đã xác nhận</p>
-            <canvas id="chart-payment-method" height="100"></canvas>
-            @if (Model.RevenueByPaymentMethod is null || Model.RevenueByPaymentMethod.Count == 0)
-            {
-                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
-            }
-        </section>
-
-        <section class="dash-chart-card dash-chart-card--compact">
-            <h2>Đơn hàng theo status</h2>
-            <canvas id="chart-orders-status" height="100"></canvas>
-            @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
-            {
-                <p class="muted">Không có đơn trong khoảng đã chọn.</p>
-            }
-        </section>
-
-        <section class="dash-chart-card dash-chart-card--compact dash-chart-card--secondary">
-            <div class="dash-chart-card__head">
-                <div>
-                    <h2>GMV đặt lịch dịch vụ</h2>
-                    <p class="muted">Ước tính theo giá variant · @bookingCountTotal booking</p>
+        @if (hasInventoryCard)
+        {
+            var inv = Model.Inventory!;
+            var lowOk = inv.LowStockSkuCount == 0;
+            var expOk = inv.ExpiringSoonLotCount == 0;
+            var expiredOk = inv.ExpiredLotCount == 0;
+            <section class="dash-chart-card" data-inventory-status>
+                <h2>Tình trạng kho hàng</h2>
+                <p class="muted">Giá trị kho @Vnd(inv.TotalValue)</p>
+                <div class="dash-inv-grid">
+                    <a class="dash-inv-cell @(lowOk ? "dash-inv-cell--ok" : "dash-inv-cell--warn")"
+                       asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+                        <span class="dash-inv-cell__label">Tồn thấp</span>
+                        <span class="dash-inv-cell__value">@inv.LowStockSkuCount</span>
+                        <span class="dash-inv-cell__status">@(lowOk ? "An toàn" : "Cần nhập")</span>
+                        <span class="dash-inv-cell__hint">Ngưỡng ≤ @inv.LowStockThreshold</span>
+                    </a>
+                    <a class="dash-inv-cell @(expOk ? "dash-inv-cell--ok" : "dash-inv-cell--warn")"
+                       asp-area="Admin" asp-controller="Inventory" asp-action="Index" asp-route-expiringSoon="true">
+                        <span class="dash-inv-cell__label">Sắp hết hạn</span>
+                        <span class="dash-inv-cell__value">@inv.ExpiringSoonLotCount</span>
+                        <span class="dash-inv-cell__status">@(expOk ? "An toàn" : "Cần xử lý")</span>
+                        <span class="dash-inv-cell__hint">Trong @inv.ExpiringWithinDays ngày</span>
+                    </a>
+                    <a class="dash-inv-cell @(expiredOk ? "dash-inv-cell--ok" : "dash-inv-cell--danger")"
+                       asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+                        <span class="dash-inv-cell__label">Lô quá hạn</span>
+                        <span class="dash-inv-cell__value">@inv.ExpiredLotCount</span>
+                        <span class="dash-inv-cell__status">@(expiredOk ? "An toàn" : "Khẩn")</span>
+                        <span class="dash-inv-cell__hint">Không xuất được</span>
+                    </a>
                 </div>
-                <div class="dash-chart-total">
-                    <span class="dash-chart-total__label">Tổng</span>
-                    <span class="dash-chart-total__value">@Vnd(Model.BookingGmvTotal)</span>
+            </section>
+        }
+        else
+        {
+            <section class="dash-chart-card">
+                <h2>Đơn hàng theo trạng thái</h2>
+                <p class="muted">Trong khoảng đã chọn</p>
+                <div class="dash-chart-donut">
+                    <canvas id="chart-orders-status" height="160"></canvas>
                 </div>
-            </div>
-            <canvas id="chart-bookings-gmv" height="90"></canvas>
-        </section>
-
-        <section class="dash-chart-card dash-chart-card--compact dash-chart-card--secondary">
-            <h2>Booking theo status</h2>
-            <canvas id="chart-bookings-status" height="90"></canvas>
-            @if (Model.BookingsByStatus is null || Model.BookingsByStatus.Count == 0)
-            {
-                <p class="muted">Không có booking trong khoảng đã chọn.</p>
-            }
-        </section>
+                @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
+                {
+                    <p class="muted">Không có đơn trong khoảng đã chọn.</p>
+                }
+            </section>
+        }
     </div>
+
+    <details class="dash-charts-more">
+        <summary>Biểu đồ chi tiết thêm</summary>
+        <div class="dash-charts dash-charts--more">
+            <section class="dash-chart-card dash-chart-card--secondary">
+                <h2>Phương thức thanh toán</h2>
+                <p class="muted">Doanh thu đơn đã xác nhận</p>
+                <canvas id="chart-payment-method" height="100"></canvas>
+                @if (Model.RevenueByPaymentMethod is null || Model.RevenueByPaymentMethod.Count == 0)
+                {
+                    <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
+                }
+            </section>
+
+            @if (hasInventoryCard)
+            {
+                <section class="dash-chart-card dash-chart-card--secondary">
+                    <h2>Đơn hàng theo trạng thái</h2>
+                    <canvas id="chart-orders-status" height="100"></canvas>
+                    @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
+                    {
+                        <p class="muted">Không có đơn trong khoảng đã chọn.</p>
+                    }
+                </section>
+            }
+
+            <section class="dash-chart-card dash-chart-card--secondary">
+                <div class="dash-chart-card__head">
+                    <div>
+                        <h2>GMV đặt lịch dịch vụ</h2>
+                        <p class="muted">Ước tính theo giá variant · @bookingCountTotal booking</p>
+                    </div>
+                    <div class="dash-chart-total">
+                        <span class="dash-chart-total__label">Tổng</span>
+                        <span class="dash-chart-total__value">@Vnd(Model.BookingGmvTotal)</span>
+                    </div>
+                </div>
+                <canvas id="chart-bookings-gmv" height="90"></canvas>
+            </section>
+
+            <section class="dash-chart-card dash-chart-card--secondary">
+                <h2>Booking theo trạng thái</h2>
+                <canvas id="chart-bookings-status" height="90"></canvas>
+                @if (Model.BookingsByStatus is null || Model.BookingsByStatus.Count == 0)
+                {
+                    <p class="muted">Không có booking trong khoảng đã chọn.</p>
+                }
+            </section>
+        </div>
+    </details>
 }
 
 @section Scripts {
@@ -343,16 +407,18 @@
     });
   }
 
-  function horizontalMoney(id, labels, values, color) {
+  function horizontalMoney(id, labels, values) {
     const el = document.getElementById(id);
     if (!el || !labels.length) return;
+    // Top rank (last index after reverse) highlighted blue like the mock.
+    const colors = values.map((_, i) => i === values.length - 1 ? '#2563eb' : '#2d6a4f');
     new Chart(el, {
       type: 'bar',
       data: {
         labels,
         datasets: [{
           data: values,
-          backgroundColor: color,
+          backgroundColor: colors,
           borderRadius: 4
         }]
       },
@@ -373,8 +439,37 @@
     });
   }
 
-  horizontalMoney('chart-top-products', topProductLabels, topProductValues, '#2d6a4f');
-  horizontalMoney('chart-revenue-category', categoryLabels, categoryValues, '#1d3557');
+  function verticalMoney(id, labels, values) {
+    const el = document.getElementById(id);
+    if (!el || !labels.length) return;
+    new Chart(el, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map((_, i) => palette[i % palette.length]),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => money(ctx.parsed.y ?? 0) } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { callback: v => Number(v).toLocaleString('vi-VN') }
+          }
+        }
+      }
+    });
+  }
+
+  horizontalMoney('chart-top-products', topProductLabels, topProductValues);
+  verticalMoney('chart-revenue-category', categoryLabels, categoryValues);
 
   function lineMoneyChart(el, labels, values, color, fill) {
     if (!el) return;
