@@ -26,13 +26,7 @@ public class SiteHeaderViewComponent(ISiteChromeCache chrome, ICmsPageService cm
                 new PublicMenuItemDto("Home", "/", 1, "home"),
                 new PublicMenuItemDto("Products", "/products", 2, "products"),
                 new PublicMenuItemDto("Services", "/services", 3, "services"),
-                new PublicMenuItemDto("About", "/about", 4, "about",
-                [
-                    new PublicMenuItemDto("About", "/about", 1, "about-page"),
-                    new PublicMenuItemDto("Concept", "/about/concept", 2, "concept"),
-                    new PublicMenuItemDto("Quality", "/about/quality", 3, "quality"),
-                    new PublicMenuItemDto("Company", "/company", 4, "company")
-                ]),
+                new PublicMenuItemDto("About", "/about", 4, "about"),
                 new PublicMenuItemDto("News", "/news", 5, "news"),
                 new PublicMenuItemDto("Careers", "/careers", 6, "careers"),
                 new PublicMenuItemDto("Dealers", "/dealers/home", 7, "dealers"),
