@@ -14,6 +14,7 @@
                   || User.HasPermission(Permissions.HomeSlides.Manage) || User.HasPermission(Permissions.Media.Manage);
     var showSettings = User.HasPermission(Permissions.SiteSettings.Manage) || User.HasPermission(Permissions.Shipping.Manage)
                        || User.HasPermission(Permissions.Users.Manage) || User.HasPermission(Permissions.EmailTemplates.Manage);
+    var showEmployees = User.HasPermission(Permissions.Employees.View);
 }
 
 <div class="admin-page-head">
@@ -31,6 +32,7 @@
         @if (showInquiries) { <li><a href="#lien-he">Liên hệ (Inquiries)</a></li> }
         @if (showDealers) { <li><a href="#dai-ly">Đại lý</a></li> }
         @if (showApplications) { <li><a href="#ho-so">Hồ sơ ứng tuyển</a></li> }
+        @if (showEmployees) { <li><a href="#nhan-vien">Nhân viên &amp; tài khoản</a></li> }
         @if (showCatalog) { <li><a href="#catalog">Danh mục / Sản phẩm / Dịch vụ / Màu</a></li> }
         @if (showPosts) { <li><a href="#posts">Tin tức &amp; tin tuyển dụng</a></li> }
         @if (showCms) { <li><a href="#cms">CMS &amp; media</a></li> }
@@ -64,10 +66,11 @@
             <li><strong>@AppRoles.Label(AppRoles.SalesStaff):</strong> tạo / xử lý đơn (không hủy, không export), đặt lịch, liên hệ, xem catalog và đại lý.</li>
             <li><strong>@AppRoles.Label(AppRoles.WarehouseManager):</strong> toàn bộ kho (nhập, điều chỉnh, vị trí, cài đặt kho), giao đơn (Processing / Shipped / Delivered).</li>
             <li><strong>@AppRoles.Label(AppRoles.WarehouseStaff):</strong> nhập kho, xem lô và lịch sử kho, giao đơn.</li>
-            <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> hồ sơ ứng tuyển, tin tức / tin tuyển dụng, trang nội dung, menu, slide.</li>
-            <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> như @AppRoles.Label(AppRoles.HrManager), trừ sửa meta trang và menu.</li>
+            <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> hồ sơ nhân viên (thêm / sửa), hồ sơ ứng tuyển, tin tức / tin tuyển dụng, trang nội dung, menu, slide.</li>
+            <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> xem hồ sơ nhân viên (không sửa); hồ sơ ứng tuyển / tin / CMS như @AppRoles.Label(AppRoles.HrManager) trừ sửa meta trang và menu.</li>
         </ul>
-        <p class="muted" style="margin:0.5rem 0 0">Một người có thể có nhiều vai trò. Cần thêm quyền: liên hệ Super Admin. Thông báo (chuông) cũng chỉ hiện loại thuộc quyền của bạn.</p>
+        <p class="muted" style="margin:0.5rem 0 0">Mỗi tài khoản chỉ có <strong>một</strong> vai trò. Cần thêm quyền: liên hệ Super Admin. Thông báo (chuông) cũng chỉ hiện loại thuộc quyền của bạn.</p>
+        <p class="muted" style="margin:0.5rem 0 0">Trên lịch sử đơn / đặt lịch / kho / audit, người thao tác (Actor) ưu tiên hiện <strong>mã nhân viên</strong> (vd. <code>AnNK</code>), không còn hiện email.</p>
     </div>
 </section>
 
@@ -104,7 +107,7 @@
         <figcaption>① Status Processing · ② Đã giao vận</figcaption>
     </figure>
 
-    <p>Khi đơn <code>Delivered</code>, không còn nút đổi trạng thái. Dùng phần <strong>Lịch sử cập nhật</strong> để đối chiếu ai đã thao tác khi nào.</p>
+    <p>Khi đơn <code>Delivered</code>, không còn nút đổi trạng thái. Dùng phần <strong>Lịch sử cập nhật</strong> để đối chiếu ai đã thao tác khi nào (tên người thao tác ưu tiên là <strong>mã NV</strong>).</p>
     <figure class="help-figure">
         <img src="~/help/admin/annotated/04-order-delivered.png" alt="Chi tiết đơn Delivered với lịch sử cập nhật" width="1024" height="802" loading="lazy" />
         <figcaption>① Status Delivered · ② Lịch sử cập nhật</figcaption>
@@ -138,7 +141,7 @@
         }
         @if (User.HasPermission(Permissions.Inventory.Receive))
         {
-            <li><strong>Nhập kho</strong>: nút <strong>+</strong> trên thanh công cụ, gõ tên / SKU để chọn biến thể, chọn vị trí, nhập mã lô (tuỳ chọn), HSD, giá vốn, số lượng.</li>
+            <li><strong>Nhập kho</strong>: nút <strong>+</strong> trên thanh công cụ, gõ tên / SKU để chọn biến thể, chọn vị trí, nhập mã lô (tuỳ chọn), HSD, giá vốn (định dạng VNĐ khi rời ô), số lượng.</li>
         }
         @if (User.HasPermission(Permissions.Inventory.Adjust))
         {
@@ -146,7 +149,7 @@
         }
         @if (User.HasPermission(Permissions.Inventory.ViewHistory))
         {
-            <li><strong>Lịch sử</strong>: các lần nhập / xuất kho, lọc theo loại (Nhập / Xuất) và khoảng ngày.</li>
+            <li><strong>Lịch sử</strong>: các lần nhập / xuất kho, lọc theo loại (Nhập / Xuất) và khoảng ngày; cột người thực hiện ưu tiên hiện mã NV.</li>
         }
         @if (User.HasPermission(Permissions.Inventory.ManageSettings))
         {
@@ -242,6 +245,56 @@
 </section>
 }
 
+@if (showEmployees)
+{
+<section id="nhan-vien" class="help-section admin-help-section help-section--highlight">
+    <h2>Nhân viên &amp; tài khoản</h2>
+    <p>Quy trình chuẩn: <strong>tạo hồ sơ nhân viên trước</strong>, cấp / gắn tài khoản đăng nhập sau. Menu <strong>Nhân viên</strong> → <code>/admin/Employees</code>.</p>
+
+    <h3>1. Thêm nhân viên (HR)</h3>
+    <ol class="help-flow">
+        <li>
+            <span class="help-flow__num">1</span>
+            <div>
+                <strong>Nhấn Thêm (+)</strong>
+                <span>Nhập họ tên (bắt buộc) và các thông tin cá nhân / công việc nếu đã có. Chưa cần email đăng nhập.</span>
+            </div>
+        </li>
+        <li>
+            <span class="help-flow__num">2</span>
+            <div>
+                <strong>Lưu → hệ thống cấp mã NV</strong>
+                <span>Mã sinh từ họ tên (bỏ dấu): tên gọi + chữ cái đầu của họ/đệm. Ví dụ <em>Nguyễn Kim An</em> → <code>AnNK</code>; <em>Văn Thị Thu Thủy</em> → <code>ThuyVTT</code>. Trùng tên thì thêm số: <code>AnNK2</code>, <code>AnNK3</code>, … Mã đã cấp không đổi khi sửa họ tên sau này. Hồ sơ cũ dạng <code>NV0001</code> giữ nguyên.</span>
+            </div>
+        </li>
+    </ol>
+    <div class="help-callout">
+        <strong>Trạng thái trên danh sách</strong>
+        <ul>
+            <li><em>Chưa có tài khoản</em> - đã có hồ sơ HR, chưa đăng nhập được Admin.</li>
+            <li><em>Chưa bổ sung hồ sơ</em> - tài khoản cũ (legacy) chưa có hồ sơ NV; HR mở Sửa và lưu lần đầu để cấp mã.</li>
+            <li><em>Chưa đủ thông tin cá nhân</em> - thiếu ngày sinh / SĐT / địa chỉ / CCCD.</li>
+        </ul>
+    </div>
+
+    <h3>2. Cấp tài khoản từ hồ sơ nhân viên</h3>
+    <p>Super Admin (quyền Users) mở hồ sơ NV chưa có tài khoản → <strong>Cấp tài khoản</strong> → nhập email, mật khẩu, role → Lưu. Họ tên lấy từ hồ sơ NV.</p>
+
+    <h3>3. Gắn nhân viên khi tạo / sửa Users</h3>
+    <p>Menu <strong>Users</strong> → Thêm / Sửa → chọn <strong>Gắn nhân viên</strong> (danh sách NV chưa gắn, hoặc NV đang gắn với user này). Có thể tạo user không gắn NV (tooling); khi đó không tự tạo hồ sơ nhân viên.</p>
+
+    <h3>4. Hồ sơ của tôi</h3>
+    <p>Mỗi nhân viên đã có tài khoản vào <strong>Hồ sơ của tôi</strong> (header) để tự cập nhật thông tin cá nhân. Phần công việc (ngày vào làm, trạng thái, ghi chú HR) chỉ HR sửa được.</p>
+
+    <h3>Ai làm gì</h3>
+    <ul>
+        <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> thêm / sửa hồ sơ NV.</li>
+        <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> chỉ xem hồ sơ.</li>
+        <li><strong>@AppRoles.Label(AppRoles.SuperAdmin):</strong> cấp tài khoản, gắn NV trên Users, toàn quyền.</li>
+    </ul>
+</section>
+}
+
 @if (showCatalog)
 {
     <section id="catalog" class="help-section admin-help-section help-section--highlight">
@@ -249,11 +302,11 @@
         <p>Các màn danh sách dùng pattern modal: <em>Thêm</em> / <em>Sửa</em> mở form trong dialog, không sang trang Edit riêng. Nếu chỉ có quyền xem, danh sách không hiện nút Thêm / Sửa / Xóa / ↑↓.</p>
         <ul>
             <li><strong>Danh mục</strong> - nhóm sản phẩm/dịch vụ; thứ tự hiển thị bằng ↑/↓.</li>
-            <li><strong>Sản phẩm</strong> - hàng hóa bán qua giỏ; bật/tắt biến thể size/màu theo từng sản phẩm; ảnh chính + ảnh theo SKU.</li>
+            <li><strong>Sản phẩm</strong> - hàng hóa bán qua giỏ; bật/tắt biến thể size/màu theo từng sản phẩm; ảnh chính + ảnh theo SKU. Ô <em>Đơn giá</em> / giá vốn: nhập số, khi rời ô hiện dạng <code>1.500.000 VNĐ</code>.</li>
             <li><strong>Dịch vụ</strong> - dịch vụ đặt lịch (không qua giỏ).</li>
             <li><strong>Màu sắc</strong> - chỉ <em>Name</em> + <em>Meaning</em> (VI/EN/JA); không có trường Description riêng.</li>
         </ul>
-        <p class="muted">Nội dung đa ngôn ngữ: ưu tiên VI; EN/JA có thể để trống (fallback VI).</p>
+        <p class="muted">Nội dung đa ngôn ngữ: ưu tiên VI; EN/JA có thể để trống (fallback VI). Tiền trên Admin và site khách dùng hậu tố <strong>VNĐ</strong> (không dùng chữ đ).</p>
     </section>
 }
 
@@ -294,8 +347,8 @@
     <section id="cai-dat" class="help-section admin-help-section">
         <h2>Cài đặt website</h2>
         <ul>
-            <li><strong>Phí ship</strong> - theo 34 tỉnh/thành (mã <code>idProvince</code>); miễn phí ship từ ngưỡng cấu hình (hiện 1.000.000đ trên site khách).</li>
-            <li><strong>Users</strong> - tạo/khóa tài khoản, gán vai trò (một người có thể nhiều vai trò); đổi vai trò có hiệu lực trong khoảng 1 phút.</li>
+            <li><strong>Phí ship</strong> - theo 34 tỉnh/thành (mã <code>idProvince</code>); miễn phí ship từ ngưỡng cấu hình (hiện 1.000.000 VNĐ trên site khách). Ô phí nhập/hiện theo định dạng tiền VNĐ.</li>
+            <li><strong>Users</strong> - tạo/khóa tài khoản, gán <strong>một</strong> vai trò; có thể <em>Gắn nhân viên</em> (hồ sơ NV đã tạo). Đổi vai trò có hiệu lực nhanh (security stamp). Xem thêm mục <a href="#nhan-vien">Nhân viên &amp; tài khoản</a>.</li>
             <li><strong>Thương hiệu &amp; logo</strong> - tên thương hiệu, logo header/footer.</li>
             <li><strong>Email &amp; thông báo</strong> / <strong>Mẫu email</strong> - SMTP và nội dung email đơn hàng, đặt lịch, …</li>
             <li><strong>Kho</strong> - ngưỡng tồn thấp / sắp hết hạn, quản lý vị trí kho.</li>
