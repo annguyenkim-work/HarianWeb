@@ -81,12 +81,13 @@ public static class EmployeeProfilePolicy
     }
 
     /// <summary>Copies the form into the entity. Self scope never touches HR fields, whatever was posted.</summary>
-    public static void Apply(EmployeeProfile profile, EmployeeProfileForm form, EmployeeEditScope scope)
+    public static void Apply(EmployeeProfile profile, EmployeeProfileForm form, EmployeeEditScope scope, bool applyPersonalEmail = true)
     {
         profile.DateOfBirth = form.DateOfBirth;
         profile.Gender = form.Gender;
         profile.Phone = Clean(form.Phone);
-        profile.PersonalEmail = Clean(form.PersonalEmail);
+        if (applyPersonalEmail)
+            profile.PersonalEmail = Clean(form.PersonalEmail);
         profile.Address = Clean(form.Address);
         profile.CitizenId = Clean(GuestValidation.NormalizeCitizenId(form.CitizenId));
         profile.EmergencyContactName = Clean(form.EmergencyContactName);
@@ -101,10 +102,11 @@ public static class EmployeeProfilePolicy
     }
 
     /// <summary>
-    /// Restores what the posted form cannot be trusted with (email, code, roles; HR fields for self)
+    /// Restores what the posted form cannot be trusted with (login email, code, roles; PersonalEmail when locked; HR fields for self)
     /// so a re-rendered form after a validation error shows stored values.
     /// </summary>
-    public static void MergeReadOnly(EmployeeProfileForm posted, EmployeeProfileForm stored, EmployeeEditScope scope)
+    public static void MergeReadOnly(
+        EmployeeProfileForm posted, EmployeeProfileForm stored, EmployeeEditScope scope, bool lockPersonalEmail = false)
     {
         posted.Id = stored.Id;
         posted.UserId = stored.UserId;
@@ -112,6 +114,8 @@ public static class EmployeeProfilePolicy
         posted.EmployeeCode = stored.EmployeeCode;
         posted.Roles = stored.Roles;
         posted.HasAccount = stored.HasAccount;
+        if (lockPersonalEmail)
+            posted.PersonalEmail = stored.PersonalEmail;
 
         if (scope == EmployeeEditScope.Hr) return;
 

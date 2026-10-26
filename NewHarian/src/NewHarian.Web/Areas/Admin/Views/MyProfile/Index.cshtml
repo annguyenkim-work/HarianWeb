@@ -5,6 +5,7 @@
     var fieldsData = new ViewDataDictionary(ViewData)
     {
         ["PersonalEditable"] = true,
+        ["EmailEditable"] = User.HasPermission(Permissions.Employees.ChangeEmail),
         ["HrEditable"] = false,
         ["ShowHrNotes"] = false
     };

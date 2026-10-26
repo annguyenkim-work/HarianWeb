@@ -1,9 +1,11 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Admin;
 using NewHarian.Application.Hr;
+using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Identity;
 
 namespace NewHarian.Web.Tests;
@@ -83,6 +85,65 @@ public class UsersFormIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
         Assert.Contains("validation-summary-errors", html);
         Assert.Contains(UserRolePolicy.RoleRequired, html);
+    }
+
+    [Fact]
+    public async Task Super_admin_can_change_login_email_and_syncs_linked_personal_email()
+    {
+        var oldEmail = $"user-old-{Guid.NewGuid():N}@test.local";
+        var newEmail = $"user-new-{Guid.NewGuid():N}@test.local";
+        string userId;
+        int profileId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            await TestUsers.EnsureRolesAsync(scope.ServiceProvider);
+            var employees = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+            var (_, _, id) = await employees.SaveAsync(new EmployeeProfileForm
+            {
+                FullName = "Đổi Email User",
+                PersonalEmail = oldEmail,
+                Status = EmployeeStatus.Active
+            }, EmployeeEditScope.Hr, null, canChangeEmail: true);
+            profileId = id!.Value;
+
+            var users = scope.ServiceProvider.GetRequiredService<IAdminUserService>();
+            var (ok, error, createdId) = await users.SaveAsync(new AdminUserSaveRequest
+            {
+                Email = oldEmail,
+                Password = TestUsers.Password,
+                Role = AppRoles.SalesStaff,
+                IsActive = true,
+                EmployeeProfileId = profileId
+            }, actorUserId: null);
+            Assert.True(ok, error);
+            userId = createdId!;
+        }
+
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SuperAdmin);
+        var form = WebUtility.HtmlDecode(await client.GetStringAsync($"/admin/Users/Edit/{userId}"));
+        Assert.Contains("data-user-email", form);
+        Assert.DoesNotContain("Chỉ Super Admin được đổi email.", form);
+        var token = AdminLoginHelper.ExtractRequestVerificationToken(form)!;
+
+        var response = await client.PostAsync("/admin/Users/Save", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Id"] = userId,
+            ["Email"] = newEmail,
+            ["Role"] = AppRoles.SalesStaff,
+            ["IsActive"] = "true",
+            ["EmployeeProfileId"] = profileId.ToString(),
+            ["__RequestVerificationToken"] = token
+        }));
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("ok").GetBoolean(), await response.Content.ReadAsStringAsync());
+
+        using var verify = _factory.Services.CreateScope();
+        var um = verify.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await um.FindByIdAsync(userId);
+        Assert.Equal(newEmail, user!.Email);
+        var profile = (await verify.ServiceProvider.GetRequiredService<IAdminEmployeeService>().GetByIdAsync(profileId))!;
+        Assert.Equal(newEmail, profile.PersonalEmail);
     }
 
     private async Task<string> CreateMultiRoleUserAsync()

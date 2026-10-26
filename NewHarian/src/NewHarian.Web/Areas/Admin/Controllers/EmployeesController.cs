@@ -46,14 +46,15 @@ public class EmployeesController(IAdminEmployeeService employees) : Controller
     [HasPermission(Permissions.Employees.Manage)]
     public async Task<IActionResult> Save(EmployeeProfileForm model, CancellationToken ct)
     {
+        var canChangeEmail = User.HasPermission(Permissions.Employees.ChangeEmail);
         var (ok, error, id) = await employees.SaveAsync(
-            model, EmployeeEditScope.Hr, User.FindFirstValue(ClaimTypes.NameIdentifier), ct);
+            model, EmployeeEditScope.Hr, User.FindFirstValue(ClaimTypes.NameIdentifier), canChangeEmail, ct);
         if (!ok)
         {
             if (model.Id is int pid && await employees.GetByIdAsync(pid, ct) is { } stored)
-                EmployeeProfilePolicy.MergeReadOnly(model, stored, EmployeeEditScope.Hr);
+                EmployeeProfilePolicy.MergeReadOnly(model, stored, EmployeeEditScope.Hr, lockPersonalEmail: !canChangeEmail);
             else if (!string.IsNullOrEmpty(model.UserId) && await employees.GetByUserIdAsync(model.UserId, ct) is { } byUser)
-                EmployeeProfilePolicy.MergeReadOnly(model, byUser, EmployeeEditScope.Hr);
+                EmployeeProfilePolicy.MergeReadOnly(model, byUser, EmployeeEditScope.Hr, lockPersonalEmail: !canChangeEmail);
             ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");
             return PartialView("_EmployeeForm", model);
         }

@@ -90,9 +90,11 @@ public sealed class AdminEmployeeService(
         => LoadFormAsync(profileId: null, userId: userId, ct);
 
     public async Task<(bool Ok, string? Error, int? Id)> SaveAsync(
-        EmployeeProfileForm form, EmployeeEditScope scope, string? actorUserId, CancellationToken ct = default)
+        EmployeeProfileForm form, EmployeeEditScope scope, string? actorUserId,
+        bool canChangeEmail = false, CancellationToken ct = default)
     {
-        logger.LogInformation("SaveEmployeeProfile Start Id={Id} UserId={UserId} Scope={Scope}", form.Id, form.UserId, scope);
+        logger.LogInformation("SaveEmployeeProfile Start Id={Id} UserId={UserId} Scope={Scope} CanChangeEmail={CanChangeEmail}",
+            form.Id, form.UserId, scope, canChangeEmail);
         try
         {
             if (EmployeeProfilePolicy.Validate(form, scope, DateOnly.FromDateTime(DateTime.Today)) is { } error)
@@ -150,7 +152,14 @@ public sealed class AdminEmployeeService(
             else if (user is not null)
                 profile.FullName = form.FullName.Trim();
 
-            EmployeeProfilePolicy.Apply(profile, form, scope);
+            // Only Super Admin (ChangeEmail) may alter PersonalEmail on update.
+            // HR create may set the initial value; self / legacy first-save cannot invent an email.
+            var applyPersonalEmail = canChangeEmail || (isNew && scope == EmployeeEditScope.Hr);
+            if (!applyPersonalEmail)
+                form.PersonalEmail = profile.PersonalEmail;
+
+            var previousPersonalEmail = profile.PersonalEmail;
+            EmployeeProfilePolicy.Apply(profile, form, scope, applyPersonalEmail);
             profile.UpdatedAt = DateTime.UtcNow;
             profile.UpdatedByUserId = actorUserId;
 
@@ -158,6 +167,25 @@ public sealed class AdminEmployeeService(
             {
                 user.FullName = profile.FullName;
                 user.UpdatedAt = DateTime.UtcNow;
+
+                // When SA changes PersonalEmail on a linked account, keep login email in sync (same SaveChanges).
+                if (applyPersonalEmail
+                    && !string.Equals(previousPersonalEmail, profile.PersonalEmail, StringComparison.OrdinalIgnoreCase))
+                {
+                    var loginEmail = profile.PersonalEmail?.Trim() ?? "";
+                    if (string.IsNullOrWhiteSpace(loginEmail))
+                        return Reject(form, "Email cá nhân bắt buộc khi nhân viên đã có tài khoản.");
+                    var normalized = loginEmail.ToUpperInvariant();
+                    var taken = await db.Users.AnyAsync(
+                        u => u.Id != user.Id && u.NormalizedEmail == normalized, ct);
+                    if (taken)
+                        return Reject(form, "Email đã được dùng cho user khác.");
+                    user.Email = loginEmail;
+                    user.UserName = loginEmail;
+                    user.NormalizedEmail = normalized;
+                    user.NormalizedUserName = normalized;
+                    user.SecurityStamp = Guid.NewGuid().ToString();
+                }
             }
 
             try
@@ -205,7 +233,7 @@ public sealed class AdminEmployeeService(
                 IsActive = request.IsActive,
                 EmployeeProfileId = profile.Id
             };
-            var (ok, error, _) = await userAdmin.SaveAsync(save, actorUserId, ct);
+            var (ok, error, _) = await userAdmin.SaveAsync(save, actorUserId, canChangeEmail: false, ct);
             if (!ok) return GrantReject(request, error ?? "Không tạo được tài khoản.");
 
             logger.LogInformation("GrantEmployeeAccount Done ProfileId={ProfileId}", request.ProfileId);

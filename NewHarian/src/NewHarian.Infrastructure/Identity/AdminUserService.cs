@@ -53,14 +53,15 @@ public sealed class AdminUserService(
     }
 
     public async Task<(bool Ok, string? Error, string? Id)> SaveAsync(
-        AdminUserSaveRequest request, string? actorUserId, CancellationToken ct = default)
+        AdminUserSaveRequest request, string? actorUserId, bool canChangeEmail = false, CancellationToken ct = default)
     {
-        logger.LogInformation("SaveUser Start Id={Id} Email={Email}", request.Id, request.Email);
+        logger.LogInformation("SaveUser Start Id={Id} Email={Email} CanChangeEmail={CanChangeEmail}",
+            request.Id, request.Email, canChangeEmail);
         try
         {
             var (ok, error, id) = request.Id is null
                 ? await CreateAsync(request, ct)
-                : await UpdateAsync(request, actorUserId, ct);
+                : await UpdateAsync(request, actorUserId, canChangeEmail, ct);
 
             if (!ok)
             {
@@ -134,7 +135,7 @@ public sealed class AdminUserService(
     }
 
     private async Task<(bool Ok, string? Error, string? Id)> UpdateAsync(
-        AdminUserSaveRequest request, string? actorUserId, CancellationToken ct)
+        AdminUserSaveRequest request, string? actorUserId, bool canChangeEmail, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(request.Id!);
         if (user is null) return (false, "Không tìm thấy user.", null);
@@ -152,6 +153,26 @@ public sealed class AdminUserService(
         if (currentRoles.Contains(AppRoles.SuperAdmin) && user.IsActive && !willBeSuperAdmin
             && !await HasOtherActiveSuperAdminAsync(user.Id))
             return (false, "Phải còn ít nhất một Super Admin đang hoạt động.", null);
+
+        var previousEmail = user.Email;
+        var emailChanged = false;
+        var newEmail = (request.Email ?? "").Trim();
+        if (!string.Equals(previousEmail, newEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!canChangeEmail)
+                return (false, "Chỉ Super Admin được đổi email.", null);
+            if (string.IsNullOrWhiteSpace(newEmail))
+                return (false, "Email bắt buộc.", null);
+            var taken = await users.FindByEmailAsync(newEmail);
+            if (taken is not null && taken.Id != user.Id)
+                return (false, "Email đã được dùng cho user khác.", null);
+
+            var setEmail = await users.SetEmailAsync(user, newEmail);
+            if (!setEmail.Succeeded) return (false, Describe(setEmail), null);
+            var setName = await users.SetUserNameAsync(user, newEmail);
+            if (!setName.Succeeded) return (false, Describe(setName), null);
+            emailChanged = true;
+        }
 
         var currentLink = await db.EmployeeProfiles.FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
         if (request.EmployeeProfileId is int newProfileId)
@@ -182,7 +203,16 @@ public sealed class AdminUserService(
         else if (!string.IsNullOrWhiteSpace(request.FullName))
             user.FullName = request.FullName.Trim();
 
-        var before = new { Roles = currentRoles, user.IsActive, user.FullName, EmployeeProfileId = currentLink?.Id };
+        if (emailChanged && currentLink is not null)
+        {
+            currentLink.PersonalEmail = newEmail;
+            currentLink.UpdatedAt = DateTime.UtcNow;
+        }
+
+        var before = new
+        {
+            Roles = currentRoles, user.IsActive, user.FullName, Email = previousEmail, EmployeeProfileId = currentLink?.Id
+        };
         var rolesChanged = !currentRoles.ToHashSet().SetEquals(roles);
         var activeChanged = user.IsActive != request.IsActive;
 
@@ -208,13 +238,17 @@ public sealed class AdminUserService(
             passwordChanged = true;
         }
 
-        if ((rolesChanged || activeChanged) && !passwordChanged)
+        if ((rolesChanged || activeChanged || emailChanged) && !passwordChanged)
             await users.UpdateSecurityStampAsync(user);
 
         await db.SaveChangesAsync(ct);
 
         await audit.WriteAsync("User.Updated", "User", user.Id, before,
-            new { Role = role, user.IsActive, user.FullName, PasswordReset = passwordChanged, request.EmployeeProfileId });
+            new
+            {
+                Role = role, user.IsActive, user.FullName, user.Email, EmailChanged = emailChanged,
+                PasswordReset = passwordChanged, request.EmployeeProfileId
+            });
         return (true, null, user.Id);
     }
 

@@ -50,7 +50,9 @@ public sealed class AdminUsersJourneyTests(E2EFixture fx)
             await page.Keyboard.PressAsync("Escape");
             await users.OpenEditAsync(email);
             await Expect(users.Role).ToHaveValueAsync(AppRoles.WarehouseStaff);
-            await Expect(users.Email).ToHaveAttributeAsync("readonly", "");
+            // Super Admin may change login email on edit (Employees.ChangeEmail).
+            await Expect(users.Email).Not.ToHaveAttributeAsync("readonly", "");
+            await Expect(users.Email).ToHaveValueAsync(email);
         });
     }
 

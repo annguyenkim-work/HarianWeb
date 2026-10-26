@@ -69,9 +69,14 @@ public interface IAdminEmployeeService
     /// <summary>By login user id (MyProfile / legacy). Null when the user does not exist.</summary>
     Task<EmployeeProfileForm?> GetByUserIdAsync(string userId, CancellationToken ct = default);
 
-    /// <summary>Creates when <see cref="EmployeeProfileForm.Id"/> is null; updates otherwise. Self scope ignores HR fields.</summary>
+    /// <summary>
+    /// Creates when <see cref="EmployeeProfileForm.Id"/> is null; updates otherwise. Self scope ignores HR fields.
+    /// <paramref name="canChangeEmail"/>: only Super Admin may change <see cref="EmployeeProfileForm.PersonalEmail"/>;
+    /// HR create may set the initial email when this is false. Self never writes email without this flag.
+    /// </summary>
     Task<(bool Ok, string? Error, int? Id)> SaveAsync(
-        EmployeeProfileForm form, EmployeeEditScope scope, string? actorUserId, CancellationToken ct = default);
+        EmployeeProfileForm form, EmployeeEditScope scope, string? actorUserId,
+        bool canChangeEmail = false, CancellationToken ct = default);
 
     /// <summary>Creates an Identity user and links it to the profile.</summary>
     Task<(bool Ok, string? Error)> GrantAccountAsync(

@@ -39,7 +39,9 @@ public class UsersController(IAdminUserService users, IAdminEmployeeService empl
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Save(AdminUserSaveRequest model, CancellationToken ct)
     {
-        var (ok, error, _) = await users.SaveAsync(model, User.FindFirstValue(ClaimTypes.NameIdentifier), ct);
+        var canChangeEmail = User.HasPermission(Permissions.Employees.ChangeEmail);
+        var (ok, error, _) = await users.SaveAsync(
+            model, User.FindFirstValue(ClaimTypes.NameIdentifier), canChangeEmail, ct);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");

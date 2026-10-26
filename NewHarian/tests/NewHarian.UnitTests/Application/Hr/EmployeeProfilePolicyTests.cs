@@ -132,6 +132,37 @@ public class EmployeeProfilePolicyTests
     }
 
     [Fact]
+    public void Apply_skips_personal_email_when_locked()
+    {
+        var profile = StoredProfile();
+        profile.PersonalEmail = "keep@x.local";
+        var form = PostedForm();
+        form.PersonalEmail = "hacked@x.local";
+
+        EmployeeProfilePolicy.Apply(profile, form, EmployeeEditScope.Hr, applyPersonalEmail: false);
+
+        Assert.Equal("keep@x.local", profile.PersonalEmail);
+        Assert.Equal("0909123456", profile.Phone);
+    }
+
+    [Fact]
+    public void MergeReadOnly_restores_personal_email_when_locked()
+    {
+        var posted = PostedForm();
+        posted.PersonalEmail = "hacked@x.local";
+        var stored = new EmployeeProfileForm
+        {
+            Id = 7, UserId = "u1", Email = "real@x.local", PersonalEmail = "keep@x.local",
+            EmployeeCode = "NV0001", HasAccount = true
+        };
+
+        EmployeeProfilePolicy.MergeReadOnly(posted, stored, EmployeeEditScope.Hr, lockPersonalEmail: true);
+
+        Assert.Equal("keep@x.local", posted.PersonalEmail);
+        Assert.Equal("real@x.local", posted.Email);
+    }
+
+    [Fact]
     public void MergeReadOnly_restores_identity_and_hr_fields_for_self()
     {
         var posted = PostedForm();
