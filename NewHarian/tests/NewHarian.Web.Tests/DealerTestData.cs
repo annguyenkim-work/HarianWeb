@@ -34,7 +34,8 @@ internal static class DealerTestData
         await db.SaveChangesAsync();
     }
 
-    public static async Task<(int ProductId, string Sku)> ProductAsync(
+    /// <summary>Creates a published product with one active SKU. Returns (ProductVariantId, Sku).</summary>
+    public static async Task<(int VariantId, string Sku)> ProductAsync(
         NewHarianWebApplicationFactory factory, string name, decimal price)
     {
         using var scope = factory.Services.CreateScope();
@@ -51,7 +52,8 @@ internal static class DealerTestData
         };
         db.Products.Add(product);
         await db.SaveChangesAsync();
-        return (product.Id, product.Variants.Single().Sku);
+        var variant = product.Variants.Single();
+        return (variant.Id, variant.Sku);
     }
 
     public static async Task<Dealer> DealerAsync(
@@ -102,9 +104,9 @@ internal static class DealerTestData
         return saved.Id;
     }
 
-    /// <summary>KIRARA-like group: 1-19 / 20-50 / Từ 51 with given % per product (one array per tier).</summary>
+    /// <summary>KIRARA-like group: 1-19 / 20-50 / Từ 51 with given % per SKU (one array per tier).</summary>
     public static async Task<int> GroupAsync(
-        NewHarianWebApplicationFactory factory, string name, int[] productIds, params decimal[][] tierPercents)
+        NewHarianWebApplicationFactory factory, string name, int[] variantIds, params decimal[][] tierPercents)
     {
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<IAdminDealerDiscountService>();
@@ -112,12 +114,12 @@ internal static class DealerTestData
         var input = new DealerDiscountGroupInput
         {
             Name = name,
-            ProductIds = productIds.ToList(),
+            ProductVariantIds = variantIds.ToList(),
             Tiers = tierPercents.Select((p, i) => new DealerDiscountTierInput
             {
                 MinQuantity = bounds[i].Min,
                 MaxQuantity = i == tierPercents.Length - 1 ? null : bounds[i].Max,
-                Percents = productIds.Select((pid, j) => (pid, p[j])).ToDictionary(x => x.pid, x => (decimal?)x.Item2),
+                Percents = variantIds.Select((vid, j) => (vid, p[j])).ToDictionary(x => x.vid, x => (decimal?)x.Item2),
             }).ToList(),
         };
         var (ok, error, id) = await service.SaveGroupAsync(input, null);

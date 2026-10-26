@@ -35,7 +35,7 @@ public static class CartPricing
 
         var discount = DealerDiscountCalculator.Calculate(
             policy,
-            cart.Items.Select(i => new DiscountLineInput(i.ProductId, i.Quantity, i.LineTotal)).ToList());
+            cart.Items.Select(i => new DiscountLineInput(i.ProductVariantId, i.Quantity, i.LineTotal)).ToList());
         var lines = cart.Items
             .Select((item, idx) =>
             {

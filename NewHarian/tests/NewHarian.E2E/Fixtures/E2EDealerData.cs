@@ -64,7 +64,7 @@ public static class E2EDealerData
             ReceivedAt = DateTime.UtcNow
         });
         await db.SaveChangesAsync();
-        return new E2EDiscountProduct(product.Id, fullName, variant.Sku, product.Slug);
+        return new E2EDiscountProduct(variant.Id, fullName, variant.Sku, product.Slug);
     }
 
     public static async Task<E2EDealer> ApprovedCompanyAsync(IServiceProvider services, DealerStatus status = DealerStatus.Approved)
@@ -130,7 +130,7 @@ public static class E2EDealerData
         var (ok, error, id) = await service.SaveGroupAsync(new DealerDiscountGroupInput
         {
             Name = name,
-            ProductIds = [coral.Id, mau.Id],
+            ProductVariantIds = [coral.Id, mau.Id],
             Tiers = [Tier(1, 19, 20, 18), Tier(20, 50, 25, 22), Tier(51, null, 30, 27)],
         }, null);
         if (!ok) throw new InvalidOperationException(error);

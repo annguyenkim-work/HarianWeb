@@ -689,20 +689,20 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.ToTable("DealerDiscountGroups");
                 });
 
-            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroupProduct", b =>
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroupVariant", b =>
                 {
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int>("ProductVariantId")
                         .HasColumnType("integer");
 
-                    b.HasKey("GroupId", "ProductId");
+                    b.HasKey("GroupId", "ProductVariantId");
 
-                    b.HasIndex("ProductId")
+                    b.HasIndex("ProductVariantId")
                         .IsUnique();
 
-                    b.ToTable("DealerDiscountGroupProducts");
+                    b.ToTable("DealerDiscountGroupVariants", (string)null);
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountOverride", b =>
@@ -720,7 +720,7 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int>("ProductVariantId")
                         .HasColumnType("integer");
 
                     b.Property<int>("TierId")
@@ -735,11 +735,11 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ProductVariantId");
 
                     b.HasIndex("TierId");
 
-                    b.HasIndex("DealerId", "TierId", "ProductId")
+                    b.HasIndex("DealerId", "TierId", "ProductVariantId")
                         .IsUnique();
 
                     b.ToTable("DealerDiscountOverrides");
@@ -750,16 +750,16 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Property<int>("TierId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int>("ProductVariantId")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Percent")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
 
-                    b.HasKey("TierId", "ProductId");
+                    b.HasKey("TierId", "ProductVariantId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ProductVariantId");
 
                     b.ToTable("DealerDiscountRates");
                 });
@@ -2842,23 +2842,23 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Navigation("BusinessLicense");
                 });
 
-            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroupProduct", b =>
+            modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroupVariant", b =>
                 {
                     b.HasOne("NewHarian.Domain.Entities.DealerDiscountGroup", "Group")
-                        .WithMany("Products")
+                        .WithMany("Variants")
                         .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NewHarian.Domain.Entities.Product", "Product")
+                    b.HasOne("NewHarian.Domain.Entities.ProductVariant", "ProductVariant")
                         .WithMany()
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Group");
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductVariant");
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountOverride", b =>
@@ -2869,9 +2869,9 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NewHarian.Domain.Entities.Product", "Product")
+                    b.HasOne("NewHarian.Domain.Entities.ProductVariant", "ProductVariant")
                         .WithMany()
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2883,16 +2883,16 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Dealer");
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductVariant");
 
                     b.Navigation("Tier");
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountRate", b =>
                 {
-                    b.HasOne("NewHarian.Domain.Entities.Product", "Product")
+                    b.HasOne("NewHarian.Domain.Entities.ProductVariant", "ProductVariant")
                         .WithMany()
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2902,7 +2902,7 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductVariant");
 
                     b.Navigation("Tier");
                 });
@@ -3361,9 +3361,9 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountGroup", b =>
                 {
-                    b.Navigation("Products");
-
                     b.Navigation("Tiers");
+
+                    b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.DealerDiscountTier", b =>

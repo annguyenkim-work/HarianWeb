@@ -17,21 +17,21 @@
 </div>
 
 <p class="muted">
-    Số lượng được cộng chung cho mọi sản phẩm trong nhóm để xét mức. Bảng mặc định áp cho mọi đại lý (trừ ô đại lý có % riêng) và có hiệu lực từ đơn tạo sau khi lưu.
+    Số lượng được cộng chung cho mọi SKU trong nhóm để xét mức. % chiết khấu gắn từng SKU. Bảng mặc định áp cho mọi đại lý (trừ ô đại lý có % riêng) và có hiệu lực từ đơn tạo sau khi lưu.
 </p>
 
-@if (Model.UnconfiguredProducts.Count > 0)
+@if (Model.UnconfiguredSkus.Count > 0)
 {
     <div data-unconfigured style="border:1px solid #f0c36d;background:#fff8e1;border-radius:8px;padding:0.75rem 1rem;margin:1rem 0">
-        <strong>Sản phẩm chưa có chiết khấu đại lý</strong> (đơn đại lý tính 0%):
+        <strong>SKU chưa có chiết khấu đại lý</strong> (đơn đại lý tính 0%):
         <ul>
-            @foreach (var p in Model.UnconfiguredProducts)
+            @foreach (var s in Model.UnconfiguredSkus)
             {
                 <li>
-                    @p.Name
+                    @s.Label
                     @if (canManage)
                     {
-                        <button type="button" class="btn-link btn-group-for-product" data-product-id="@p.ProductId">Thêm vào nhóm</button>
+                        <button type="button" class="btn-link btn-group-for-sku" data-variant-id="@s.ProductVariantId">Thêm vào nhóm</button>
                     }
                 </li>
             }
@@ -115,7 +115,7 @@
 
   document.getElementById('btn-add-group')?.addEventListener('click', () => open(''));
   document.querySelectorAll('.btn-edit-group').forEach(b => b.addEventListener('click', () => open('?id=' + b.dataset.id)));
-  document.querySelectorAll('.btn-group-for-product').forEach(b => b.addEventListener('click', () => open('?productId=' + b.dataset.productId)));
+  document.querySelectorAll('.btn-group-for-sku').forEach(b => b.addEventListener('click', () => open('?variantId=' + b.dataset.variantId)));
 })();
 </script>
 }

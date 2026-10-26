@@ -24,7 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Dealer> Dealers => Set<Dealer>();
     public DbSet<DealerDiscountGroup> DealerDiscountGroups => Set<DealerDiscountGroup>();
-    public DbSet<DealerDiscountGroupProduct> DealerDiscountGroupProducts => Set<DealerDiscountGroupProduct>();
+    public DbSet<DealerDiscountGroupVariant> DealerDiscountGroupVariants => Set<DealerDiscountGroupVariant>();
     public DbSet<DealerDiscountTier> DealerDiscountTiers => Set<DealerDiscountTier>();
     public DbSet<DealerDiscountRate> DealerDiscountRates => Set<DealerDiscountRate>();
     public DbSet<DealerDiscountOverride> DealerDiscountOverrides => Set<DealerDiscountOverride>();
@@ -265,12 +265,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Name).HasMaxLength(200);
         });
 
-        builder.Entity<DealerDiscountGroupProduct>(e =>
+        builder.Entity<DealerDiscountGroupVariant>(e =>
         {
-            e.HasKey(x => new { x.GroupId, x.ProductId });
-            e.HasIndex(x => x.ProductId).IsUnique();
-            e.HasOne(x => x.Group).WithMany(g => g.Products).HasForeignKey(x => x.GroupId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+            e.ToTable("DealerDiscountGroupVariants");
+            e.HasKey(x => new { x.GroupId, x.ProductVariantId });
+            e.HasIndex(x => x.ProductVariantId).IsUnique();
+            e.HasOne(x => x.Group).WithMany(g => g.Variants).HasForeignKey(x => x.GroupId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.ProductVariant).WithMany().HasForeignKey(x => x.ProductVariantId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<DealerDiscountTier>(e =>
@@ -280,20 +281,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
         builder.Entity<DealerDiscountRate>(e =>
         {
-            e.HasKey(x => new { x.TierId, x.ProductId });
+            e.HasKey(x => new { x.TierId, x.ProductVariantId });
             e.Property(x => x.Percent).HasPrecision(5, 2);
             e.HasOne(x => x.Tier).WithMany(t => t.Rates).HasForeignKey(x => x.TierId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.ProductVariant).WithMany().HasForeignKey(x => x.ProductVariantId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<DealerDiscountOverride>(e =>
         {
-            e.HasIndex(x => new { x.DealerId, x.TierId, x.ProductId }).IsUnique();
+            e.HasIndex(x => new { x.DealerId, x.TierId, x.ProductVariantId }).IsUnique();
             e.Property(x => x.Percent).HasPrecision(5, 2);
             e.Property(x => x.UpdatedByUserId).HasMaxLength(450);
             e.HasOne(x => x.Dealer).WithMany(d => d.DiscountOverrides).HasForeignKey(x => x.DealerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Tier).WithMany().HasForeignKey(x => x.TierId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.ProductVariant).WithMany().HasForeignKey(x => x.ProductVariantId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<OrderItem>(e =>

@@ -40,7 +40,7 @@ public sealed class AdminDealerDiscountsPage(IPage page)
 
         foreach (var (productName, values) in percents)
         {
-            await Form.Locator($"[data-products] input[type=checkbox][data-product-name=\"{productName}\"]").CheckAsync();
+            await Form.Locator("[data-products] label").Filter(new() { HasText = productName }).Locator("input[type=checkbox]").CheckAsync();
             var row = Form.Locator("[data-matrix] tbody tr").Filter(new() { HasText = productName });
             await Expect(row.Locator("input")).ToHaveCountAsync(values.Length);
             for (var t = 0; t < values.Length; t++)

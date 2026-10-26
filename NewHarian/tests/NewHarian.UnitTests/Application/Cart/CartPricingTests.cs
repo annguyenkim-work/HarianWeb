@@ -11,8 +11,8 @@ public class CartPricingTests
     private const int Mau = 2;
     private const int Loose = 3;
 
-    private static CartItemDto Item(int productId, int qty, decimal price = 100_000m)
-        => new(productId * 10, productId, $"P{productId}", "1kg", $"SKU-{productId}", price, qty, null);
+    private static CartItemDto Item(int variantId, int qty, decimal price = 100_000m)
+        => new(variantId, variantId, $"P{variantId}", "1kg", $"SKU-{variantId}", price, qty, null);
 
     private static DealerDiscountPolicy Kirara(Dictionary<(int, int), decimal>? overrides = null) => new(
     [

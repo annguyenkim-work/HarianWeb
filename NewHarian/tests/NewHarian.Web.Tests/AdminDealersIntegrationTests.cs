@@ -182,7 +182,7 @@ public class AdminDealersIntegrationTests : IClassFixture<NewHarianWebApplicatio
                 ["__RequestVerificationToken"] = token,
                 ["DealerId"] = dealer.Id.ToString(),
                 ["Cells[0].TierId"] = tierId.ToString(),
-                ["Cells[0].ProductId"] = coral.ToString(),
+                ["Cells[0].ProductVariantId"] = coral.ToString(),
                 ["Cells[0].Percent"] = "27.5",
             })));
         Assert.True(json.GetProperty("ok").GetBoolean(), json.ToString());

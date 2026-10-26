@@ -40,7 +40,7 @@
       const table = document.createElement('table');
       table.className = 'data-table discount-table';
       const head = document.createElement('tr');
-      head.innerHTML = '<th>Sản phẩm</th>';
+      head.innerHTML = '<th>SKU</th>';
       rows.forEach((row) => {
         const th = document.createElement('th');
         const min = row.querySelector('[data-tier-min]').value;

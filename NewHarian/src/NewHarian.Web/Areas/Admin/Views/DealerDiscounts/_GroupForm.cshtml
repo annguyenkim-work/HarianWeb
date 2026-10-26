@@ -4,8 +4,8 @@
     Layout = null;
     var input = Model.Input;
     var isNew = input.Id is null;
-    var selected = input.ProductIds.ToHashSet();
-    var names = Model.ProductOptions.ToDictionary(p => p.ProductId, p => p.Name);
+    var selected = input.ProductVariantIds.ToHashSet();
+    var names = Model.SkuOptions.ToDictionary(s => s.ProductVariantId, s => s.Label);
     string Pct(decimal? v) => v?.ToString("0.##", CultureInfo.InvariantCulture) ?? "";
 }
 <form id="discount-group-form" asp-area="Admin" asp-controller="DealerDiscounts" asp-action="Save" method="post" data-modal-form data-discount-group-form>
@@ -16,7 +16,7 @@
     @if (Model.DealersWithOverrides > 0)
     {
         <p class="badge badge--warning" data-overrides-warning>
-            @Model.DealersWithOverrides đại lý đang có % riêng trong nhóm này. Xóa mức hoặc bỏ sản phẩm sẽ xóa % riêng tương ứng.
+            @Model.DealersWithOverrides đại lý đang có % riêng trong nhóm này. Xóa mức hoặc bỏ SKU sẽ xóa % riêng tương ứng.
         </p>
     }
 
@@ -27,7 +27,7 @@
         </label>
     </div>
 
-    <h3 class="detail-section-title">Mức số lượng (cộng chung cả nhóm)</h3>
+    <h3 class="detail-section-title">Mức số lượng (cộng chung mọi SKU trong nhóm)</h3>
     <table class="data-table" data-tiers>
         <thead><tr><th>Từ</th><th>Đến (trống = trở lên)</th><th></th></tr></thead>
         <tbody>
@@ -47,25 +47,24 @@
     </table>
     <button type="button" class="btn-secondary" data-add-tier>Thêm mức</button>
 
-    <h3 class="detail-section-title">Sản phẩm trong nhóm</h3>
+    <h3 class="detail-section-title">SKU trong nhóm</h3>
     <div class="discount-products" data-products style="display:flex;flex-wrap:wrap;gap:0.25rem 1rem;max-height:12rem;overflow:auto">
-        @foreach (var p in Model.ProductOptions)
+        @foreach (var s in Model.SkuOptions)
         {
-            var taken = p.GroupName is not null;
+            var taken = s.GroupName is not null;
             <label class="@(taken ? "muted" : null)">
-                <input type="checkbox" name="ProductIds" value="@p.ProductId" data-product-name="@p.Name" checked="@selected.Contains(p.ProductId)" disabled="@taken" />
-                @p.Name @(taken ? $"(nhóm {p.GroupName})" : "")
+                <input type="checkbox" name="ProductVariantIds" value="@s.ProductVariantId" data-product-name="@s.Label" checked="@selected.Contains(s.ProductVariantId)" disabled="@taken" />
+                @s.Label @(taken ? $"(nhóm {s.GroupName})" : "")
             </label>
         }
     </div>
 
     <h3 class="detail-section-title">% chiết khấu mặc định</h3>
     <div data-matrix>
-        @* Initial render; dealer-discount-group.js rebuilds this table whenever tiers or products change. *@
         <table class="data-table discount-table">
             <thead>
                 <tr>
-                    <th>Sản phẩm</th>
+                    <th>SKU</th>
                     @for (var i = 0; i < input.Tiers.Count; i++)
                     {
                         <th>Mức @(i + 1)</th>
@@ -73,14 +72,14 @@
                 </tr>
             </thead>
             <tbody>
-            @foreach (var pid in input.ProductIds)
+            @foreach (var vid in input.ProductVariantIds)
             {
                 <tr>
-                    <td>@(names.GetValueOrDefault(pid) ?? $"#{pid}")</td>
+                    <td>@(names.GetValueOrDefault(vid) ?? $"#{vid}")</td>
                     @for (var i = 0; i < input.Tiers.Count; i++)
                     {
-                        input.Tiers[i].Percents.TryGetValue(pid, out var v);
-                        <td><input type="number" class="form-control" data-cell="t@(i)|@pid" value="@Pct(v)" min="0" max="100" step="0.01" required style="max-width:6rem" /></td>
+                        input.Tiers[i].Percents.TryGetValue(vid, out var v);
+                        <td><input type="number" class="form-control" data-cell="t@(i)|@vid" value="@Pct(v)" min="0" max="100" step="0.01" required style="max-width:6rem" /></td>
                     }
                 </tr>
             }

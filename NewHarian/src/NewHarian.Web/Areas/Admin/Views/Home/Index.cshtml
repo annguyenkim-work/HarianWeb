@@ -6,21 +6,32 @@
     var k = Model.Kpis;
     var startVal = Model.Range.Start.ToString("yyyy-MM-dd");
     var endVal = Model.Range.End.ToString("yyyy-MM-dd");
+    var today = ViewBag.Today as DateOnly? ?? Model.Range.End;
+    var preset7Start = today.AddDays(-6).ToString("yyyy-MM-dd");
+    var preset30Start = today.AddDays(-29).ToString("yyyy-MM-dd");
+    var todayVal = today.ToString("yyyy-MM-dd");
     var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-    var gmvLabels = (Model.GmvByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
-    var gmvValues = (Model.GmvByDay ?? []).Select(x => x.Amount).ToList();
+    var trendLabels = (Model.OrdersTrendByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
+    var trendRevenue = (Model.OrdersTrendByDay ?? []).Select(x => x.Revenue).ToList();
+    var trendOrders = (Model.OrdersTrendByDay ?? []).Select(x => x.OrderCount).ToList();
+    var topProductLabels = (Model.TopProducts ?? []).Select(x => x.Label).Reverse().ToList();
+    var topProductValues = (Model.TopProducts ?? []).Select(x => x.Amount).Reverse().ToList();
+    var categoryLabels = (Model.RevenueByCategory ?? []).Select(x => x.Label).Reverse().ToList();
+    var categoryValues = (Model.RevenueByCategory ?? []).Select(x => x.Amount).Reverse().ToList();
     var orderLabels = (Model.OrdersByStatus ?? []).Select(x => x.Label).ToList();
     var orderValues = (Model.OrdersByStatus ?? []).Select(x => x.Count).ToList();
-    var orderSourceLabels = (Model.OrdersBySource ?? []).Select(x => x.Label).ToList();
-    var orderSourceValues = (Model.OrdersBySource ?? []).Select(x => x.Count).ToList();
     var revenueSourceLabels = (Model.RevenueBySource ?? []).Select(x => x.Label).ToList();
     var revenueSourceValues = (Model.RevenueBySource ?? []).Select(x => x.Amount).ToList();
+    var paymentLabels = (Model.RevenueByPaymentMethod ?? []).Select(x => x.Label).ToList();
+    var paymentValues = (Model.RevenueByPaymentMethod ?? []).Select(x => x.Amount).ToList();
     var bookingLabels = (Model.BookingsByStatus ?? []).Select(x => x.Label).ToList();
     var bookingValues = (Model.BookingsByStatus ?? []).Select(x => x.Count).ToList();
     var bookingGmvLabels = (Model.BookingGmvByDay ?? []).Select(x => x.Date.ToString("dd/MM")).ToList();
     var bookingGmvValues = (Model.BookingGmvByDay ?? []).Select(x => x.Amount).ToList();
     var bookingCountTotal = (Model.BookingsByDay ?? []).Sum(x => x.Total);
     string Vnd(decimal v) => MoneyFormat.Vnd(v);
+    string DeltaClass(decimal? pct) => pct is null ? "dash-delta dash-delta--flat" : pct >= 0 ? "dash-delta dash-delta--up" : "dash-delta dash-delta--down";
+    string DeltaText(decimal? pct) => pct is null ? "Không so sánh được" : $"{(pct >= 0 ? "+" : "")}{pct:0.#}% so kỳ trước";
 }
 
 <div class="admin-toolbar">
@@ -36,128 +47,179 @@
         <input type="date" name="end" value="@endVal" class="form-control" required />
     </label>
     <button type="submit" class="btn-secondary">Áp dụng</button>
+    <a class="btn-secondary" href="?start=@preset7Start&amp;end=@todayVal">7 ngày</a>
+    <a class="btn-secondary" href="?start=@preset30Start&amp;end=@todayVal">30 ngày</a>
 </form>
 
-<div class="dash-kpi-grid">
-    @if (User.HasPermission(Permissions.Orders.View))
-    {
-        <a class="dash-kpi" asp-area="Admin" asp-controller="Orders" asp-action="Index">
-            <span class="dash-kpi__label">Đơn chờ xử lý</span>
-            <span class="dash-kpi__value">@k.PendingOrders</span>
-            <span class="dash-kpi__hint">PendingPayment + AwaitingConfirmation</span>
-        </a>
-    }
-    @if (User.HasPermission(Permissions.Bookings.View))
-    {
-        <a class="dash-kpi" asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index" asp-route-status="New">
-            <span class="dash-kpi__label">Booking mới</span>
-            <span class="dash-kpi__value">@k.NewBookings</span>
-        </a>
-    }
-    @if (User.HasPermission(Permissions.Inquiries.View))
-    {
-        <a class="dash-kpi" asp-area="Admin" asp-controller="Inquiries" asp-action="Index" asp-route-status="New">
-            <span class="dash-kpi__label">Liên hệ mới</span>
-            <span class="dash-kpi__value">@k.NewInquiries</span>
-        </a>
-    }
-    @if (User.HasPermission(Permissions.Applications.View))
-    {
-        <a class="dash-kpi" asp-area="Admin" asp-controller="Applications" asp-action="Index" asp-route-status="New">
-            <span class="dash-kpi__label">Hồ sơ ứng tuyển mới</span>
-            <span class="dash-kpi__value">@k.NewApplications</span>
-        </a>
-    }
-    @if (Model.Inventory is { } inv)
-    {
-        <a class="dash-kpi" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
-            <span class="dash-kpi__label">Giá trị kho</span>
-            <span class="dash-kpi__value">@Vnd(inv.TotalValue)</span>
-            <span class="dash-kpi__hint">Σ SL × giá vốn lô</span>
-        </a>
-        <a class="dash-kpi" asp-area="Admin" asp-controller="Inventory" asp-action="Index" asp-route-expiringSoon="true">
-            <span class="dash-kpi__label">Lô sắp hết hạn</span>
-            <span class="dash-kpi__value">@inv.ExpiringSoonLotCount</span>
-            <span class="dash-kpi__hint">Trong @inv.ExpiringWithinDays ngày · quá hạn: @inv.ExpiredLotCount</span>
-        </a>
-        <a class="dash-kpi" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
-            <span class="dash-kpi__label">SKU tồn thấp</span>
-            <span class="dash-kpi__value">@inv.LowStockSkuCount</span>
-            <span class="dash-kpi__hint">SKU active · tồn ≤ @inv.LowStockThreshold</span>
-        </a>
-    }
-</div>
+@{
+    var commerceKpi = Model.Commerce;
+}
+@if (showRevenue && commerceKpi is not null)
+{
+    <div class="dash-kpi-grid dash-kpi-grid--commerce" data-commerce-kpis>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Doanh thu</span>
+            <span class="dash-kpi__value" data-kpi="revenue">@Vnd(commerceKpi!.Revenue)</span>
+            <span class="@DeltaClass(commerceKpi.RevenueDeltaPct)">@DeltaText(commerceKpi.RevenueDeltaPct)</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">Số đơn hàng</span>
+            <span class="dash-kpi__value" data-kpi="orders">@commerceKpi.OrderCount.ToString("N0")</span>
+            <span class="@DeltaClass(commerceKpi.OrderCountDeltaPct)">@DeltaText(commerceKpi.OrderCountDeltaPct)</span>
+            <span class="dash-kpi__hint">Tất cả đơn tạo trong kỳ</span>
+        </div>
+        <div class="dash-kpi">
+            <span class="dash-kpi__label">AOV</span>
+            <span class="dash-kpi__value" data-kpi="aov">@Vnd(commerceKpi.Aov)</span>
+            <span class="@DeltaClass(commerceKpi.AovDeltaPct)">@DeltaText(commerceKpi.AovDeltaPct)</span>
+            <span class="dash-kpi__hint">Doanh thu / đơn đã xác nhận (@commerceKpi.RevenueOrderCount)</span>
+        </div>
+    </div>
+}
+
+@{
+    var showOps = User.HasPermission(Permissions.Orders.View)
+        || User.HasPermission(Permissions.Bookings.View)
+        || User.HasPermission(Permissions.Inquiries.View)
+        || User.HasPermission(Permissions.Applications.View)
+        || Model.Inventory is not null;
+}
+@if (showOps)
+{
+    <div class="dash-ops-strip" data-ops-strip>
+        <span class="dash-ops-strip__title">Cần xử lý</span>
+        <div class="dash-ops-strip__chips">
+            @if (User.HasPermission(Permissions.Orders.View))
+            {
+                <a class="dash-ops-chip" asp-area="Admin" asp-controller="Orders" asp-action="Index">
+                    Đơn chờ xử lý <strong>@k.PendingOrders</strong>
+                </a>
+            }
+            @if (User.HasPermission(Permissions.Bookings.View))
+            {
+                <a class="dash-ops-chip" asp-area="Admin" asp-controller="ServiceBookings" asp-action="Index" asp-route-status="New">
+                    Booking mới <strong>@k.NewBookings</strong>
+                </a>
+            }
+            @if (User.HasPermission(Permissions.Inquiries.View))
+            {
+                <a class="dash-ops-chip" asp-area="Admin" asp-controller="Inquiries" asp-action="Index" asp-route-status="New">
+                    Liên hệ mới <strong>@k.NewInquiries</strong>
+                </a>
+            }
+            @if (User.HasPermission(Permissions.Applications.View))
+            {
+                <a class="dash-ops-chip" asp-area="Admin" asp-controller="Applications" asp-action="Index" asp-route-status="New">
+                    Hồ sơ ứng tuyển mới <strong>@k.NewApplications</strong>
+                </a>
+            }
+            @if (Model.Inventory is { } inv)
+            {
+                <a class="dash-ops-chip" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+                    Giá trị kho <strong>@Vnd(inv.TotalValue)</strong>
+                </a>
+                <a class="dash-ops-chip" asp-area="Admin" asp-controller="Inventory" asp-action="Index" asp-route-expiringSoon="true">
+                    Lô sắp hết hạn <strong>@inv.ExpiringSoonLotCount</strong>
+                </a>
+                <a class="dash-ops-chip" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+                    SKU tồn thấp <strong>@inv.LowStockSkuCount</strong>
+                </a>
+            }
+        </div>
+    </div>
+}
 
 @if (showRevenue)
 {
     <div class="dash-charts">
-        <section class="dash-chart-card dash-chart-card--wide">
+        <section class="dash-chart-card dash-chart-card--wide dash-chart-card--compact">
             <div class="dash-chart-card__head">
                 <div>
-                    <h2>GMV đơn hàng đã xác nhận</h2>
-                    <p class="muted">Confirmed / Processing / Shipped / Delivered theo ngày tạo</p>
+                    <h2>Doanh thu và số đơn theo ngày</h2>
+                    <p class="muted">Doanh thu: Confirmed / Processing / Shipped / Delivered · Số đơn: mọi trạng thái</p>
                 </div>
                 <div class="dash-chart-total">
                     <span class="dash-chart-total__label">Tổng GMV</span>
                     <span class="dash-chart-total__value">@Vnd(Model.OrderGmvTotal)</span>
                 </div>
             </div>
-            <canvas id="chart-gmv" height="120"></canvas>
+            <canvas id="chart-orders-trend" height="100"></canvas>
         </section>
-        <section class="dash-chart-card dash-chart-card--wide">
-            <div class="dash-chart-card__head">
-                <div>
-                    <h2>GMV đặt lịch dịch vụ</h2>
-                    <p class="muted">Ước tính theo giá variant hiện tại (không tính đã hủy) · @bookingCountTotal booking</p>
-                </div>
-                <div class="dash-chart-total">
-                    <span class="dash-chart-total__label">Tổng GMV (ước tính)</span>
-                    <span class="dash-chart-total__value">@Vnd(Model.BookingGmvTotal)</span>
-                </div>
-            </div>
-            <canvas id="chart-bookings-gmv" height="120"></canvas>
-            @if (bookingCountTotal == 0)
+
+        <section class="dash-chart-card dash-chart-card--compact">
+            <h2>Top 10 sản phẩm</h2>
+            <p class="muted">Theo doanh thu dòng (đơn đã xác nhận)</p>
+            <canvas id="chart-top-products" height="110"></canvas>
+            @if (Model.TopProducts is null || Model.TopProducts.Count == 0)
             {
-                <p class="muted">Không có booking trong khoảng đã chọn.</p>
+                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
             }
         </section>
-        <section class="dash-chart-card">
-            <h2>Đơn hàng theo nguồn</h2>
-            <p class="muted">Số đơn theo Source trong khoảng đã chọn</p>
-            <canvas id="chart-orders-source"></canvas>
-            @if (Model.OrdersBySource is null || Model.OrdersBySource.Count == 0)
+
+        <section class="dash-chart-card dash-chart-card--compact">
+            <h2>Doanh thu theo danh mục</h2>
+            <p class="muted">Theo danh mục sản phẩm</p>
+            <canvas id="chart-revenue-category" height="110"></canvas>
+            @if (Model.RevenueByCategory is null || Model.RevenueByCategory.Count == 0)
             {
-                <p class="muted">Không có đơn trong khoảng đã chọn.</p>
+                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
             }
         </section>
-        <section class="dash-chart-card">
+
+        <section class="dash-chart-card dash-chart-card--compact">
             <div class="dash-chart-card__head">
                 <div>
                     <h2>Doanh thu theo nguồn</h2>
-                    <p class="muted">Confirmed / Processing / Shipped / Delivered</p>
+                    <p class="muted">Website / Cửa hàng / Shopee / TikTok</p>
                 </div>
                 <div class="dash-chart-total">
                     <span class="dash-chart-total__label">Tổng</span>
                     <span class="dash-chart-total__value">@Vnd(Model.OrderRevenueBySourceTotal)</span>
                 </div>
             </div>
-            <canvas id="chart-revenue-source"></canvas>
+            <canvas id="chart-revenue-source" height="100"></canvas>
             @if (Model.RevenueBySource is null || Model.RevenueBySource.Count == 0)
             {
                 <p class="muted">Không có doanh thu ghi nhận trong khoảng đã chọn.</p>
             }
         </section>
-        <section class="dash-chart-card">
+
+        <section class="dash-chart-card dash-chart-card--compact">
+            <h2>Phương thức thanh toán</h2>
+            <p class="muted">Doanh thu đơn đã xác nhận</p>
+            <canvas id="chart-payment-method" height="100"></canvas>
+            @if (Model.RevenueByPaymentMethod is null || Model.RevenueByPaymentMethod.Count == 0)
+            {
+                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
+            }
+        </section>
+
+        <section class="dash-chart-card dash-chart-card--compact">
             <h2>Đơn hàng theo status</h2>
-            <canvas id="chart-orders-status"></canvas>
+            <canvas id="chart-orders-status" height="100"></canvas>
             @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
             {
                 <p class="muted">Không có đơn trong khoảng đã chọn.</p>
             }
         </section>
-        <section class="dash-chart-card">
+
+        <section class="dash-chart-card dash-chart-card--compact dash-chart-card--secondary">
+            <div class="dash-chart-card__head">
+                <div>
+                    <h2>GMV đặt lịch dịch vụ</h2>
+                    <p class="muted">Ước tính theo giá variant · @bookingCountTotal booking</p>
+                </div>
+                <div class="dash-chart-total">
+                    <span class="dash-chart-total__label">Tổng</span>
+                    <span class="dash-chart-total__value">@Vnd(Model.BookingGmvTotal)</span>
+                </div>
+            </div>
+            <canvas id="chart-bookings-gmv" height="90"></canvas>
+        </section>
+
+        <section class="dash-chart-card dash-chart-card--compact dash-chart-card--secondary">
             <h2>Booking theo status</h2>
-            <canvas id="chart-bookings-status"></canvas>
+            <canvas id="chart-bookings-status" height="90"></canvas>
             @if (Model.BookingsByStatus is null || Model.BookingsByStatus.Count == 0)
             {
                 <p class="muted">Không có booking trong khoảng đã chọn.</p>
@@ -172,20 +234,116 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 (() => {
-  const gmvLabels = @Html.Raw(JsonSerializer.Serialize(gmvLabels, jsonOpts));
-  const gmvValues = @Html.Raw(JsonSerializer.Serialize(gmvValues, jsonOpts));
+  const trendLabels = @Html.Raw(JsonSerializer.Serialize(trendLabels, jsonOpts));
+  const trendRevenue = @Html.Raw(JsonSerializer.Serialize(trendRevenue, jsonOpts));
+  const trendOrders = @Html.Raw(JsonSerializer.Serialize(trendOrders, jsonOpts));
+  const topProductLabels = @Html.Raw(JsonSerializer.Serialize(topProductLabels, jsonOpts));
+  const topProductValues = @Html.Raw(JsonSerializer.Serialize(topProductValues, jsonOpts));
+  const categoryLabels = @Html.Raw(JsonSerializer.Serialize(categoryLabels, jsonOpts));
+  const categoryValues = @Html.Raw(JsonSerializer.Serialize(categoryValues, jsonOpts));
   const orderLabels = @Html.Raw(JsonSerializer.Serialize(orderLabels, jsonOpts));
   const orderValues = @Html.Raw(JsonSerializer.Serialize(orderValues, jsonOpts));
-  const orderSourceLabels = @Html.Raw(JsonSerializer.Serialize(orderSourceLabels, jsonOpts));
-  const orderSourceValues = @Html.Raw(JsonSerializer.Serialize(orderSourceValues, jsonOpts));
   const revenueSourceLabels = @Html.Raw(JsonSerializer.Serialize(revenueSourceLabels, jsonOpts));
   const revenueSourceValues = @Html.Raw(JsonSerializer.Serialize(revenueSourceValues, jsonOpts));
+  const paymentLabels = @Html.Raw(JsonSerializer.Serialize(paymentLabels, jsonOpts));
+  const paymentValues = @Html.Raw(JsonSerializer.Serialize(paymentValues, jsonOpts));
   const bookingLabels = @Html.Raw(JsonSerializer.Serialize(bookingLabels, jsonOpts));
   const bookingValues = @Html.Raw(JsonSerializer.Serialize(bookingValues, jsonOpts));
   const bookingGmvLabels = @Html.Raw(JsonSerializer.Serialize(bookingGmvLabels, jsonOpts));
   const bookingGmvValues = @Html.Raw(JsonSerializer.Serialize(bookingGmvValues, jsonOpts));
   const palette = ['#2d6a4f','#1d3557','#457b9d','#e9c46a','#f4a261','#e76f51','#6c757d','#264653'];
   const money = v => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
+
+  const trendEl = document.getElementById('chart-orders-trend');
+  if (trendEl) {
+    new Chart(trendEl, {
+      data: {
+        labels: trendLabels,
+        datasets: [
+          {
+            type: 'line',
+            label: 'Doanh thu',
+            data: trendRevenue,
+            borderColor: '#2d6a4f',
+            backgroundColor: 'rgba(45,106,79,0.12)',
+            fill: true,
+            tension: 0.25,
+            yAxisID: 'yMoney'
+          },
+          {
+            type: 'bar',
+            label: 'Số đơn',
+            data: trendOrders,
+            backgroundColor: 'rgba(29,53,87,0.45)',
+            yAxisID: 'yCount',
+            order: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: ctx => ctx.dataset.yAxisID === 'yMoney'
+                ? `${ctx.dataset.label}: ${money(ctx.parsed.y ?? 0)}`
+                : `${ctx.dataset.label}: ${ctx.parsed.y ?? 0}`
+            }
+          }
+        },
+        scales: {
+          yMoney: {
+            type: 'linear',
+            position: 'left',
+            beginAtZero: true,
+            ticks: { callback: v => Number(v).toLocaleString('vi-VN') }
+          },
+          yCount: {
+            type: 'linear',
+            position: 'right',
+            beginAtZero: true,
+            grid: { drawOnChartArea: false },
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
+
+  function horizontalMoney(id, labels, values, color) {
+    const el = document.getElementById(id);
+    if (!el || !labels.length) return;
+    new Chart(el, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: color,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => money(ctx.parsed.x ?? 0) } }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: { callback: v => Number(v).toLocaleString('vi-VN') }
+          }
+        }
+      }
+    });
+  }
+
+  horizontalMoney('chart-top-products', topProductLabels, topProductValues, '#2d6a4f');
+  horizontalMoney('chart-revenue-category', categoryLabels, categoryValues, '#1d3557');
 
   function lineMoneyChart(el, labels, values, color, fill) {
     if (!el) return;
@@ -218,7 +376,6 @@
     });
   }
 
-  lineMoneyChart(document.getElementById('chart-gmv'), gmvLabels, gmvValues, '#2d6a4f', 'rgba(45,106,79,0.12)');
   lineMoneyChart(document.getElementById('chart-bookings-gmv'), bookingGmvLabels, bookingGmvValues, '#1d3557', 'rgba(29,53,87,0.12)');
 
   function doughnut(id, labels, values, moneyMode) {
@@ -245,8 +402,8 @@
     });
   }
 
-  doughnut('chart-orders-source', orderSourceLabels, orderSourceValues, false);
   doughnut('chart-revenue-source', revenueSourceLabels, revenueSourceValues, true);
+  doughnut('chart-payment-method', paymentLabels, paymentValues, true);
   doughnut('chart-orders-status', orderLabels, orderValues, false);
   doughnut('chart-bookings-status', bookingLabels, bookingValues, false);
 })();

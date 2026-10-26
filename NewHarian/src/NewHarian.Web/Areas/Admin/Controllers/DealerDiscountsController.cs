@@ -14,9 +14,9 @@ public class DealerDiscountsController(IAdminDealerDiscountService discounts) : 
 
     [HttpGet]
     [HasPermission(Permissions.Dealers.ManageDiscounts)]
-    public async Task<IActionResult> Edit(int? id, int? productId, CancellationToken ct)
+    public async Task<IActionResult> Edit(int? id, int? variantId, CancellationToken ct)
     {
-        var model = await discounts.GetGroupEditAsync(id, productId, ct);
+        var model = await discounts.GetGroupEditAsync(id, variantId, ct);
         if (id is not null && model.Input.Id is null) return NotFound();
         return PartialView("_GroupForm", model);
     }

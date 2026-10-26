@@ -10,6 +10,7 @@ namespace NewHarian.Infrastructure.Dashboard;
 public sealed class AdminDashboardService(AppDbContext db, IInventoryService inventory) : IAdminDashboardService
 {
     private const int MaxRangeDays = 366;
+    private const int TopProductLimit = 10;
 
     private static readonly OrderStatus[] PendingOrderStatuses =
     [
@@ -62,70 +63,76 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
                 invSummary.ExpiredLotCount);
         }
 
+        CommerceKpiDto? commerce = null;
+        if (includeCharts)
+            commerce = await BuildCommerceKpisAsync(range, ct);
+
         if (!includeCharts)
         {
             return new AdminDashboardDto { Range = range, Kpis = kpis, Inventory = invDto };
         }
 
-        var gmvRaw = await db.Orders.AsNoTracking()
-            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive
-                        && ConfirmedRevenueStatuses.Contains(o.Status))
-            .Select(o => new { o.CreatedAt, o.Total })
+        var allOrdersRaw = await db.Orders.AsNoTracking()
+            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive)
+            .Select(o => new { o.CreatedAt, o.Total, o.Status, o.Source, o.PaymentMethod })
             .ToListAsync(ct);
 
-        var gmvByLocalDay = gmvRaw
-            .GroupBy(x => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(
-                DateTime.SpecifyKind(x.CreatedAt, DateTimeKind.Utc), LocalTz)))
+        var orderCountByLocalDay = allOrdersRaw
+            .GroupBy(x => ToLocalDate(x.CreatedAt))
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var revenueOrders = allOrdersRaw.Where(x => ConfirmedRevenueStatuses.Contains(x.Status)).ToList();
+        var gmvByLocalDay = revenueOrders
+            .GroupBy(x => ToLocalDate(x.CreatedAt))
             .ToDictionary(g => g.Key, g => g.Sum(x => x.Total));
 
+        var ordersTrendByDay = new List<DashboardDayTrendDto>();
         var gmvByDay = new List<DashboardDayPointDto>();
         for (var d = range.Start; d <= range.End; d = d.AddDays(1))
-            gmvByDay.Add(new DashboardDayPointDto(d, gmvByLocalDay.GetValueOrDefault(d)));
-        var orderGmvTotal = gmvRaw.Sum(x => x.Total);
+        {
+            var rev = gmvByLocalDay.GetValueOrDefault(d);
+            var cnt = orderCountByLocalDay.GetValueOrDefault(d);
+            ordersTrendByDay.Add(new DashboardDayTrendDto(d, rev, cnt));
+            gmvByDay.Add(new DashboardDayPointDto(d, rev));
+        }
 
-        var orderStatusRaw = await db.Orders.AsNoTracking()
-            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive)
-            .GroupBy(o => o.Status)
-            .Select(g => new { Status = g.Key, Count = g.Count() })
-            .ToListAsync(ct);
+        var orderGmvTotal = revenueOrders.Sum(x => x.Total);
 
         var ordersByStatus = Enum.GetValues<OrderStatus>()
             .Select(s => new DashboardStatusCountDto(
                 s.ToString(),
                 LabelOrderStatus(s),
-                orderStatusRaw.FirstOrDefault(x => x.Status == s)?.Count ?? 0))
+                allOrdersRaw.Count(x => x.Status == s)))
             .Where(x => x.Count > 0)
             .ToList();
-
-        var orderSourceCountRaw = await db.Orders.AsNoTracking()
-            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive)
-            .GroupBy(o => o.Source)
-            .Select(g => new { Source = g.Key, Count = g.Count() })
-            .ToListAsync(ct);
 
         var ordersBySource = Enum.GetValues<OrderSource>()
             .Select(s => new DashboardStatusCountDto(
                 s.ToString(),
                 OrderSourceLabels.Vi(s),
-                orderSourceCountRaw.FirstOrDefault(x => x.Source == s)?.Count ?? 0))
+                allOrdersRaw.Count(x => x.Source == s)))
             .Where(x => x.Count > 0)
             .ToList();
-
-        var orderSourceRevenueRaw = await db.Orders.AsNoTracking()
-            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive
-                        && ConfirmedRevenueStatuses.Contains(o.Status))
-            .GroupBy(o => o.Source)
-            .Select(g => new { Source = g.Key, Amount = g.Sum(x => x.Total) })
-            .ToListAsync(ct);
 
         var revenueBySource = Enum.GetValues<OrderSource>()
             .Select(s => new DashboardSourceAmountDto(
                 s.ToString(),
                 OrderSourceLabels.Vi(s),
-                orderSourceRevenueRaw.FirstOrDefault(x => x.Source == s)?.Amount ?? 0m))
+                revenueOrders.Where(x => x.Source == s).Sum(x => x.Total)))
             .Where(x => x.Amount > 0)
             .ToList();
         var orderRevenueBySourceTotal = revenueBySource.Sum(x => x.Amount);
+
+        var revenueByPayment = Enum.GetValues<PaymentMethod>()
+            .Select(m => new DashboardSourceAmountDto(
+                m.ToString(),
+                PaymentMethodLabels.Vi(m),
+                revenueOrders.Where(x => x.PaymentMethod == m).Sum(x => x.Total)))
+            .Where(x => x.Amount > 0)
+            .ToList();
+
+        var topProducts = await LoadTopProductsAsync(utcFrom, utcToExclusive, ct);
+        var revenueByCategory = await LoadRevenueByCategoryAsync(utcFrom, utcToExclusive, ct);
 
         var bookingStatusRaw = await db.ServiceBookings.AsNoTracking()
             .Where(b => b.CreatedAt >= utcFrom && b.CreatedAt < utcToExclusive)
@@ -153,8 +160,7 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
             .ToListAsync(ct);
 
         var bookingByLocalDay = bookingRaw
-            .GroupBy(x => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(
-                DateTime.SpecifyKind(x.CreatedAt, DateTimeKind.Utc), LocalTz)))
+            .GroupBy(x => ToLocalDate(x.CreatedAt))
             .ToDictionary(
                 g => g.Key,
                 g => (
@@ -177,8 +183,13 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
         {
             Range = range,
             Kpis = kpis,
+            Commerce = commerce,
+            OrdersTrendByDay = ordersTrendByDay,
             GmvByDay = gmvByDay,
             OrderGmvTotal = orderGmvTotal,
+            TopProducts = topProducts,
+            RevenueByCategory = revenueByCategory,
+            RevenueByPaymentMethod = revenueByPayment,
             OrdersByStatus = ordersByStatus,
             OrdersBySource = ordersBySource,
             RevenueBySource = revenueBySource,
@@ -191,8 +202,102 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
         };
     }
 
+    private async Task<CommerceKpiDto> BuildCommerceKpisAsync(DashboardDateRange range, CancellationToken ct)
+    {
+        var current = await SumCommerceAsync(range, ct);
+        var previous = await SumCommerceAsync(DashboardKpiMath.PreviousPeriod(range), ct);
+        var aov = DashboardKpiMath.AverageOrderValue(current.Revenue, current.RevenueOrderCount);
+        var prevAov = DashboardKpiMath.AverageOrderValue(previous.Revenue, previous.RevenueOrderCount);
+        return new CommerceKpiDto(
+            current.Revenue,
+            current.OrderCount,
+            current.RevenueOrderCount,
+            aov,
+            DashboardKpiMath.DeltaPercent(current.Revenue, previous.Revenue),
+            DashboardKpiMath.DeltaPercent(current.OrderCount, previous.OrderCount),
+            DashboardKpiMath.DeltaPercent(aov, prevAov));
+    }
+
+    private async Task<(decimal Revenue, int OrderCount, int RevenueOrderCount)> SumCommerceAsync(
+        DashboardDateRange range, CancellationToken ct)
+    {
+        var (utcFrom, utcToExclusive) = ToUtcBounds(range.Start, range.End);
+        var rows = await db.Orders.AsNoTracking()
+            .Where(o => o.CreatedAt >= utcFrom && o.CreatedAt < utcToExclusive)
+            .Select(o => new { o.Total, o.Status })
+            .ToListAsync(ct);
+        var orderCount = rows.Count;
+        var revenueRows = rows.Where(x => ConfirmedRevenueStatuses.Contains(x.Status)).ToList();
+        return (revenueRows.Sum(x => x.Total), orderCount, revenueRows.Count);
+    }
+
+    private async Task<IReadOnlyList<DashboardNamedAmountDto>> LoadTopProductsAsync(
+        DateTime utcFrom, DateTime utcToExclusive, CancellationToken ct)
+    {
+        var rows = await db.OrderItems.AsNoTracking()
+            .Where(i => i.Order.CreatedAt >= utcFrom && i.Order.CreatedAt < utcToExclusive
+                        && ConfirmedRevenueStatuses.Contains(i.Order.Status))
+            .GroupBy(i => i.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                ProductName = g.Max(x => x.ProductName),
+                Amount = g.Sum(x => x.LineTotal)
+            })
+            .OrderByDescending(x => x.Amount)
+            .Take(TopProductLimit)
+            .ToListAsync(ct);
+
+        return rows
+            .Select(x => new DashboardNamedAmountDto(
+                x.ProductId.ToString(),
+                string.IsNullOrWhiteSpace(x.ProductName) ? $"SP #{x.ProductId}" : x.ProductName!,
+                x.Amount))
+            .ToList();
+    }
+
+    private async Task<IReadOnlyList<DashboardNamedAmountDto>> LoadRevenueByCategoryAsync(
+        DateTime utcFrom, DateTime utcToExclusive, CancellationToken ct)
+    {
+        var rows = await (
+            from item in db.OrderItems.AsNoTracking()
+            join product in db.Products.AsNoTracking() on item.ProductId equals product.Id into products
+            from product in products.DefaultIfEmpty()
+            join cat in db.Categories.AsNoTracking() on product.CategoryId equals cat.Id into cats
+            from cat in cats.DefaultIfEmpty()
+            join tr in db.CategoryTranslations.AsNoTracking().Where(t => t.LanguageCode == "vi")
+                on cat.Id equals tr.CategoryId into trs
+            from tr in trs.DefaultIfEmpty()
+            where item.Order.CreatedAt >= utcFrom && item.Order.CreatedAt < utcToExclusive
+                  && ConfirmedRevenueStatuses.Contains(item.Order.Status)
+            group item by new
+            {
+                CategoryId = product != null ? product.CategoryId : (int?)null,
+                Name = tr != null ? tr.Name : null
+            }
+            into g
+            select new
+            {
+                g.Key.CategoryId,
+                g.Key.Name,
+                Amount = g.Sum(x => x.LineTotal)
+            })
+            .OrderByDescending(x => x.Amount)
+            .ToListAsync(ct);
+
+        return rows
+            .Select(x => new DashboardNamedAmountDto(
+                x.CategoryId?.ToString() ?? "none",
+                string.IsNullOrWhiteSpace(x.Name) ? "Không danh mục" : x.Name!,
+                x.Amount))
+            .ToList();
+    }
+
+    public static DateOnly TodayLocal()
+        => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, LocalTz));
+
     public static DashboardDateRange NormalizeRange(DateOnly? start, DateOnly? end)
-        => NormalizeRange(start, end, DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, LocalTz)));
+        => NormalizeRange(start, end, TodayLocal());
 
     /// <summary>Defaults to the last 30 days ending <paramref name="today"/>; swaps reversed bounds; caps at 366 days.</summary>
     public static DashboardDateRange NormalizeRange(DateOnly? start, DateOnly? end, DateOnly today)
@@ -210,6 +315,10 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
 
         return new DashboardDateRange(s, e);
     }
+
+    private static DateOnly ToLocalDate(DateTime utc)
+        => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(utc, DateTimeKind.Utc), LocalTz));
 
     private static (DateTime UtcFrom, DateTime UtcToExclusive) ToUtcBounds(DateOnly start, DateOnly end)
     {

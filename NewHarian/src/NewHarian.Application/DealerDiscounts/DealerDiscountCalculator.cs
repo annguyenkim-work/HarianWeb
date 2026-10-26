@@ -3,21 +3,21 @@ using NewHarian.Domain.Enums;
 namespace NewHarian.Application.DealerDiscounts;
 
 public sealed record DiscountTierConfig(
-    int TierId, int MinQuantity, int? MaxQuantity, IReadOnlyDictionary<int, decimal> DefaultPercentByProduct);
+    int TierId, int MinQuantity, int? MaxQuantity, IReadOnlyDictionary<int, decimal> DefaultPercentByVariant);
 
 public sealed record DiscountGroupConfig(
-    int GroupId, string Name, IReadOnlyCollection<int> ProductIds, IReadOnlyList<DiscountTierConfig> Tiers);
+    int GroupId, string Name, IReadOnlyCollection<int> ProductVariantIds, IReadOnlyList<DiscountTierConfig> Tiers);
 
 /// <summary>Discount table for one dealer: shared groups/tiers + that dealer's per-cell overrides.</summary>
 public sealed record DealerDiscountPolicy(
     IReadOnlyList<DiscountGroupConfig> Groups,
-    IReadOnlyDictionary<(int TierId, int ProductId), decimal> Overrides)
+    IReadOnlyDictionary<(int TierId, int ProductVariantId), decimal> Overrides)
 {
     public static DealerDiscountPolicy Empty { get; } =
         new([], new Dictionary<(int, int), decimal>());
 }
 
-public sealed record DiscountLineInput(int ProductId, int Quantity, decimal LineTotal, decimal? ManualPercent = null);
+public sealed record DiscountLineInput(int ProductVariantId, int Quantity, decimal LineTotal, decimal? ManualPercent = null);
 
 public sealed record DiscountLineResult(
     decimal Percent,
@@ -33,15 +33,15 @@ public static class DealerDiscountCalculator
 {
     public static DiscountResult Calculate(DealerDiscountPolicy policy, IReadOnlyList<DiscountLineInput> lines)
     {
-        var groupByProduct = new Dictionary<int, DiscountGroupConfig>();
+        var groupByVariant = new Dictionary<int, DiscountGroupConfig>();
         foreach (var g in policy.Groups)
-            foreach (var pid in g.ProductIds)
-                groupByProduct.TryAdd(pid, g);
+            foreach (var vid in g.ProductVariantIds)
+                groupByVariant.TryAdd(vid, g);
 
         var qtyByGroup = new Dictionary<int, int>();
         foreach (var line in lines)
         {
-            if (groupByProduct.TryGetValue(line.ProductId, out var g))
+            if (groupByVariant.TryGetValue(line.ProductVariantId, out var g))
                 qtyByGroup[g.GroupId] = qtyByGroup.GetValueOrDefault(g.GroupId) + line.Quantity;
         }
 
@@ -51,7 +51,7 @@ public static class DealerDiscountCalculator
             decimal policyPercent = 0;
             string? label = null;
             var source = DealerDiscountSource.None;
-            var unconfigured = !groupByProduct.TryGetValue(line.ProductId, out var group);
+            var unconfigured = !groupByVariant.TryGetValue(line.ProductVariantId, out var group);
 
             if (group is not null)
             {
@@ -59,12 +59,12 @@ public static class DealerDiscountCalculator
                 if (tier is not null)
                 {
                     label = TierLabel(group.Name, tier.MinQuantity, tier.MaxQuantity);
-                    if (policy.Overrides.TryGetValue((tier.TierId, line.ProductId), out var own))
+                    if (policy.Overrides.TryGetValue((tier.TierId, line.ProductVariantId), out var own))
                     {
                         policyPercent = own;
                         source = DealerDiscountSource.DealerOverride;
                     }
-                    else if (tier.DefaultPercentByProduct.TryGetValue(line.ProductId, out var def))
+                    else if (tier.DefaultPercentByVariant.TryGetValue(line.ProductVariantId, out var def))
                     {
                         policyPercent = def;
                         source = DealerDiscountSource.Default;

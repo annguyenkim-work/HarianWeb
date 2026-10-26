@@ -1,6 +1,6 @@
 namespace NewHarian.Domain.Entities;
 
-/// <summary>Products whose quantities are summed to pick a tier (e.g. all KIRARA CREAM colors).</summary>
+/// <summary>SKUs whose quantities are summed to pick a tier (e.g. all KIRARA CREAM variants).</summary>
 public class DealerDiscountGroup
 {
     public int Id { get; set; }
@@ -9,17 +9,17 @@ public class DealerDiscountGroup
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
-    public ICollection<DealerDiscountGroupProduct> Products { get; set; } = new List<DealerDiscountGroupProduct>();
+    public ICollection<DealerDiscountGroupVariant> Variants { get; set; } = new List<DealerDiscountGroupVariant>();
     public ICollection<DealerDiscountTier> Tiers { get; set; } = new List<DealerDiscountTier>();
 }
 
-public class DealerDiscountGroupProduct
+public class DealerDiscountGroupVariant
 {
     public int GroupId { get; set; }
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
 
     public DealerDiscountGroup Group { get; set; } = null!;
-    public Product Product { get; set; } = null!;
+    public ProductVariant ProductVariant { get; set; } = null!;
 }
 
 public class DealerDiscountTier
@@ -38,11 +38,11 @@ public class DealerDiscountTier
 public class DealerDiscountRate
 {
     public int TierId { get; set; }
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
     public decimal Percent { get; set; }
 
     public DealerDiscountTier Tier { get; set; } = null!;
-    public Product Product { get; set; } = null!;
+    public ProductVariant ProductVariant { get; set; } = null!;
 }
 
 public class DealerDiscountOverride
@@ -50,12 +50,12 @@ public class DealerDiscountOverride
     public int Id { get; set; }
     public int DealerId { get; set; }
     public int TierId { get; set; }
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
     public decimal Percent { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public string? UpdatedByUserId { get; set; }
 
     public Dealer Dealer { get; set; } = null!;
     public DealerDiscountTier Tier { get; set; } = null!;
-    public Product Product { get; set; } = null!;
+    public ProductVariant ProductVariant { get; set; } = null!;
 }

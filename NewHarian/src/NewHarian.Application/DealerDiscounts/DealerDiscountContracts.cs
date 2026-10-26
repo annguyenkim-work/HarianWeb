@@ -4,7 +4,7 @@ public class DealerDiscountGroupInput
 {
     public int? Id { get; set; }
     public string Name { get; set; } = "";
-    public List<int> ProductIds { get; set; } = new();
+    public List<int> ProductVariantIds { get; set; } = new();
     public List<DealerDiscountTierInput> Tiers { get; set; } = new();
 }
 
@@ -14,11 +14,11 @@ public class DealerDiscountTierInput
     public int? Id { get; set; }
     public int MinQuantity { get; set; }
     public int? MaxQuantity { get; set; }
-    /// <summary>Key = ProductId.</summary>
+    /// <summary>Key = ProductVariantId.</summary>
     public Dictionary<int, decimal?> Percents { get; set; } = new();
 }
 
-public record DealerDiscountProductDto(int ProductId, string Name);
+public record DealerDiscountSkuDto(int ProductVariantId, string Label, string Sku);
 
 public record DealerDiscountTierDto(int Id, int MinQuantity, int? MaxQuantity)
 {
@@ -29,20 +29,20 @@ public record DealerDiscountGroupDto(
     int Id,
     string Name,
     IReadOnlyList<DealerDiscountTierDto> Tiers,
-    IReadOnlyList<DealerDiscountProductDto> Products,
-    IReadOnlyDictionary<(int TierId, int ProductId), decimal> Rates);
+    IReadOnlyList<DealerDiscountSkuDto> Skus,
+    IReadOnlyDictionary<(int TierId, int ProductVariantId), decimal> Rates);
 
 public record DealerDiscountOverviewDto(
     IReadOnlyList<DealerDiscountGroupDto> Groups,
-    IReadOnlyList<DealerDiscountProductDto> UnconfiguredProducts);
+    IReadOnlyList<DealerDiscountSkuDto> UnconfiguredSkus);
 
-/// <summary>Product choice in the group modal; <see cref="GroupName"/> set when it already belongs to another group.</summary>
-public record DealerDiscountProductOptionDto(int ProductId, string Name, string? GroupName);
+/// <summary>SKU choice in the group modal; <see cref="GroupName"/> set when it already belongs to another group.</summary>
+public record DealerDiscountSkuOptionDto(int ProductVariantId, string Label, string Sku, string? GroupName);
 
 public class DealerDiscountGroupEditModel
 {
     public DealerDiscountGroupInput Input { get; set; } = new();
-    public IReadOnlyList<DealerDiscountProductOptionDto> ProductOptions { get; set; } = [];
+    public IReadOnlyList<DealerDiscountSkuOptionDto> SkuOptions { get; set; } = [];
     public int DealersWithOverrides { get; set; }
 }
 
@@ -50,12 +50,12 @@ public record DealerDiscountOverridesDto(
     int DealerId,
     string DealerName,
     IReadOnlyList<DealerDiscountGroupDto> Groups,
-    IReadOnlyDictionary<(int TierId, int ProductId), decimal> Overrides);
+    IReadOnlyDictionary<(int TierId, int ProductVariantId), decimal> Overrides);
 
 public class DealerDiscountOverrideCell
 {
     public int TierId { get; set; }
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
     /// <summary>Null = follow the default table.</summary>
     public decimal? Percent { get; set; }
 }
@@ -70,8 +70,8 @@ public class DealerDiscountOverridesInput
 public interface IAdminDealerDiscountService
 {
     Task<DealerDiscountOverviewDto> GetOverviewAsync(CancellationToken ct = default);
-    Task<DealerDiscountGroupEditModel> GetGroupEditAsync(int? id, int? preselectProductId = null, CancellationToken ct = default);
-    Task<IReadOnlyList<DealerDiscountProductOptionDto>> ListProductOptionsAsync(int? groupId, CancellationToken ct = default);
+    Task<DealerDiscountGroupEditModel> GetGroupEditAsync(int? id, int? preselectVariantId = null, CancellationToken ct = default);
+    Task<IReadOnlyList<DealerDiscountSkuOptionDto>> ListSkuOptionsAsync(int? groupId, CancellationToken ct = default);
     Task<(bool Ok, string? Error, int? Id)> SaveGroupAsync(DealerDiscountGroupInput input, string? userId, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> DeleteGroupAsync(int id, string? userId, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> MoveGroupAsync(int id, int direction, CancellationToken ct = default);

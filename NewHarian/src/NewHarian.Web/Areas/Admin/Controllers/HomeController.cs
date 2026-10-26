@@ -20,6 +20,7 @@ public class HomeController(IAdminDashboardService dashboard) : Controller
             includeInventory: User.HasPermission(Permissions.Inventory.View),
             ct);
         ViewBag.ShowRevenue = showRevenue;
+        ViewBag.Today = AdminDashboardService.TodayLocal();
         return View(model);
     }
 }
