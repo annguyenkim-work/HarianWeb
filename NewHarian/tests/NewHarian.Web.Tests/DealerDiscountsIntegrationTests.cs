@@ -201,4 +201,17 @@ public class DealerDiscountsIntegrationTests : IClassFixture<NewHarianWebApplica
         Assert.Contains($"data-variant-id=\"{lonely}\"", html);
         Assert.Contains("SKU chưa có chiết khấu đại lý", html);
     }
+
+    [Fact]
+    public async Task Help_documents_sku_based_dealer_discounts()
+    {
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SalesManager);
+        var help = WebUtility.HtmlDecode(await client.GetStringAsync("/admin/Help"));
+
+        Assert.Contains("id=\"dai-ly\"", help);
+        Assert.Contains("id=\"chiet-khau-dai-ly\"", help);
+        Assert.Contains("theo SKU", help);
+        Assert.Contains("/admin/DealerDiscounts", help);
+        Assert.Contains("Số lượng cộng chung", help);
+    }
 }
