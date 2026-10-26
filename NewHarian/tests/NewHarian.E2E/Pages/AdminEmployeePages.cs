@@ -9,6 +9,7 @@ public sealed class EmployeeProfileFields(ILocator form)
     public ILocator FullName => form.Locator("input[name=FullName]");
     public ILocator DateOfBirth => form.Locator("input[name=DateOfBirth]");
     public ILocator Phone => form.Locator("input[name=Phone]");
+    public ILocator PersonalEmail => form.Locator("input[name=PersonalEmail]");
     public ILocator CitizenId => form.Locator("input[name=CitizenId]");
     public ILocator Address => form.Locator("input[name=Address]");
     public ILocator Role => form.Locator("[data-employee-role]");
@@ -58,12 +59,14 @@ public sealed class AdminEmployeesPage(IPage page)
         await Expect(Form).ToBeVisibleAsync();
     }
 
-    public async Task CreateAsync(string fullName)
+    public async Task CreateAsync(string fullName, string? personalEmail = null)
     {
         await page.GotoAsync("/Admin/Employees");
         await AddButton.ClickAsync();
         await Expect(Form).ToBeVisibleAsync();
         await Fields.FullName.FillAsync(fullName);
+        if (!string.IsNullOrWhiteSpace(personalEmail))
+            await Fields.PersonalEmail.FillAsync(personalEmail);
         await Form.GetByRole(AriaRole.Button, new() { Name = "Thêm" }).ClickAsync();
     }
 }

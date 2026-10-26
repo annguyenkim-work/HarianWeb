@@ -106,7 +106,7 @@ public sealed class EmployeeProfileJourneyTests(E2EFixture fx)
             await fx.RunAsync(hr, "Hr_creates_employee_without_account", async page =>
             {
                 var employees = new AdminEmployeesPage(page);
-                await employees.CreateAsync(fullName);
+                await employees.CreateAsync(fullName, email);
                 await employees.Toasts.ExpectSuccessAsync("Đã thêm nhân viên.");
                 await employees.SearchAsync(tag);
                 await Expect(employees.Row(expectedCode)).ToContainTextAsync("Chưa có tài khoản");
@@ -123,7 +123,8 @@ public sealed class EmployeeProfileJourneyTests(E2EFixture fx)
             await page.Locator("[data-grant-account]").ClickAsync();
             var grant = page.Locator("#grant-account-form");
             await Expect(grant).ToBeVisibleAsync();
-            await grant.Locator("input[name=Email]").FillAsync(email);
+            await Expect(grant.Locator("input[name=Email]")).ToHaveValueAsync(email);
+            await Expect(grant.Locator("input[name=Email]")).ToHaveAttributeAsync("readonly", "");
             await grant.Locator("input[name=Password]").FillAsync(E2ETestData.UserPassword);
             await grant.Locator("select[name=Role]").SelectOptionAsync(AppRoles.SalesStaff);
             await grant.GetByRole(AriaRole.Button, new() { Name = "Cấp tài khoản" }).ClickAsync();

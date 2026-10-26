@@ -24,7 +24,7 @@
             Email *
             @if (isNew)
             {
-                <input asp-for="Email" type="email" class="form-control" required />
+                <input asp-for="Email" type="email" class="form-control" required data-user-email />
             }
             else
             {
@@ -33,18 +33,25 @@
         </label>
         <label>
             Họ tên
-            <input asp-for="FullName" class="form-control" />
-            <small class="form-hint">Khi gắn nhân viên, họ tên lấy từ hồ sơ NV.</small>
+            <input asp-for="FullName" class="form-control" data-user-fullname />
+            <small class="form-hint">Khi gắn nhân viên, email và họ tên lấy từ hồ sơ NV.</small>
         </label>
         <label class="full">
             Gắn nhân viên
-            <select asp-for="EmployeeProfileId" class="form-control">
+            <select asp-for="EmployeeProfileId" class="form-control" data-employee-link>
                 <option value="">Không gắn</option>
                 @foreach (var opt in employeeOptions)
                 {
-                    <option value="@opt.Id" selected="@(Model.EmployeeProfileId == opt.Id)">@opt.EmployeeCode - @opt.FullName</option>
+                    <option value="@opt.Id"
+                            selected="@(Model.EmployeeProfileId == opt.Id)"
+                            data-email="@(opt.PersonalEmail ?? "")"
+                            data-fullname="@opt.FullName">@opt.EmployeeCode - @opt.FullName</option>
                 }
             </select>
+            @if (isNew)
+            {
+                <small class="form-hint">Chọn nhân viên để điền email đăng nhập từ Email cá nhân.</small>
+            }
         </label>
         <label>
             @(isNew ? "Mật khẩu *" : "Mật khẩu mới")

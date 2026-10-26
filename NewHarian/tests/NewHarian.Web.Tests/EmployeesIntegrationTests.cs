@@ -57,6 +57,29 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
     }
 
     [Fact]
+    public async Task Grant_account_form_prefills_email_from_personal_email()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var employees = scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>();
+            var email = $"grant-ui-{Guid.NewGuid():N}@test.local";
+            var (_, _, id) = await employees.SaveAsync(new EmployeeProfileForm
+            {
+                FullName = "Võ Thị Grant",
+                PersonalEmail = email,
+                Status = EmployeeStatus.Active
+            }, EmployeeEditScope.Hr, null);
+
+            var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SuperAdmin);
+            var form = WebUtility.HtmlDecode(await client.GetStringAsync($"/admin/Employees/GrantAccount/{id}"));
+            Assert.Contains("Cấp tài khoản", form);
+            Assert.Contains($"value=\"{email}\"", form);
+            Assert.Contains("readonly", form);
+            Assert.Contains("Email cá nhân", form);
+        }
+    }
+
+    [Fact]
     public async Task Hr_manager_save_returns_success_message_and_assigns_code()
     {
         var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.HrManager);

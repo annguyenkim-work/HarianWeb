@@ -83,6 +83,18 @@
       }
     });
     body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
+
+    const link = form.querySelector('[data-employee-link]');
+    const emailInput = form.querySelector('[data-user-email]');
+    const nameInput = form.querySelector('[data-user-fullname]');
+    link?.addEventListener('change', () => {
+      const opt = link.selectedOptions[0];
+      if (!opt || !opt.value) return;
+      const email = opt.dataset.email || '';
+      const fullName = opt.dataset.fullname || '';
+      if (emailInput && email) emailInput.value = email;
+      if (nameInput && fullName) nameInput.value = fullName;
+    });
   }
 
   document.getElementById('btn-add-user').addEventListener('click', () => openForm(null));

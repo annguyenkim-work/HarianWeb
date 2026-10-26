@@ -77,6 +77,7 @@ public class EmployeesController(IAdminEmployeeService employees) : Controller
         return PartialView("_GrantAccountForm", new GrantEmployeeAccountRequest
         {
             ProfileId = id,
+            Email = profile.PersonalEmail?.Trim() ?? "",
             IsActive = true
         });
     }

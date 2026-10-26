@@ -21,7 +21,7 @@ public sealed record EmployeeListItemDto(
     bool IsPersonalComplete,
     bool HasAccount);
 
-public sealed record EmployeeLinkOptionDto(int Id, string EmployeeCode, string FullName);
+public sealed record EmployeeLinkOptionDto(int Id, string EmployeeCode, string FullName, string? PersonalEmail);
 
 public sealed class EmployeeProfileForm
 {
