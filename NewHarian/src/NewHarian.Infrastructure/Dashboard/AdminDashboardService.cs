@@ -18,6 +18,15 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
         OrderStatus.AwaitingConfirmation
     ];
 
+    /// <summary>Open pipeline for the "Đơn đang xử lý" commerce card (snapshot, all time).</summary>
+    private static readonly OrderStatus[] InProgressOrderStatuses =
+    [
+        OrderStatus.PendingPayment,
+        OrderStatus.AwaitingConfirmation,
+        OrderStatus.Confirmed,
+        OrderStatus.Processing
+    ];
+
     private static readonly OrderStatus[] ConfirmedRevenueStatuses =
     [
         OrderStatus.Confirmed,
@@ -208,11 +217,14 @@ public sealed class AdminDashboardService(AppDbContext db, IInventoryService inv
         var previous = await SumCommerceAsync(DashboardKpiMath.PreviousPeriod(range), ct);
         var aov = DashboardKpiMath.AverageOrderValue(current.Revenue, current.RevenueOrderCount);
         var prevAov = DashboardKpiMath.AverageOrderValue(previous.Revenue, previous.RevenueOrderCount);
+        var inProgress = await db.Orders.AsNoTracking()
+            .CountAsync(o => InProgressOrderStatuses.Contains(o.Status), ct);
         return new CommerceKpiDto(
             current.Revenue,
             current.OrderCount,
             current.RevenueOrderCount,
             aov,
+            inProgress,
             DashboardKpiMath.DeltaPercent(current.Revenue, previous.Revenue),
             DashboardKpiMath.DeltaPercent(current.OrderCount, previous.OrderCount),
             DashboardKpiMath.DeltaPercent(aov, prevAov));

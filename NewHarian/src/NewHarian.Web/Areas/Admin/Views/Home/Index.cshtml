@@ -32,6 +32,24 @@
     string Vnd(decimal v) => MoneyFormat.Vnd(v);
     string DeltaClass(decimal? pct) => pct is null ? "dash-delta dash-delta--flat" : pct >= 0 ? "dash-delta dash-delta--up" : "dash-delta dash-delta--down";
     string DeltaText(decimal? pct) => pct is null ? "Không so sánh được" : $"{(pct >= 0 ? "+" : "")}{pct:0.#}% so kỳ trước";
+    string SparklineSvg(IReadOnlyList<decimal> series, string cssClass)
+    {
+        if (series.Count < 2) return "";
+        const int w = 120, h = 28, pad = 2;
+        var min = series.Min();
+        var max = series.Max();
+        var span = max - min;
+        if (span == 0) span = 1;
+        var pts = new System.Text.StringBuilder();
+        for (var i = 0; i < series.Count; i++)
+        {
+            var x = pad + (w - 2 * pad) * i / (decimal)(series.Count - 1);
+            var y = h - pad - (h - 2 * pad) * (series[i] - min) / span;
+            if (i > 0) pts.Append(' ');
+            pts.Append(FormattableString.Invariant($"{x:0.##},{y:0.##}"));
+        }
+        return $"<svg class=\"{cssClass}\" viewBox=\"0 0 {w} {h}\" width=\"{w}\" height=\"{h}\" aria-hidden=\"true\"><polyline fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" points=\"{pts}\"/></svg>";
+    }
 }
 
 <div class="admin-toolbar">
@@ -61,13 +79,26 @@
             <span class="dash-kpi__label">Doanh thu</span>
             <span class="dash-kpi__value" data-kpi="revenue">@Vnd(commerceKpi!.Revenue)</span>
             <span class="@DeltaClass(commerceKpi.RevenueDeltaPct)">@DeltaText(commerceKpi.RevenueDeltaPct)</span>
+            @if (trendRevenue.Count > 1)
+            {
+                @Html.Raw(SparklineSvg(trendRevenue, "dash-spark dash-spark--revenue"))
+            }
         </div>
         <div class="dash-kpi">
             <span class="dash-kpi__label">Số đơn hàng</span>
             <span class="dash-kpi__value" data-kpi="orders">@commerceKpi.OrderCount.ToString("N0")</span>
             <span class="@DeltaClass(commerceKpi.OrderCountDeltaPct)">@DeltaText(commerceKpi.OrderCountDeltaPct)</span>
             <span class="dash-kpi__hint">Tất cả đơn tạo trong kỳ</span>
+            @if (trendOrders.Count > 1)
+            {
+                @Html.Raw(SparklineSvg(trendOrders.Select(x => (decimal)x).ToList(), "dash-spark dash-spark--orders"))
+            }
         </div>
+        <a class="dash-kpi dash-kpi--link" asp-area="Admin" asp-controller="Orders" asp-action="Index" data-kpi-card="in-progress">
+            <span class="dash-kpi__label">Đơn đang xử lý</span>
+            <span class="dash-kpi__value" data-kpi="in-progress">@commerceKpi.InProgressOrderCount.ToString("N0")</span>
+            <span class="dash-kpi__hint">Chờ xác nhận / đã xác nhận / đang xử lý (hiện tại)</span>
+        </a>
         <div class="dash-kpi">
             <span class="dash-kpi__label">AOV</span>
             <span class="dash-kpi__value" data-kpi="aov">@Vnd(commerceKpi.Aov)</span>

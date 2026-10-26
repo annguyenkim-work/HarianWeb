@@ -71,6 +71,8 @@ public class AdminDashboardCommerceTests : IClassFixture<NewHarianWebApplication
         Assert.Equal(3, dto.Commerce.OrderCount);
         Assert.Equal(2, dto.Commerce.RevenueOrderCount);
         Assert.Equal(200_000m, dto.Commerce.Aov);
+        // Snapshot includes C1 Confirmed + C3 PendingPayment (+ any other open seed orders).
+        Assert.True(dto.Commerce.InProgressOrderCount >= 2);
         Assert.Equal(100m, dto.Commerce.RevenueDeltaPct);
         Assert.NotNull(dto.OrdersTrendByDay);
         Assert.Equal(7, dto.OrdersTrendByDay.Count);
@@ -88,6 +90,9 @@ public class AdminDashboardCommerceTests : IClassFixture<NewHarianWebApplication
 
         Assert.Contains("data-commerce-kpis", html);
         Assert.Contains("data-kpi=\"revenue\"", html);
+        Assert.Contains("data-kpi=\"orders\"", html);
+        Assert.Contains("data-kpi=\"in-progress\"", html);
+        Assert.Contains("Đơn đang xử lý", html);
         Assert.Contains("data-kpi=\"aov\"", html);
         Assert.Contains("chart-orders-trend", html);
         Assert.Contains("chart-top-products", html);
@@ -95,6 +100,50 @@ public class AdminDashboardCommerceTests : IClassFixture<NewHarianWebApplication
         Assert.Contains("data-ops-strip", html);
         Assert.DoesNotContain("chart-gmv", html);
         Assert.DoesNotContain("chart-orders-source", html);
+    }
+
+    [Fact]
+    public async Task In_progress_kpi_is_snapshot_not_filtered_by_selected_range()
+    {
+        var end = AdminDashboardService.TodayLocal();
+        var start = end; // single day today
+
+        int before;
+        using (var read = _factory.Services.CreateScope())
+        {
+            before = (await read.ServiceProvider.GetRequiredService<IAdminDashboardService>()
+                .GetAsync(start, end, includeCharts: true, includeInventory: false)).Commerce!.InProgressOrderCount;
+        }
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var product = new Product
+            {
+                Slug = $"dash-ip-{suffix}",
+                Status = ProductStatus.Published,
+                Variants = { new ProductVariant { Sku = $"IP-{suffix}", VariantLabel = "1L", Price = 50_000m, IsActive = true } }
+            };
+            db.Products.Add(product);
+            await db.SaveChangesAsync();
+            var variant = product.Variants.Single();
+
+            // Old open order (outside today's range) must still bump the snapshot.
+            db.Orders.Add(MakeOrder(
+                $"IP-OLD-{suffix}", OrderStatus.Processing, PaymentMethod.COD, OrderSource.Website,
+                product, variant, 50_000m, DateTime.UtcNow.AddDays(-40)));
+            // Finished order (also outside range) must not bump the in-progress count.
+            db.Orders.Add(MakeOrder(
+                $"IP-DONE-{suffix}", OrderStatus.Delivered, PaymentMethod.COD, OrderSource.Website,
+                product, variant, 50_000m, DateTime.UtcNow.AddDays(-41)));
+            await db.SaveChangesAsync();
+        }
+
+        using var afterScope = _factory.Services.CreateScope();
+        var after = (await afterScope.ServiceProvider.GetRequiredService<IAdminDashboardService>()
+            .GetAsync(start, end, includeCharts: true, includeInventory: false)).Commerce!.InProgressOrderCount;
+        Assert.Equal(before + 1, after);
     }
 
     private static Order MakeOrder(

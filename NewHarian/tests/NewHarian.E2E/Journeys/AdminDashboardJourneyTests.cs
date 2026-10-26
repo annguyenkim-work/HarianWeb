@@ -19,7 +19,9 @@ public sealed class AdminDashboardJourneyTests(E2EFixture fx)
             await Expect(page.Locator("[data-commerce-kpis]")).ToBeVisibleAsync();
             await Expect(page.Locator("[data-kpi=revenue]")).ToBeVisibleAsync();
             await Expect(page.Locator("[data-kpi=orders]")).ToBeVisibleAsync();
+            await Expect(page.Locator("[data-kpi=in-progress]")).ToBeVisibleAsync();
             await Expect(page.Locator("[data-kpi=aov]")).ToBeVisibleAsync();
+            await Expect(page.GetByText("Đơn đang xử lý")).ToBeVisibleAsync();
             await Expect(page.Locator("#chart-orders-trend")).ToBeVisibleAsync();
             await Expect(page.Locator("[data-ops-strip]")).ToBeVisibleAsync();
             await Expect(page.GetByRole(AriaRole.Link, new() { Name = "7 ngày" })).ToBeVisibleAsync();
