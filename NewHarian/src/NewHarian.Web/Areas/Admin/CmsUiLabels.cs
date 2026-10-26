@@ -26,7 +26,7 @@ public static class CmsUiLabels
     {
         "home" => "Trang chủ",
         "about" => "Giới thiệu",
-        "company" => "Công ty",
+        "company" => "Giới thiệu", // legacy module after consolidate
         "legal" => "Pháp lý",
         "contact" => "Liên hệ",
         "dealers" => "Đại lý",

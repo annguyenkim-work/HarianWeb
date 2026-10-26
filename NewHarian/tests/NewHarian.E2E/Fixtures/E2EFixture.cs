@@ -12,7 +12,7 @@ public sealed class E2ECollection : ICollectionFixture<E2EFixture>
 }
 
 /// <summary>
-/// One app + one browser per run. In-process mode drops/recreates the E2E Postgres DB and hosts the app on Kestrel;
+/// One app + one browser per run. In-process mode DROP+CREATE the E2E Postgres DB (then Migrate/seed) and hosts the app on Kestrel;
 /// with E2E_BASE_URL it targets a running app (started with ASPNETCORE_ENVIRONMENT=E2E against the same DB).
 /// </summary>
 public sealed class E2EFixture : IAsyncLifetime

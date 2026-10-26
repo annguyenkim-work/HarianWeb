@@ -20,7 +20,10 @@ public static class E2EDatabase
         }
     }
 
-    /// <summary>Drops the E2E database; the app's DbSeeder (MigrateAsync) recreates it on start.</summary>
+    /// <summary>
+    /// Drops and recreates the E2E database. MigrateAsync applies schema but does not CREATE DATABASE
+    /// on Postgres, so an empty DB must exist before the app starts.
+    /// </summary>
     public static async Task DropAsync(string connectionString)
     {
         var csb = new NpgsqlConnectionStringBuilder(connectionString);
@@ -29,12 +32,20 @@ public static class E2EDatabase
         if (!name.Contains("e2e", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Refusing to drop database '{name}': E2E database name must contain 'e2e'.");
 
+        var quoted = "\"" + name.Replace("\"", "\"\"") + "\"";
         csb.Database = "postgres";
         csb.Pooling = false;
         await using var conn = new NpgsqlConnection(csb.ConnectionString);
         await conn.OpenAsync();
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"DROP DATABASE IF EXISTS \"{name.Replace("\"", "\"\"")}\" WITH (FORCE)";
-        await cmd.ExecuteNonQueryAsync();
+        await using (var drop = conn.CreateCommand())
+        {
+            drop.CommandText = $"DROP DATABASE IF EXISTS {quoted} WITH (FORCE)";
+            await drop.ExecuteNonQueryAsync();
+        }
+        await using (var create = conn.CreateCommand())
+        {
+            create.CommandText = $"CREATE DATABASE {quoted}";
+            await create.ExecuteNonQueryAsync();
+        }
     }
 }
