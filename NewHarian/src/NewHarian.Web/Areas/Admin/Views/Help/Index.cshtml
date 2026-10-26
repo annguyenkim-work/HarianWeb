@@ -54,7 +54,7 @@
             <span class="help-flow__num">2</span>
             <div>
                 <strong>Vào Dashboard</strong>
-                <span>Sau khi đăng nhập bạn vào <code>/admin</code>. Role có quyền doanh thu thấy KPI Doanh thu / Số đơn / AOV và biểu đồ; mọi role thấy strip <em>Cần xử lý</em> theo quyền của mình.</span>
+                <span>Sau khi đăng nhập bạn vào <code>/admin</code>. Role có quyền doanh thu thấy 4 KPI (Doanh thu / Số đơn / Đơn đang xử lý / AOV) và layout biểu đồ 2+3 (xu hướng / danh mục · top SP / kênh / kho); mọi role thấy strip <em>Cần xử lý</em> theo quyền của mình.</span>
             </div>
         </li>
     </ol>
@@ -369,7 +369,7 @@
         <ul>
             @if (User.HasPermission(Permissions.CmsPages.View))
             {
-                <li><strong>Trang nội dung</strong> - About, Company, Legal, Đại lý (<code>dealers/home</code>), khối nội dung trang chủ, …</li>
+                <li><strong>Trang nội dung</strong> - Giới thiệu (gom triết lý / chất lượng / hồ sơ), Legal, Đại lý (<code>dealers/home</code>), khối nội dung trang chủ, …</li>
             }
             @if (User.HasPermission(Permissions.Menus.Manage) || User.HasPermission(Permissions.HomeSlides.Manage))
             {

@@ -14,12 +14,6 @@
     {
         <span>@Model.Title</span>
     }
-    else if (Model.ModuleCode == "about" && Model.Slug != "about")
-    {
-        <a href="/about">@Localizer["Nav.About"]</a>
-        <span>/</span>
-        <span>@Model.Title</span>
-    }
     else
     {
         <span>@Model.Title</span>

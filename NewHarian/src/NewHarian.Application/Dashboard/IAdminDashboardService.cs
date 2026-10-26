@@ -9,11 +9,16 @@ public sealed record DashboardKpiDto(
     int NewApplications);
 
 /// <summary>Commerce scorecards for the selected range vs the previous equal-length period.</summary>
+/// <param name="InProgressOrderCount">
+/// Snapshot (not range-bound): orders still in the ops pipeline
+/// (PendingPayment, AwaitingConfirmation, Confirmed, Processing).
+/// </param>
 public sealed record CommerceKpiDto(
     decimal Revenue,
     int OrderCount,
     int RevenueOrderCount,
     decimal Aov,
+    int InProgressOrderCount,
     decimal? RevenueDeltaPct,
     decimal? OrderCountDeltaPct,
     decimal? AovDeltaPct);

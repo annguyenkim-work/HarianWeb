@@ -197,6 +197,9 @@ public static class DbSeeder
         await roleManager.DeleteAsync(legacy);
     }
 
+    /// <summary>CMS pages/menus only (no Migrate). Web.Tests use this because Testing skips full <see cref="SeedAsync"/>.</summary>
+    public static Task SeedCmsOnlyAsync(AppDbContext db) => SeedCmsContentAsync(db);
+
     private static async Task SeedCmsContentAsync(AppDbContext db)
     {
         await EnsurePageAsync(db, "home", "home", 1,
@@ -208,16 +211,6 @@ public static class DbSeeder
             ("vi", "Giới thiệu", "Về Harian", "Giới thiệu Harian"),
             ("en", "About", "About Harian", "About Harian"),
             ("ja", "会社概要", "Harianについて", "Harianについて"));
-
-        await EnsurePageAsync(db, "about/concept", "about", 2,
-            ("vi", "Concept", "Concept", "Concept Harian"),
-            ("en", "Concept", "Concept", "Harian Concept"),
-            ("ja", "コンセプト", "コンセプト", "コンセプト"));
-
-        await EnsurePageAsync(db, "about/quality", "about", 2,
-            ("vi", "Tiêu chuẩn chất lượng", "Chất lượng", "Tiêu chuẩn chất lượng"),
-            ("en", "Quality", "Quality", "Quality standards"),
-            ("ja", "品質基準", "品質", "品質基準"));
 
         var home = await db.Pages.Include(p => p.ContentBlocks).FirstAsync(p => p.Slug == "home");
         if (!home.ContentBlocks.Any())
@@ -255,111 +248,7 @@ public static class DbSeeder
 
         var about = await db.Pages.Include(p => p.ContentBlocks).FirstAsync(p => p.Slug == "about");
         if (!about.ContentBlocks.Any())
-        {
-            var tableJson = """
-                {"rows":[
-                  {"id":"row-1","sortOrder":1,"label":{"vi":"Tên công ty","en":"Company name","ja":"会社名"},"value":{"vi":"Công ty Cổ Phần Harian","en":"Harian Joint Stock Company","ja":"Harian株式会社"}},
-                  {"id":"row-2","sortOrder":2,"label":{"vi":"Lĩnh vực","en":"Business","ja":"事業"},"value":{"vi":"Hóa chất & dịch vụ","en":"Chemicals & services","ja":"化学品・サービス"}}
-                ]}
-                """;
-            db.ContentBlocks.Add(new ContentBlock
-            {
-                PageId = about.Id,
-                BlockType = ContentBlockType.DataTable,
-                SortOrder = 10,
-                IsPublished = true,
-                ExtraData = tableJson
-            });
-            db.ContentBlocks.Add(new ContentBlock
-            {
-                PageId = about.Id,
-                BlockType = ContentBlockType.CtaButton,
-                SortOrder = 20,
-                IsPublished = true,
-                LinkUrl = "/products",
-                Translations =
-                {
-                    new ContentBlockTranslation { LanguageCode = "vi", Title = "Xem sản phẩm" },
-                    new ContentBlockTranslation { LanguageCode = "en", Title = "View products" },
-                    new ContentBlockTranslation { LanguageCode = "ja", Title = "製品を見る" }
-                }
-            });
-            await db.SaveChangesAsync();
-        }
-
-        var concept = await db.Pages.Include(p => p.ContentBlocks).FirstAsync(p => p.Slug == "about/concept");
-        if (!concept.ContentBlocks.Any())
-        {
-            db.ContentBlocks.Add(new ContentBlock
-            {
-                PageId = concept.Id,
-                BlockType = ContentBlockType.RichText,
-                SortOrder = 10,
-                IsPublished = true,
-                Translations =
-                {
-                    new ContentBlockTranslation { LanguageCode = "vi", Title = "Concept", Body = "<p>Chúng tôi mang tiêu chuẩn Nhật Bản đến từng sản phẩm và dịch vụ.</p>" },
-                    new ContentBlockTranslation { LanguageCode = "en", Title = "Concept", Body = "<p>We bring Japanese standards to every product and service.</p>" },
-                    new ContentBlockTranslation { LanguageCode = "ja", Title = "コンセプト", Body = "<p>すべての製品とサービスに日本基準をお届けします。</p>" }
-                }
-            });
-            await db.SaveChangesAsync();
-        }
-
-        var quality = await db.Pages.Include(p => p.ContentBlocks).FirstAsync(p => p.Slug == "about/quality");
-        if (!quality.ContentBlocks.Any())
-        {
-            db.ContentBlocks.Add(new ContentBlock
-            {
-                PageId = quality.Id,
-                BlockType = ContentBlockType.BulletList,
-                SortOrder = 10,
-                IsPublished = true,
-                Translations =
-                {
-                    new ContentBlockTranslation
-                    {
-                        LanguageCode = "vi",
-                        Title = "Cam kết chất lượng",
-                        Body = "Nguyên liệu kiểm soát nguồn gốc\nQuy trình chuẩn hóa\nHỗ trợ khách hàng tận tâm"
-                    },
-                    new ContentBlockTranslation
-                    {
-                        LanguageCode = "en",
-                        Title = "Quality commitment",
-                        Body = "Sourced materials\nStandardized process\nDedicated support"
-                    },
-                    new ContentBlockTranslation
-                    {
-                        LanguageCode = "ja",
-                        Title = "品質へのこだわり",
-                        Body = "原材料の管理\n標準化された工程\n丁寧なサポート"
-                    }
-                }
-            });
-            await db.SaveChangesAsync();
-        }
-
-        if (!await db.Menus.AnyAsync(m => m.Code == "sidebar-about"))
-        {
-            db.Menus.Add(new Menu
-            {
-                Code = "sidebar-about",
-                Name = "About sidebar",
-                Items =
-                {
-                    MenuItemWith("/about", 1, "Giới thiệu", "About", "会社概要"),
-                    MenuItemWith("/about/concept", 2, "Concept", "Concept", "コンセプト"),
-                    MenuItemWith("/about/quality", 3, "Tiêu chuẩn chất lượng", "Quality", "品質基準")
-                }
-            });
-            await db.SaveChangesAsync();
-        }
-
-        await EnsurePageAsync(db, "company", "company", 2,
-            ("vi", "Công ty", "Thông tin công ty", "Thông tin công ty Harian"),
-            ("en", "Company", "Company profile", "Harian company profile"),
-            ("ja", "会社情報", "会社情報", "Harian会社情報"));
+            await SeedMergedAboutBlocksAsync(db, about.Id);
 
         await EnsurePageAsync(db, "legal/privacy", "legal", 2,
             ("vi", "Chính sách bảo mật", "Chính sách bảo mật", "Chính sách bảo mật"),
@@ -370,55 +259,6 @@ public static class DbSeeder
             ("vi", "Điều khoản sử dụng", "Điều khoản sử dụng", "Điều khoản sử dụng"),
             ("en", "Terms of use", "Terms of use", "Terms of use"),
             ("ja", "利用規約", "利用規約", "利用規約"));
-
-        var company = await db.Pages.Include(p => p.ContentBlocks).FirstAsync(p => p.Slug == "company");
-        if (!company.ContentBlocks.Any())
-        {
-            db.ContentBlocks.Add(new ContentBlock
-            {
-                PageId = company.Id,
-                BlockType = ContentBlockType.RichText,
-                SortOrder = 10,
-                IsPublished = true,
-                Translations =
-                {
-                    new ContentBlockTranslation
-                    {
-                        LanguageCode = "vi",
-                        Title = "Hồ sơ công ty",
-                        Body = "<p>Harian hoạt động trong lĩnh vực hóa chất và dịch vụ liên quan, hướng tới tiêu chuẩn Nhật Bản.</p>"
-                    },
-                    new ContentBlockTranslation
-                    {
-                        LanguageCode = "en",
-                        Title = "Company profile",
-                        Body = "<p>Harian operates in chemicals and related services, aiming for Japanese standards.</p>"
-                    },
-                    new ContentBlockTranslation
-                    {
-                        LanguageCode = "ja",
-                        Title = "会社概要",
-                        Body = "<p>Harianは化学品および関連サービスを扱い、日本基準を目指します。</p>"
-                    }
-                }
-            });
-            var companyTable = """
-                {"rows":[
-                  {"id":"c1","sortOrder":1,"label":{"vi":"Tên pháp lý","en":"Legal name","ja":"法人名"},"value":{"vi":"Công ty Cổ Phần Harian","en":"Harian Joint Stock Company","ja":"Harian株式会社"}},
-                  {"id":"c2","sortOrder":2,"label":{"vi":"Mã số thuế","en":"Tax code","ja":"税コード"},"value":{"vi":"0123456789","en":"0123456789","ja":"0123456789"}},
-                  {"id":"c3","sortOrder":3,"label":{"vi":"Địa chỉ","en":"Address","ja":"住所"},"value":{"vi":"[Địa chỉ công ty]","en":"[Company address]","ja":"[会社住所]"}}
-                ]}
-                """;
-            db.ContentBlocks.Add(new ContentBlock
-            {
-                PageId = company.Id,
-                BlockType = ContentBlockType.DataTable,
-                SortOrder = 20,
-                IsPublished = true,
-                ExtraData = companyTable
-            });
-            await db.SaveChangesAsync();
-        }
 
         var privacy = await db.Pages.Include(p => p.ContentBlocks).FirstAsync(p => p.Slug == "legal/privacy");
         if (!privacy.ContentBlocks.Any())
@@ -483,22 +323,6 @@ public static class DbSeeder
                         Title = "利用規約",
                         Body = "<p>本サイトの利用をもって、以下の規約に同意したものとみなします。</p><h2>注文</h2><p>COD確認後、または振込確認後に注文が確定します。</p><h2>価格・送料</h2><p>表示価格はVND、送料はチェックアウト時に都道府県で計算します。</p>"
                     }
-                }
-            });
-            await db.SaveChangesAsync();
-        }
-
-        if (!await db.Menus.AnyAsync(m => m.Code == "sidebar-company"))
-        {
-            db.Menus.Add(new Menu
-            {
-                Code = "sidebar-company",
-                Name = "Company sidebar",
-                Items =
-                {
-                    MenuItemWith("/company", 1, "Công ty", "Company", "会社情報"),
-                    MenuItemWith("/careers", 2, "Tuyển dụng", "Careers", "採用"),
-                    MenuItemWith("/contact", 3, "Liên hệ", "Contact", "お問い合わせ")
                 }
             });
             await db.SaveChangesAsync();
@@ -626,7 +450,7 @@ public static class DbSeeder
                 Items =
                 {
                     MenuItemWith("/contact", 1, "Liên hệ", "Contact", "お問い合わせ"),
-                    MenuItemWith("/company", 2, "Công ty", "Company", "会社情報")
+                    MenuItemWith("/about", 2, "Giới thiệu", "About", "会社概要")
                 }
             });
             await db.SaveChangesAsync();
@@ -641,7 +465,7 @@ public static class DbSeeder
                 Items =
                 {
                     MenuItemWith("/careers", 1, "Tuyển dụng", "Careers", "採用"),
-                    MenuItemWith("/company", 2, "Công ty", "Company", "会社情報")
+                    MenuItemWith("/about", 2, "Giới thiệu", "About", "会社概要")
                 }
             });
             await db.SaveChangesAsync();
@@ -649,6 +473,237 @@ public static class DbSeeder
 
         await EnsureHeaderMainMenuAsync(db);
         await EnsureDealerNavItemAsync(db);
+        await ConsolidateAboutPagesAsync(db);
+    }
+
+    /// <summary>
+    /// Fresh install: profile table, philosophy, quality, capabilities, CTA — all on /about.
+    /// </summary>
+    private static async Task SeedMergedAboutBlocksAsync(AppDbContext db, int aboutPageId)
+    {
+        var profileTable = """
+            {"rows":[
+              {"id":"c1","sortOrder":1,"label":{"vi":"Tên pháp lý","en":"Legal name","ja":"法人名"},"value":{"vi":"Công ty Cổ Phần Harian","en":"Harian Joint Stock Company","ja":"Harian株式会社"}},
+              {"id":"c2","sortOrder":2,"label":{"vi":"Mã số thuế","en":"Tax code","ja":"税コード"},"value":{"vi":"0123456789","en":"0123456789","ja":"0123456789"}},
+              {"id":"c3","sortOrder":3,"label":{"vi":"Lĩnh vực","en":"Business","ja":"事業"},"value":{"vi":"Hóa chất & dịch vụ","en":"Chemicals & services","ja":"化学品・サービス"}},
+              {"id":"c4","sortOrder":4,"label":{"vi":"Địa chỉ","en":"Address","ja":"住所"},"value":{"vi":"[Địa chỉ công ty]","en":"[Company address]","ja":"[会社住所]"}}
+            ]}
+            """;
+        db.ContentBlocks.AddRange(
+            new ContentBlock
+            {
+                PageId = aboutPageId,
+                BlockType = ContentBlockType.RichText,
+                SortOrder = 10,
+                IsPublished = true,
+                Translations =
+                {
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "vi",
+                        Title = "Hồ sơ công ty",
+                        Body = "<p>Harian hoạt động trong lĩnh vực hóa chất và dịch vụ liên quan, hướng tới tiêu chuẩn Nhật Bản.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "en",
+                        Title = "Company profile",
+                        Body = "<p>Harian operates in chemicals and related services, aiming for Japanese standards.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "ja",
+                        Title = "会社概要",
+                        Body = "<p>Harianは化学品および関連サービスを扱い、日本基準を目指します。</p>"
+                    }
+                }
+            },
+            new ContentBlock
+            {
+                PageId = aboutPageId,
+                BlockType = ContentBlockType.DataTable,
+                SortOrder = 20,
+                IsPublished = true,
+                ExtraData = profileTable
+            },
+            new ContentBlock
+            {
+                PageId = aboutPageId,
+                BlockType = ContentBlockType.RichText,
+                SortOrder = 30,
+                IsPublished = true,
+                Translations =
+                {
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "vi",
+                        Title = "Triết lý",
+                        Body = "<p>Chúng tôi mang tiêu chuẩn Nhật Bản đến từng sản phẩm và dịch vụ.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "en",
+                        Title = "Philosophy",
+                        Body = "<p>We bring Japanese standards to every product and service.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "ja",
+                        Title = "コンセプト",
+                        Body = "<p>すべての製品とサービスに日本基準をお届けします。</p>"
+                    }
+                }
+            },
+            new ContentBlock
+            {
+                PageId = aboutPageId,
+                BlockType = ContentBlockType.BulletList,
+                SortOrder = 40,
+                IsPublished = true,
+                Translations =
+                {
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "vi",
+                        Title = "Cam kết chất lượng",
+                        Body = "Nguyên liệu kiểm soát nguồn gốc\nQuy trình chuẩn hóa\nHỗ trợ khách hàng tận tâm"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "en",
+                        Title = "Quality commitment",
+                        Body = "Sourced materials\nStandardized process\nDedicated support"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "ja",
+                        Title = "品質へのこだわり",
+                        Body = "原材料の管理\n標準化された工程\n丁寧なサポート"
+                    }
+                }
+            },
+            new ContentBlock
+            {
+                PageId = aboutPageId,
+                BlockType = ContentBlockType.RichText,
+                SortOrder = 50,
+                IsPublished = true,
+                Translations =
+                {
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "vi",
+                        Title = "Hồ sơ năng lực & thành tựu",
+                        Body = "<p>Đội ngũ kỹ thuật và hệ thống phân phối phủ rộng; đồng hành cùng khách hàng doanh nghiệp và đại lý trên toàn quốc.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "en",
+                        Title = "Capabilities & achievements",
+                        Body = "<p>Technical teams and a wide distribution network; serving enterprise customers and dealers nationwide.</p>"
+                    },
+                    new ContentBlockTranslation
+                    {
+                        LanguageCode = "ja",
+                        Title = "実績・強み",
+                        Body = "<p>技術チームと広域の流通網により、企業顧客および代理店を全国で支援します。</p>"
+                    }
+                }
+            },
+            new ContentBlock
+            {
+                PageId = aboutPageId,
+                BlockType = ContentBlockType.CtaButton,
+                SortOrder = 60,
+                IsPublished = true,
+                LinkUrl = "/products",
+                Translations =
+                {
+                    new ContentBlockTranslation { LanguageCode = "vi", Title = "Xem sản phẩm" },
+                    new ContentBlockTranslation { LanguageCode = "en", Title = "View products" },
+                    new ContentBlockTranslation { LanguageCode = "ja", Title = "製品を見る" }
+                }
+            });
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Merge legacy about/concept, about/quality, company pages into /about; flatten menus. Idempotent.
+    /// </summary>
+    private static async Task ConsolidateAboutPagesAsync(AppDbContext db)
+    {
+        var about = await db.Pages.Include(p => p.ContentBlocks)
+            .FirstOrDefaultAsync(p => p.Slug == "about");
+        if (about is null) return;
+
+        string[] obsoleteSlugs = ["about/concept", "about/quality", "company"];
+        var sources = await db.Pages
+            .Include(p => p.ContentBlocks)
+            .Where(p => obsoleteSlugs.Contains(p.Slug))
+            .ToListAsync();
+
+        if (sources.Count > 0)
+        {
+            var nextOrder = about.ContentBlocks.Select(b => b.SortOrder).DefaultIfEmpty(0).Max();
+            foreach (var src in sources.OrderBy(s => s.Slug switch
+                     {
+                         "company" => 1,
+                         "about/concept" => 2,
+                         "about/quality" => 3,
+                         _ => 9
+                     }))
+            {
+                foreach (var block in src.ContentBlocks.OrderBy(b => b.SortOrder).ToList())
+                {
+                    nextOrder += 10;
+                    block.PageId = about.Id;
+                    block.SortOrder = nextOrder;
+                }
+
+                db.Pages.Remove(src);
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        var header = await db.Menus.Include(m => m.Items)
+            .FirstOrDefaultAsync(m => m.Code == "header-main");
+        if (header is not null)
+        {
+            var aboutRoot = header.Items.FirstOrDefault(i =>
+                i.ParentId == null && (i.ItemKey == "about" || i.Url == "/about"));
+            var remove = header.Items.Where(i =>
+                    i.Id != aboutRoot?.Id
+                    && (i.ItemKey is "about-page" or "concept" or "quality" or "company"
+                        || i.Url is "/about/concept" or "/about/quality" or "/company"
+                        || (aboutRoot is not null && i.ParentId == aboutRoot.Id)))
+                .ToList();
+            if (remove.Count > 0)
+                db.RemoveRange(remove);
+            if (aboutRoot is not null)
+            {
+                aboutRoot.Url = "/about";
+                aboutRoot.ItemKey = "about";
+                aboutRoot.ParentId = null;
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        foreach (var code in new[] { "sidebar-about", "sidebar-company" })
+        {
+            var sidebar = await db.Menus.Include(m => m.Items)
+                .FirstOrDefaultAsync(m => m.Code == code);
+            if (sidebar is null) continue;
+            db.Menus.Remove(sidebar);
+            await db.SaveChangesAsync();
+        }
+
+        var companyLinks = await db.MenuItems.Where(i => i.Url == "/company").ToListAsync();
+        foreach (var item in companyLinks)
+            item.Url = "/about";
+        if (companyLinks.Count > 0)
+            await db.SaveChangesAsync();
     }
 
     private static async Task EnsureDealerNavItemAsync(AppDbContext db)
@@ -694,16 +749,6 @@ public static class DbSeeder
         if (await db.Menus.AnyAsync(m => m.Code == "header-main"))
             return;
 
-        var about = MenuItemWith("about", "/about", 4, "Giới thiệu", "About", "会社情報");
-        var aboutPage = MenuItemWith("about-page", "/about", 1, "Giới thiệu", "About", "会社概要");
-        var concept = MenuItemWith("concept", "/about/concept", 2, "Triết lý", "Concept", "コンセプト");
-        var quality = MenuItemWith("quality", "/about/quality", 3, "Chất lượng", "Quality", "品質");
-        var company = MenuItemWith("company", "/company", 4, "Công ty", "Company", "会社情報");
-        aboutPage.Parent = about;
-        concept.Parent = about;
-        quality.Parent = about;
-        company.Parent = about;
-
         db.Menus.Add(new Menu
         {
             Code = "header-main",
@@ -713,11 +758,7 @@ public static class DbSeeder
                 MenuItemWith("home", "/", 1, "Trang chủ", "Home", "ホーム"),
                 MenuItemWith("products", "/products", 2, "Sản phẩm", "Products", "製品"),
                 MenuItemWith("services", "/services", 3, "Dịch vụ", "Services", "サービス"),
-                about,
-                aboutPage,
-                concept,
-                quality,
-                company,
+                MenuItemWith("about", "/about", 4, "Giới thiệu", "About", "会社概要"),
                 MenuItemWith("news", "/news", 5, "Tin tức", "News", "ニュース"),
                 MenuItemWith("careers", "/careers", 6, "Tuyển dụng", "Careers", "採用"),
                 MenuItemWith("dealers", "/dealers/home", 7, "Đại lý", "Dealers", "代理店"),
