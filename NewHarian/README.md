@@ -28,7 +28,7 @@ Security notes: [docs/engineering/security.md](../docs/engineering/security.md).
 
 | Area | URL |
 |------|-----|
-| Home / About / Company | `/`, `/about`, `/company` |
+| Home / About | `/`, `/about` (`/company` → redirect) |
 | Legal | `/legal/privacy`, `/legal/terms` |
 | Contact / Careers | `/contact`, `/careers` |
 | Shop | `/products`, `/Cart`, `/checkout`, `/orders/track` |
@@ -40,20 +40,16 @@ Security notes: [docs/engineering/security.md](../docs/engineering/security.md).
 
 ## Tests
 
-**Bắt buộc:** mọi thay đổi code phải có test ở cả 3 tầng (Unit + Integration + E2E) và cả 3 project phải xanh trước khi merge. CI chặn deploy khi `build-and-test` hoặc `e2e` đỏ. Bỏ tầng nào thì ghi lý do trong PR (chỉ chấp nhận khi tầng đó không có hành vi để kiểm, vd. chỉ sửa docs).
+**Bắt buộc:** mọi thay đổi code phải có test Unit + Integration và cả hai project phải xanh trước khi merge. CI chặn deploy khi `build-and-test` đỏ. Bỏ tầng nào thì ghi lý do trong PR (chỉ chấp nhận khi tầng đó không có hành vi để kiểm, vd. chỉ sửa docs).
 
 | Tầng | Project | Phạm vi |
 |------|---------|---------|
 | Unit | `tests/NewHarian.UnitTests` | Logic thuần (policy, validator, helper), không web host, không DB |
 | Integration | `tests/NewHarian.Web.Tests` | HTTP + DI + Identity + phân quyền, EF InMemory |
-| E2E | `tests/NewHarian.E2E` | Playwright .NET trên app thật + Postgres thật |
 
 ```bash
 dotnet test tests/NewHarian.UnitTests
 dotnet test tests/NewHarian.Web.Tests
-# E2E cần Postgres local; tên DB phải chứa "e2e" (bị drop mỗi lần chạy)
-# PowerShell: $env:E2E_CONNECTION_STRING = "Host=localhost;Port=5432;Database=newharian_e2e;Username=postgres;Password=<local>"
-dotnet test tests/NewHarian.E2E
 ```
 
-E2E bị **Skipped** khi không kết nối được DB: như vậy là chưa chạy, không tính là pass. Cài trình duyệt lần đầu: `powershell -ExecutionPolicy Bypass -File tests/NewHarian.E2E/bin/Debug/net10.0/playwright.ps1 install chromium`. Chi tiết, quy ước và Definition of Done: [docs/engineering/testing.md](../docs/engineering/testing.md); checklist PR: [.github/pull_request_template.md](../.github/pull_request_template.md).
+Chi tiết, quy ước và Definition of Done: [docs/engineering/testing.md](../docs/engineering/testing.md); checklist PR: [.github/pull_request_template.md](../.github/pull_request_template.md).
