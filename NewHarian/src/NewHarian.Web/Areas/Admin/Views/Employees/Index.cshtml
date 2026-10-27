@@ -1,4 +1,5 @@
 @model IReadOnlyList<NewHarian.Application.Hr.EmployeeListItemDto>
+@using NewHarian.Application.Admin
 @using NewHarian.Application.Hr
 @using NewHarian.Domain.Enums
 @{
@@ -6,6 +7,8 @@
     Layout = "_AdminLayout";
     var canManage = User.HasPermission(Permissions.Employees.Manage);
     var currentStatus = ViewBag.Status as EmployeeStatus?;
+    var currentRole = ViewBag.Role as string;
+    var roleFilterOptions = UserRolePolicy.Options([]);
 }
 
 <div class="admin-toolbar">
@@ -22,6 +25,13 @@
         @foreach (var s in EmployeeProfilePolicy.Statuses)
         {
             <option value="@s" selected="@(currentStatus == s)">@EmployeeProfilePolicy.StatusLabel(s)</option>
+        }
+    </select>
+    <select name="role" aria-label="Role">
+        <option value="">Tất cả role</option>
+        @foreach (var r in roleFilterOptions)
+        {
+            <option value="@r" selected="@(string.Equals(currentRole, r, StringComparison.Ordinal))">@AppRoles.Label(r)</option>
         }
     </select>
     <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm mã NV / họ tên / email / role" class="form-control filter-bar__search" />

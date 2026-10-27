@@ -12,6 +12,7 @@ public enum EmployeeEditScope
 public sealed record EmployeeListItemDto(
     int? ProfileId,
     string? UserId,
+    /// <summary>Personal email from the employee profile (not login email). Empty when unset / no profile.</summary>
     string Email,
     string FullName,
     IReadOnlyList<string> Roles,
@@ -62,7 +63,9 @@ public sealed class GrantEmployeeAccountRequest
 
 public interface IAdminEmployeeService
 {
-    Task<IReadOnlyList<EmployeeListItemDto>> ListAsync(string? q, EmployeeStatus? status, CancellationToken ct = default);
+    /// <param name="role">AspNet role code from the linked account. Null/empty = all. No-account rows never match a role filter.</param>
+    Task<IReadOnlyList<EmployeeListItemDto>> ListAsync(
+        string? q, EmployeeStatus? status, string? role = null, CancellationToken ct = default);
 
     Task<EmployeeProfileForm?> GetByIdAsync(int id, CancellationToken ct = default);
 

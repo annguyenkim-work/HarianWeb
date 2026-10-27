@@ -17,7 +17,7 @@ public sealed class AdminEmployeeService(
     ILogger<AdminEmployeeService> logger) : IAdminEmployeeService
 {
     public async Task<IReadOnlyList<EmployeeListItemDto>> ListAsync(
-        string? q, EmployeeStatus? status, CancellationToken ct = default)
+        string? q, EmployeeStatus? status, string? role = null, CancellationToken ct = default)
     {
         var internalRoles = RolePermissionMap.InternalRoles.ToList();
         var userRoles = await (
@@ -46,7 +46,7 @@ public sealed class AdminEmployeeService(
             rows.Add(new EmployeeListItemDto(
                 p.Id,
                 p.UserId,
-                u?.Email ?? "",
+                p.PersonalEmail ?? "",
                 p.FullName,
                 roles,
                 u?.IsActive ?? true,
@@ -56,14 +56,14 @@ public sealed class AdminEmployeeService(
                 p.UserId is not null));
         }
 
-        // Legacy: internal-role users still without a profile.
+        // Legacy: internal-role users still without a profile (no PersonalEmail yet).
         foreach (var userId in rolesByUser.Keys.Where(id => !linkedUserIds.Contains(id)))
         {
             if (!userMap.TryGetValue(userId, out var u)) continue;
             rows.Add(new EmployeeListItemDto(
                 null,
                 u.Id,
-                u.Email ?? "",
+                "",
                 u.FullName,
                 rolesByUser[userId],
                 u.IsActive,
@@ -74,8 +74,10 @@ public sealed class AdminEmployeeService(
         }
 
         var term = q?.Trim();
+        var roleFilter = string.IsNullOrWhiteSpace(role) ? null : role.Trim();
         return rows
             .Where(x => status is null || x.Status == status)
+            .Where(x => roleFilter is null || x.Roles.Contains(roleFilter, StringComparer.Ordinal))
             .Where(x => string.IsNullOrEmpty(term) || Matches(x, term))
             .OrderBy(x => x.EmployeeCode is null)
             .ThenBy(x => x.EmployeeCode, StringComparer.Ordinal)

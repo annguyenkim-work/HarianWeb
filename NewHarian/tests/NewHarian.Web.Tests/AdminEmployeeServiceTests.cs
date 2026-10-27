@@ -183,19 +183,30 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
         var sp = scope.ServiceProvider;
         var service = sp.GetRequiredService<IAdminEmployeeService>();
         var noProfile = await NewUserAsync(sp, AppRoles.WarehouseManager);
+        var personalEmail = $"thuy-{Guid.NewGuid():N}@test.local";
         var (_, _, profileId) = await service.SaveAsync(
-            new EmployeeProfileForm { FullName = "Văn Thị Thu Thủy", Status = EmployeeStatus.OnLeave },
+            new EmployeeProfileForm
+            {
+                FullName = "Văn Thị Thu Thủy",
+                PersonalEmail = personalEmail,
+                Status = EmployeeStatus.OnLeave
+            },
             EmployeeEditScope.Hr, null);
 
         var all = await service.ListAsync(null, null);
-        Assert.Contains(all, r => r.UserId == noProfile && r.ProfileId is null);
+        Assert.Contains(all, r => r.UserId == noProfile && r.ProfileId is null && r.Email == "");
         var orphan = Assert.Single(all, r => r.ProfileId == profileId);
         Assert.Equal("ThuyVTT", orphan.EmployeeCode);
+        Assert.Equal(personalEmail, orphan.Email);
         Assert.False(orphan.HasAccount);
 
         var onLeave = await service.ListAsync(null, EmployeeStatus.OnLeave);
         Assert.Contains(onLeave, r => r.ProfileId == profileId);
         Assert.DoesNotContain(onLeave, r => r.UserId == noProfile);
+
+        var byRole = await service.ListAsync(null, null, AppRoles.WarehouseManager);
+        Assert.Contains(byRole, r => r.UserId == noProfile);
+        Assert.DoesNotContain(byRole, r => r.ProfileId == profileId);
     }
 
     [Fact]
@@ -204,11 +215,15 @@ public class AdminEmployeeServiceTests : IClassFixture<NewHarianWebApplicationFa
         using var scope = await ScopeAsync();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var email = $"norole-{Guid.NewGuid():N}@test.local";
-        await users.CreateAsync(new ApplicationUser { UserName = email, Email = email, IsActive = true }, TestUsers.Password);
+        var create = await users.CreateAsync(
+            new ApplicationUser { UserName = email, Email = email, IsActive = true, FullName = "No Role" },
+            TestUsers.Password);
+        Assert.True(create.Succeeded);
+        var userId = (await users.FindByEmailAsync(email))!.Id;
 
         var list = await scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>().ListAsync(null, null);
 
-        Assert.DoesNotContain(list, r => r.Email == email);
+        Assert.DoesNotContain(list, r => r.UserId == userId);
     }
 
     private async Task<IServiceScope> ScopeAsync()

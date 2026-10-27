@@ -11,12 +11,14 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 public class EmployeesController(IAdminEmployeeService employees) : Controller
 {
     [HasPermission(Permissions.Employees.View)]
-    public async Task<IActionResult> Index(string? q, EmployeeStatus? status, int page = 1, CancellationToken ct = default)
+    public async Task<IActionResult> Index(
+        string? q, EmployeeStatus? status, string? role, int page = 1, CancellationToken ct = default)
     {
-        var (items, pager) = AdminPaging.Apply(await employees.ListAsync(q, status, ct), page);
+        var (items, pager) = AdminPaging.Apply(await employees.ListAsync(q, status, role, ct), page);
         ViewBag.Pager = pager;
         ViewBag.Q = q;
         ViewBag.Status = status;
+        ViewBag.Role = role;
         return View(items);
     }
 
