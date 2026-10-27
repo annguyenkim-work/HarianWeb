@@ -22,7 +22,9 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
 
         var list = WebUtility.HtmlDecode(await client.GetStringAsync("/admin/Employees"));
         Assert.Contains("href=\"/admin/Employees\"", list, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains($"data-employee-row=\"{staffEmail}\"", list);
+        Assert.Contains("name=\"role\"", list);
+        Assert.Contains("Tất cả role", list);
+        Assert.Contains(AppRoles.Label(AppRoles.WarehouseStaff), list);
         Assert.Contains("Chưa bổ sung hồ sơ", list);
         Assert.Contains("btn-add-employee", list);
 
