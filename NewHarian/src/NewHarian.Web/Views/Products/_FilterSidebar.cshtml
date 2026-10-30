@@ -1,0 +1,117 @@
+@model ProductListingPageModel
+@using System.Globalization
+@using NewHarian.Application.Catalog
+@{
+    var criteria = Model.Criteria;
+    var activeTag = criteria.TagSlug;
+    var tagKnown = Model.Tags.Any(t => string.Equals(t.Slug, activeTag, StringComparison.OrdinalIgnoreCase));
+}
+
+<aside class="catalog-filters" aria-labelledby="catalog-filters-title">
+    <input id="catalog-filters-toggle" class="catalog-filters__toggle" type="checkbox" />
+    <label class="catalog-filters__summary" for="catalog-filters-toggle">
+        <span>@Localizer["Catalog.Filters"]</span>
+        @if (criteria.ActiveFilterCount > 0)
+        {
+            <span class="catalog-filters__badge">@criteria.ActiveFilterCount</span>
+        }
+        <span class="catalog-filters__chevron" aria-hidden="true"></span>
+    </label>
+    <div class="catalog-filters__body">
+            <h2 id="catalog-filters-title" class="catalog-filters__heading">@Localizer["Catalog.Filters"]</h2>
+
+            <div class="catalog-filters__group">
+                <h3>@Localizer["Catalog.Category"]</h3>
+                <ul class="catalog-filters__list">
+                    <li>
+                        <a class="catalog-filters__link@(Model.Category is null ? " is-active" : "")"
+                           href="@Model.PathForCategory(null)"
+                           aria-current="@(Model.Category is null ? "page" : null)">
+                            <span>@Localizer["Catalog.All"]</span>
+                        </a>
+                    </li>
+                    @foreach (var category in Model.Categories)
+                    {
+                        var current = Model.Category is not null
+                            && string.Equals(Model.Category.Slug, category.Slug, StringComparison.OrdinalIgnoreCase);
+                        <li>
+                            <a class="catalog-filters__link@(current ? " is-active" : "")"
+                               href="@Model.PathForCategory(category.Slug)"
+                               aria-current="@(current ? "page" : null)">
+                                <span class="catalog-filters__name">@category.Name</span>
+                                <span class="catalog-filters__count">@category.PhysicalCount</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            @if (Model.Tags.Count > 0 || activeTag is not null)
+            {
+                <div class="catalog-filters__group">
+                    <h3>@Localizer["Catalog.Tags"]</h3>
+                    <ul class="catalog-filters__list">
+                        <li>
+                            <a class="catalog-filters__link@(activeTag is null ? " is-active" : "")"
+                               href="@Model.Href(criteria.ForTag(null))"
+                               aria-current="@(activeTag is null ? "true" : null)">
+                                <span>@Localizer["Catalog.All"]</span>
+                            </a>
+                        </li>
+                        @foreach (var tag in Model.Tags)
+                        {
+                            var current = string.Equals(tag.Slug, activeTag, StringComparison.OrdinalIgnoreCase);
+                            <li>
+                                <a class="catalog-filters__link@(current ? " is-active" : "")"
+                                   href="@Model.Href(criteria.ForTag(tag.Slug))"
+                                   aria-current="@(current ? "true" : null)">
+                                    <span>@tag.Name</span>
+                                </a>
+                            </li>
+                        }
+                        @if (activeTag is not null && !tagKnown)
+                        {
+                            <li>
+                                <a class="catalog-filters__link is-active"
+                                   href="@Model.Href(criteria.ForTag(activeTag))"
+                                   aria-current="true">
+                                    <span>@activeTag</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <form class="catalog-filters__group catalog-price-form" method="get" action="@Model.BasePath">
+                <h3>@Localizer["Catalog.Price"]</h3>
+                @if (criteria.Sort != ProductListSort.Recommended)
+                {
+                    <input type="hidden" name="sort" value="@ProductListCriteria.Key(criteria.Sort)" />
+                }
+                @if (!string.IsNullOrEmpty(activeTag))
+                {
+                    <input type="hidden" name="tag" value="@activeTag" />
+                }
+                <div class="catalog-price">
+                    <label class="catalog-field" for="catalog-price-min">
+                        <span>@Localizer["Catalog.PriceMin"]</span>
+                        <input id="catalog-price-min" name="min" type="number" inputmode="numeric" min="0" step="1"
+                               value="@criteria.MinPrice?.ToString("0", CultureInfo.InvariantCulture)" />
+                    </label>
+                    <label class="catalog-field" for="catalog-price-max">
+                        <span>@Localizer["Catalog.PriceMax"]</span>
+                        <input id="catalog-price-max" name="max" type="number" inputmode="numeric" min="0" step="1"
+                               value="@criteria.MaxPrice?.ToString("0", CultureInfo.InvariantCulture)" />
+                    </label>
+                </div>
+                <div class="catalog-filters__actions">
+                    <button type="submit" class="catalog-btn">@Localizer["Catalog.Apply"]</button>
+                    @if (criteria.ActiveFilterCount > 0)
+                    {
+                        <a class="catalog-text-link" href="@Model.Href(criteria.WithoutTagOrPrice())">@Localizer["Catalog.Clear"]</a>
+                    }
+                </div>
+            </form>
+    </div>
+</aside>

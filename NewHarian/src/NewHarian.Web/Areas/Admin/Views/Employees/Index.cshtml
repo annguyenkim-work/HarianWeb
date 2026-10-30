@@ -8,6 +8,8 @@
     var canManage = User.HasPermission(Permissions.Employees.Manage);
     var currentStatus = ViewBag.Status as EmployeeStatus?;
     var currentRole = ViewBag.Role as string;
+    var currentPosition = ViewBag.Position as int?;
+    var positionOptions = ViewBag.Positions as IReadOnlyList<JobPositionListItemDto> ?? [];
     var roleFilterOptions = UserRolePolicy.Options([]);
 }
 
@@ -34,7 +36,14 @@
             <option value="@r" selected="@(string.Equals(currentRole, r, StringComparison.Ordinal))">@AppRoles.Label(r)</option>
         }
     </select>
-    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm mã NV / họ tên / email / role" class="form-control filter-bar__search" />
+    <select name="position" aria-label="Vị trí công việc">
+        <option value="">Tất cả vị trí</option>
+        @foreach (var p in positionOptions)
+        {
+            <option value="@p.Id" selected="@(currentPosition == p.Id)">@(p.IsActive ? p.Name : p.Name + " (tắt)")</option>
+        }
+    </select>
+    <input type="search" name="q" value="@ViewBag.Q" placeholder="Tìm mã NV / họ tên / email / SĐT / role / vị trí" class="form-control filter-bar__search" />
     <button type="submit" class="btn-secondary filter-bar__submit">Tìm kiếm</button>
 </form>
 
@@ -43,7 +52,10 @@
         <tr>
             <th>Mã NV</th>
             <th>Họ tên</th>
+            <th>Vị trí</th>
             <th>Email</th>
+            <th>Ngày sinh</th>
+            <th>Số điện thoại</th>
             <th>Role</th>
             <th>Trạng thái</th>
             <th></th>
@@ -70,7 +82,10 @@
                     <span class="badge" data-no-account>Chưa có tài khoản</span>
                 }
             </td>
+            <td>@(string.IsNullOrWhiteSpace(e.JobPositionName) ? "-" : e.JobPositionName)</td>
             <td>@(string.IsNullOrEmpty(e.Email) ? "-" : e.Email)</td>
+            <td>@(e.DateOfBirth?.ToString("dd/MM/yyyy") ?? "-")</td>
+            <td>@(string.IsNullOrWhiteSpace(e.Phone) ? "-" : e.Phone)</td>
             <td>@(e.Roles.Count == 0 ? "-" : string.Join(", ", e.Roles.Select(AppRoles.Label)))</td>
             <td>
                 @(e.Status is { } st ? EmployeeProfilePolicy.StatusLabel(st) : "-")
@@ -91,7 +106,7 @@
     }
     @if (Model.Count == 0)
     {
-        <tr><td colspan="6" class="muted">Không có nhân viên phù hợp.</td></tr>
+        <tr><td colspan="9" class="muted">Không có nhân viên phù hợp.</td></tr>
     }
     </tbody>
 </table>

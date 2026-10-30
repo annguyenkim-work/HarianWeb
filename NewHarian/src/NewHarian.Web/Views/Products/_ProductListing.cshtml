@@ -1,0 +1,49 @@
+@model ProductListingPageModel
+@{
+    var heading = Model.Category?.Name ?? Localizer["Nav.Products"].Value;
+}
+
+<section class="catalog" aria-labelledby="catalog-title">
+    <header class="catalog__header">
+        <nav class="breadcrumb" aria-label="@Localizer["Catalog.Breadcrumb"]">
+            <a asp-controller="Home" asp-action="Index">@Localizer["Nav.Home"]</a>
+            <span aria-hidden="true">/</span>
+            @if (Model.Category is null)
+            {
+                <span aria-current="page">@Localizer["Nav.Products"]</span>
+            }
+            else
+            {
+                <a href="/products">@Localizer["Nav.Products"]</a>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">@Model.Category.Name</span>
+            }
+        </nav>
+        <h1 id="catalog-title" class="catalog__title">@heading</h1>
+        @if (Model.Category is null)
+        {
+            <p class="catalog__intro">@Localizer["Products.HubIntro"]</p>
+        }
+    </header>
+
+    <div class="catalog__layout">
+        <partial name="_FilterSidebar" model="Model" />
+        <div class="catalog__main">
+            <partial name="_ProductToolbar" model="Model" />
+            @if (Model.Products.Count == 0)
+            {
+                <p class="catalog-empty" role="status">@Localizer["Catalog.Empty"]</p>
+            }
+            else
+            {
+                <ul class="catalog-grid">
+                    @foreach (var product in Model.Products)
+                    {
+                        <partial name="_ProductCard" model="product" />
+                    }
+                </ul>
+            }
+            <partial name="_Pagination" model="Model" />
+        </div>
+    </div>
+</section>

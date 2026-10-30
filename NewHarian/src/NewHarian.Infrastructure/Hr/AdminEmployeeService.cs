@@ -17,7 +17,7 @@ public sealed class AdminEmployeeService(
     ILogger<AdminEmployeeService> logger) : IAdminEmployeeService
 {
     public async Task<IReadOnlyList<EmployeeListItemDto>> ListAsync(
-        string? q, EmployeeStatus? status, string? role = null, CancellationToken ct = default)
+        string? q, EmployeeStatus? status, string? role = null, int? positionId = null, CancellationToken ct = default)
     {
         var internalRoles = RolePermissionMap.InternalRoles.ToList();
         var userRoles = await (
@@ -31,6 +31,8 @@ public sealed class AdminEmployeeService(
             .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)OrderRoles(g.Select(x => x.Role)));
 
         var profiles = await db.EmployeeProfiles.AsNoTracking().ToListAsync(ct);
+        var positionNames = await db.JobPositions.AsNoTracking()
+            .ToDictionaryAsync(p => p.Id, p => p.Name, ct);
         var linkedUserIds = profiles.Where(p => p.UserId is not null).Select(p => p.UserId!).ToHashSet();
         var userIdsNeeded = linkedUserIds.Union(rolesByUser.Keys).ToList();
         var userMap = await db.Users.AsNoTracking()
@@ -53,7 +55,11 @@ public sealed class AdminEmployeeService(
                 p.EmployeeCode,
                 p.Status,
                 EmployeeProfilePolicy.IsPersonalComplete(p),
-                p.UserId is not null));
+                p.UserId is not null,
+                PositionName(positionNames, p.JobPositionId),
+                p.DateOfBirth,
+                p.Phone,
+                p.JobPositionId));
         }
 
         // Legacy: internal-role users still without a profile (no PersonalEmail yet).
@@ -78,6 +84,7 @@ public sealed class AdminEmployeeService(
         return rows
             .Where(x => status is null || x.Status == status)
             .Where(x => roleFilter is null || x.Roles.Contains(roleFilter, StringComparer.Ordinal))
+            .Where(x => positionId is null || x.JobPositionId == positionId)
             .Where(x => string.IsNullOrEmpty(term) || Matches(x, term))
             .OrderBy(x => x.EmployeeCode is null)
             .ThenBy(x => x.EmployeeCode, StringComparer.Ordinal)
@@ -101,6 +108,19 @@ public sealed class AdminEmployeeService(
         {
             if (EmployeeProfilePolicy.Validate(form, scope, DateOnly.FromDateTime(DateTime.Today)) is { } error)
                 return Reject(form, error);
+
+            if (scope == EmployeeEditScope.Hr && form.JobPositionId is int postedPositionId)
+            {
+                var position = await db.JobPositions.AsNoTracking().FirstOrDefaultAsync(p => p.Id == postedPositionId, ct);
+                int? currentPositionId = null;
+                if (form.Id is int existingId)
+                    currentPositionId = await db.EmployeeProfiles.AsNoTracking()
+                        .Where(p => p.Id == existingId)
+                        .Select(p => p.JobPositionId)
+                        .FirstOrDefaultAsync(ct);
+                if (JobPositionPolicy.ValidateAssignment(position is not null, position?.IsActive == true, postedPositionId, currentPositionId) is { } positionError)
+                    return Reject(form, positionError);
+            }
 
             EmployeeProfile profile;
             ApplicationUser? user = null;
@@ -326,7 +346,8 @@ public sealed class AdminEmployeeService(
             HireDate = p.HireDate,
             TerminationDate = p.TerminationDate,
             Status = p.Status,
-            HrNotes = p.HrNotes
+            HrNotes = p.HrNotes,
+            JobPositionId = p.JobPositionId
         };
 
     private (bool Ok, string? Error, int? Id) Reject(EmployeeProfileForm form, string error)
@@ -343,6 +364,7 @@ public sealed class AdminEmployeeService(
 
     private static bool Matches(EmployeeListItemDto row, string term)
         => Contains(row.Email, term) || Contains(row.FullName, term) || Contains(row.EmployeeCode, term)
+           || Contains(row.Phone, term) || Contains(row.JobPositionName, term)
            || row.Roles.Any(r => Contains(AppRoles.Label(r), term));
 
     private static bool Contains(string? value, string term)
@@ -364,8 +386,12 @@ public sealed class AdminEmployeeService(
         p.HireDate,
         p.TerminationDate,
         p.Status,
-        p.HrNotes
+        p.HrNotes,
+        p.JobPositionId
     };
+
+    private static string? PositionName(IReadOnlyDictionary<int, string> names, int? id)
+        => id is int positionId && names.TryGetValue(positionId, out var name) ? name : null;
 
     private static List<string> OrderRoles(IEnumerable<string> roles)
     {

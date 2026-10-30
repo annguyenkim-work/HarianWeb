@@ -99,6 +99,7 @@ public static class EmployeeProfilePolicy
         profile.TerminationDate = form.TerminationDate;
         profile.Status = form.Status;
         profile.HrNotes = Clean(form.HrNotes);
+        profile.JobPositionId = form.JobPositionId;
     }
 
     /// <summary>
@@ -123,6 +124,7 @@ public static class EmployeeProfilePolicy
         posted.TerminationDate = stored.TerminationDate;
         posted.Status = stored.Status;
         posted.HrNotes = stored.HrNotes;
+        posted.JobPositionId = stored.JobPositionId;
     }
 
     /// <summary>The employee has filled in the fields HR needs (date of birth, phone, address, ID number).</summary>

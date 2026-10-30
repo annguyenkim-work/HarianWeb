@@ -8,24 +8,29 @@ using NewHarian.Web.Authorization;
 namespace NewHarian.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
-public class EmployeesController(IAdminEmployeeService employees) : Controller
+public class EmployeesController(IAdminEmployeeService employees, IAdminJobPositionService positions) : Controller
 {
     [HasPermission(Permissions.Employees.View)]
     public async Task<IActionResult> Index(
-        string? q, EmployeeStatus? status, string? role, int page = 1, CancellationToken ct = default)
+        string? q, EmployeeStatus? status, string? role, int? position, int page = 1, CancellationToken ct = default)
     {
-        var (items, pager) = AdminPaging.Apply(await employees.ListAsync(q, status, role, ct), page);
+        var (items, pager) = AdminPaging.Apply(await employees.ListAsync(q, status, role, position, ct), page);
         ViewBag.Pager = pager;
         ViewBag.Q = q;
         ViewBag.Status = status;
         ViewBag.Role = role;
+        ViewBag.Position = position;
+        ViewBag.Positions = await positions.ListAsync(ct);
         return View(items);
     }
 
     [HttpGet]
     [HasPermission(Permissions.Employees.Manage)]
-    public IActionResult Create()
-        => PartialView("_EmployeeForm", new EmployeeProfileForm { Status = EmployeeStatus.Active });
+    public async Task<IActionResult> Create(CancellationToken ct)
+    {
+        await SetPositionChoices(null, ct);
+        return PartialView("_EmployeeForm", new EmployeeProfileForm { Status = EmployeeStatus.Active });
+    }
 
     [HttpGet]
     [HasPermission(Permissions.Employees.View)]
@@ -40,6 +45,7 @@ public class EmployeesController(IAdminEmployeeService employees) : Controller
             model = await employees.GetByUserIdAsync(id, ct);
 
         if (model is null) return NotFound();
+        await SetPositionChoices(model.JobPositionId, ct);
         return PartialView("_EmployeeForm", model);
     }
 
@@ -58,6 +64,7 @@ public class EmployeesController(IAdminEmployeeService employees) : Controller
             else if (!string.IsNullOrEmpty(model.UserId) && await employees.GetByUserIdAsync(model.UserId, ct) is { } byUser)
                 EmployeeProfilePolicy.MergeReadOnly(model, byUser, EmployeeEditScope.Hr, lockPersonalEmail: !canChangeEmail);
             ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");
+            await SetPositionChoices(model.JobPositionId, ct);
             return PartialView("_EmployeeForm", model);
         }
         return Json(new
@@ -104,4 +111,7 @@ public class EmployeesController(IAdminEmployeeService employees) : Controller
             redirect = Url.Action(nameof(Index), new { area = "Admin" })
         });
     }
+
+    private async Task SetPositionChoices(int? includeId, CancellationToken ct)
+        => ViewBag.JobPositions = await positions.ListChoicesAsync(includeId, ct);
 }

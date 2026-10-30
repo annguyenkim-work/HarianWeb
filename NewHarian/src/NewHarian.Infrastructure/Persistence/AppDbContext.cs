@@ -62,6 +62,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
+    public DbSet<JobPosition> JobPositions => Set<JobPosition>();
     public DbSet<PageViewDaily> PageViewDaily => Set<PageViewDaily>();
     public DbSet<ProductViewDaily> ProductViewDaily => Set<ProductViewDaily>();
 
@@ -583,6 +584,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.HrNotes).HasMaxLength(2000);
             e.HasOne<ApplicationUser>().WithOne().HasForeignKey<EmployeeProfile>(x => x.UserId)
                 .IsRequired(false).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.JobPosition).WithMany().HasForeignKey(x => x.JobPositionId)
+                .IsRequired(false).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<JobPosition>(e =>
+        {
+            e.ToTable("JobPositions");
+            e.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            e.HasIndex(x => x.Name).IsUnique();
+            e.HasIndex(x => x.SortOrder);
         });
 
         builder.Entity<PageViewDaily>(e =>

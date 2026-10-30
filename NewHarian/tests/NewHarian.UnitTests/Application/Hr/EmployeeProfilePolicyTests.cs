@@ -103,7 +103,9 @@ public class EmployeeProfilePolicyTests
     public void Apply_self_never_changes_hr_fields()
     {
         var profile = StoredProfile();
+        profile.JobPositionId = 2;
         var form = PostedForm();
+        form.JobPositionId = 8;
 
         EmployeeProfilePolicy.Apply(profile, form, EmployeeEditScope.Self);
 
@@ -113,13 +115,16 @@ public class EmployeeProfilePolicyTests
         Assert.Equal(new DateOnly(2024, 1, 2), profile.HireDate);
         Assert.Null(profile.TerminationDate);
         Assert.Equal("note", profile.HrNotes);
+        Assert.Equal(2, profile.JobPositionId);
     }
 
     [Fact]
     public void Apply_hr_changes_every_field_and_normalizes_text()
     {
         var profile = StoredProfile();
+        profile.JobPositionId = 2;
         var form = PostedForm();
+        form.JobPositionId = 8;
 
         EmployeeProfilePolicy.Apply(profile, form, EmployeeEditScope.Hr);
 
@@ -129,6 +134,7 @@ public class EmployeeProfilePolicyTests
         Assert.Null(profile.HrNotes);
         Assert.Equal("001099012345", profile.CitizenId);
         Assert.Null(profile.PersonalEmail);
+        Assert.Equal(8, profile.JobPositionId);
     }
 
     [Fact]
@@ -167,12 +173,14 @@ public class EmployeeProfilePolicyTests
     {
         var posted = PostedForm();
         posted.Email = "hacked@x.local";
+        posted.JobPositionId = 8;
         posted.EmployeeCode = "NV9999";
         var stored = new EmployeeProfileForm
         {
             Id = 7, UserId = "u1", Email = "real@x.local", EmployeeCode = "NV0001", Roles = ["HrStaff"],
             HasAccount = true,
-            HireDate = new DateOnly(2023, 6, 1), Status = EmployeeStatus.Active, HrNotes = "note"
+            HireDate = new DateOnly(2023, 6, 1), Status = EmployeeStatus.Active, HrNotes = "note",
+            JobPositionId = 2
         };
 
         EmployeeProfilePolicy.MergeReadOnly(posted, stored, EmployeeEditScope.Self);
@@ -187,6 +195,7 @@ public class EmployeeProfilePolicyTests
         Assert.Equal("note", posted.HrNotes);
         Assert.Equal(EmployeeStatus.Active, posted.Status);
         Assert.Equal(" 0909123456 ", posted.Phone);
+        Assert.Equal(2, posted.JobPositionId);
     }
 
     [Fact]

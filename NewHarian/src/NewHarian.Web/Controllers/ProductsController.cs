@@ -4,6 +4,7 @@ using NewHarian.Application.Analytics;
 using NewHarian.Application.Catalog;
 using NewHarian.Application.Formatting;
 using NewHarian.Domain.Enums;
+using NewHarian.Web.Models;
 
 namespace NewHarian.Web.Controllers;
 
@@ -14,14 +15,16 @@ public class ProductsController(ICatalogService catalog) : Controller
     private const int PageSize = 12;
 
     [HttpGet("/products")]
-    public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
+    public async Task<IActionResult> Index(
+        int page = 1,
+        string? sort = null,
+        string? tag = null,
+        decimal? min = null,
+        decimal? max = null,
+        CancellationToken ct = default)
     {
-        page = Math.Max(1, page);
-        var (items, total) = await catalog.GetProductsByTypeAsync(CatalogKind.Product, Lang, page, PageSize, ct);
-        ViewBag.Page = page;
-        ViewBag.Total = total;
-        ViewBag.PageSize = PageSize;
-        return View("Browse", items);
+        var criteria = ProductListCriteria.Normalize(page, sort, categorySlug: null, tag, min, max);
+        return await ListingAsync(criteria, category: null, ct);
     }
 
     [HttpGet("/products/search")]
@@ -35,7 +38,7 @@ public class ProductsController(ICatalogService catalog) : Controller
         ViewBag.Tag = tagSlug;
         ViewBag.Page = page;
         ViewBag.PageSize = PageSize;
-        ViewBag.Tags = await catalog.GetPublishedProductTagsAsync(ct);
+        ViewBag.Tags = await catalog.GetPublishedProductTagsAsync(ct: ct);
 
         if (query.Length == 0 && tagSlug.Length == 0)
         {
@@ -48,7 +51,14 @@ public class ProductsController(ICatalogService catalog) : Controller
         return View(items);
     }
 
-    public async Task<IActionResult> Category(string categorySlug, int page = 1, CancellationToken ct = default)
+    public async Task<IActionResult> Category(
+        string categorySlug,
+        int page = 1,
+        string? sort = null,
+        string? tag = null,
+        decimal? min = null,
+        decimal? max = null,
+        CancellationToken ct = default)
     {
         var cat = await catalog.GetCategoryAsync(categorySlug, Lang, ct);
         if (cat is null) return NotFound();
@@ -57,14 +67,26 @@ public class ProductsController(ICatalogService catalog) : Controller
         if (cat.PhysicalCount == 0 && cat.ServiceCount > 0)
             return RedirectToRoutePermanent("serviceCategory", new { categorySlug, page });
 
-        page = Math.Max(1, page);
-        var (items, total) = await catalog.GetProductsByCategoryAsync(
-            categorySlug, Lang, page, PageSize, CatalogKind.Product, ct);
-        ViewBag.Category = cat;
-        ViewBag.Page = page;
-        ViewBag.Total = total;
-        ViewBag.PageSize = PageSize;
-        return View(items);
+        var criteria = ProductListCriteria.Normalize(page, sort, categorySlug, tag, min, max);
+        return await ListingAsync(criteria, cat, ct);
+    }
+
+    private async Task<IActionResult> ListingAsync(
+        ProductListCriteria criteria, CategoryCardDto? category, CancellationToken ct)
+    {
+        var (items, total) = await catalog.ListProductsAsync(Lang, criteria, ct);
+        var categories = await catalog.GetActiveCategoriesAsync(Lang, ct);
+        var tags = await catalog.GetPublishedProductTagsAsync(category?.Slug, ct);
+        var model = new ProductListingPageModel
+        {
+            Category = category,
+            Products = items,
+            Criteria = criteria,
+            Total = total,
+            Categories = categories.Where(c => c.PhysicalCount > 0).ToList(),
+            Tags = tags
+        };
+        return View(category is null ? "Browse" : "Category", model);
     }
 
     public async Task<IActionResult> Detail(string categorySlug, string productSlug, CancellationToken ct)

@@ -125,6 +125,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IAdminEmployeeService, AdminEmployeeService>();
+        services.AddScoped<IAdminJobPositionService, AdminJobPositionService>();
         services.AddScoped<IStaffActorLabel, StaffActorLabel>();
         services.AddScoped<IStatusHistoryService, StatusHistoryService>();
         services.AddScoped<IAdminNotificationRealtime, NullAdminNotificationRealtime>();

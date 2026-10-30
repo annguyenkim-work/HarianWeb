@@ -80,6 +80,24 @@
             <small class="form-hint">Đổi role tại trang Users.</small>
         </label>
         <label>
+            Vị trí công việc
+            <select asp-for="JobPositionId" class="form-control">
+                <option value="">Chọn</option>
+                @foreach (var position in ViewData["JobPositions"] as IReadOnlyList<JobPositionOptionDto> ?? [])
+                {
+                    if (Model.JobPositionId == position.Id)
+                    {
+                        <option value="@position.Id" selected>@position.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@position.Id">@position.Name</option>
+                    }
+                }
+            </select>
+            <small class="form-hint">Danh mục vị trí nhân sự. Không phải quyền đăng nhập.</small>
+        </label>
+        <label>
             Trạng thái
             <select asp-for="Status" class="form-control">
                 @foreach (var s in EmployeeProfilePolicy.Statuses)

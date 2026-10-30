@@ -1,0 +1,22 @@
+@model NewHarian.Application.Hr.JobPositionForm
+
+<form asp-area="Admin" asp-controller="JobPositions" asp-action="Save" method="post" id="job-position-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <h2>@(Model.Id is null ? "Thêm vị trí công việc" : "Sửa vị trí công việc")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-grid">
+        <label class="full">
+            Tên *
+            <input asp-for="Name" class="form-control" required maxlength="100" />
+        </label>
+        <label class="full">
+            <input asp-for="IsActive" /> Đang dùng
+            <small class="form-hint">Tắt thì hồ sơ đang gắn vẫn giữ tên này. Form chọn mới không còn hiện vị trí đã tắt.</small>
+        </label>
+    </div>
+    <div class="modal__actions">
+        <button type="button" data-close class="btn-secondary">Hủy</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+    </div>
+</form>

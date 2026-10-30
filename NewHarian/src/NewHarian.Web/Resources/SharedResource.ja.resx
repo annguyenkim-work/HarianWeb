@@ -226,4 +226,27 @@
   <data name="Dealers.BusinessLicenseKeep" xml:space="preserve"><value>アップロード済み: {0}。差し替える場合は新しいファイルを選択してください。</value></data>
   <data name="Dealers.NoFile" xml:space="preserve"><value>なし</value></data>
   <data name="Nav.Dealers" xml:space="preserve"><value>代理店</value></data>
+  <data name="Catalog.Filters" xml:space="preserve"><value>絞り込み</value></data>
+  <data name="Catalog.Category" xml:space="preserve"><value>カテゴリー</value></data>
+  <data name="Catalog.Tags" xml:space="preserve"><value>タグ</value></data>
+  <data name="Catalog.Price" xml:space="preserve"><value>価格</value></data>
+  <data name="Catalog.All" xml:space="preserve"><value>すべて</value></data>
+  <data name="Catalog.PriceMin" xml:space="preserve"><value>最低</value></data>
+  <data name="Catalog.PriceMax" xml:space="preserve"><value>最高</value></data>
+  <data name="Catalog.Apply" xml:space="preserve"><value>適用</value></data>
+  <data name="Catalog.Clear" xml:space="preserve"><value>絞り込みを解除</value></data>
+  <data name="Catalog.Sort" xml:space="preserve"><value>並び替え</value></data>
+  <data name="Catalog.SortRecommended" xml:space="preserve"><value>おすすめ</value></data>
+  <data name="Catalog.SortName" xml:space="preserve"><value>名前</value></data>
+  <data name="Catalog.SortPriceAsc" xml:space="preserve"><value>価格の安い順</value></data>
+  <data name="Catalog.SortPriceDesc" xml:space="preserve"><value>価格の高い順</value></data>
+  <data name="Catalog.Range" xml:space="preserve"><value>{0}-{1} / {2} 件</value></data>
+  <data name="Catalog.Count" xml:space="preserve"><value>{0} 件</value></data>
+  <data name="Catalog.Empty" xml:space="preserve"><value>該当する製品がありません。</value></data>
+  <data name="Catalog.Featured" xml:space="preserve"><value>注目</value></data>
+  <data name="Catalog.Previous" xml:space="preserve"><value>前へ</value></data>
+  <data name="Catalog.Next" xml:space="preserve"><value>次へ</value></data>
+  <data name="Catalog.Pagination" xml:space="preserve"><value>ページ</value></data>
+  <data name="Catalog.Breadcrumb" xml:space="preserve"><value>パンくず</value></data>
+  <data name="Catalog.RemoveFilter" xml:space="preserve"><value>{0}の絞り込みを解除</value></data>
 </root>
