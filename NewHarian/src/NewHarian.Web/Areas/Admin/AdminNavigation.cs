@@ -36,6 +36,7 @@ public static class AdminNavigation
         new("Nhân sự",
         [
             new("Nhân viên", "Employees", "Index", Permissions.Employees.View),
+            new("Vị trí công việc", "JobPositions", "Index", Permissions.Employees.Manage),
         ]),
         new("Cài đặt website",
         [

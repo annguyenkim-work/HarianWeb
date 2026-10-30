@@ -226,4 +226,27 @@
   <data name="Dealers.BusinessLicenseKeep" xml:space="preserve"><value>Uploaded: {0}. Choose a new file to replace it.</value></data>
   <data name="Dealers.NoFile" xml:space="preserve"><value>None</value></data>
   <data name="Nav.Dealers" xml:space="preserve"><value>Dealers</value></data>
+  <data name="Catalog.Filters" xml:space="preserve"><value>Filters</value></data>
+  <data name="Catalog.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Catalog.Tags" xml:space="preserve"><value>Tags</value></data>
+  <data name="Catalog.Price" xml:space="preserve"><value>Price</value></data>
+  <data name="Catalog.All" xml:space="preserve"><value>All</value></data>
+  <data name="Catalog.PriceMin" xml:space="preserve"><value>Minimum</value></data>
+  <data name="Catalog.PriceMax" xml:space="preserve"><value>Maximum</value></data>
+  <data name="Catalog.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Catalog.Clear" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Catalog.Sort" xml:space="preserve"><value>Sort</value></data>
+  <data name="Catalog.SortRecommended" xml:space="preserve"><value>Recommended</value></data>
+  <data name="Catalog.SortName" xml:space="preserve"><value>Name A-Z</value></data>
+  <data name="Catalog.SortPriceAsc" xml:space="preserve"><value>Price low to high</value></data>
+  <data name="Catalog.SortPriceDesc" xml:space="preserve"><value>Price high to low</value></data>
+  <data name="Catalog.Range" xml:space="preserve"><value>{0}-{1} / {2} products</value></data>
+  <data name="Catalog.Count" xml:space="preserve"><value>{0} products</value></data>
+  <data name="Catalog.Empty" xml:space="preserve"><value>No matching products.</value></data>
+  <data name="Catalog.Featured" xml:space="preserve"><value>Featured</value></data>
+  <data name="Catalog.Previous" xml:space="preserve"><value>Previous</value></data>
+  <data name="Catalog.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Catalog.Pagination" xml:space="preserve"><value>Pagination</value></data>
+  <data name="Catalog.Breadcrumb" xml:space="preserve"><value>Breadcrumb</value></data>
+  <data name="Catalog.RemoveFilter" xml:space="preserve"><value>Remove filter {0}</value></data>
 </root>

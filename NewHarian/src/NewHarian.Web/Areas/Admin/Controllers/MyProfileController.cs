@@ -9,13 +9,14 @@ namespace NewHarian.Web.Areas.Admin.Controllers;
 /// <summary>"Hồ sơ của tôi": the signed-in user fills in the personal part of their own employee profile.</summary>
 [Area("Admin")]
 [HasPermission(Permissions.MyProfile.Edit)]
-public class MyProfileController(IAdminEmployeeService employees) : Controller
+public class MyProfileController(IAdminEmployeeService employees, IAdminJobPositionService positions) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         var model = await employees.GetByUserIdAsync(CurrentUserId, ct);
         if (model is null) return NotFound();
+        ViewBag.JobPositions = await positions.ListChoicesAsync(model.JobPositionId, ct);
         return View(model);
     }
 
@@ -42,6 +43,7 @@ public class MyProfileController(IAdminEmployeeService employees) : Controller
         if (stored is null) return NotFound();
         EmployeeProfilePolicy.MergeReadOnly(model, stored, EmployeeEditScope.Self, lockPersonalEmail: !canChangeEmail);
         ModelState.AddModelError(string.Empty, error ?? "Không lưu được.");
+        ViewBag.JobPositions = await positions.ListChoicesAsync(model.JobPositionId, ct);
         return View(model);
     }
 

@@ -1,0 +1,63 @@
+@model ProductListingPageModel
+@using NewHarian.Application.Catalog
+@using NewHarian.Application.Formatting
+@{
+    var criteria = Model.Criteria;
+    var (start, end) = ProductListCriteria.ResultRange(criteria.Page, ProductListCriteria.PageSize, Model.Total);
+    var activeTag = Model.Tags.FirstOrDefault(t => string.Equals(t.Slug, criteria.TagSlug, StringComparison.OrdinalIgnoreCase));
+    var tagLabel = activeTag?.Name ?? criteria.TagSlug ?? "";
+}
+
+<div class="catalog-toolbar">
+    <p class="catalog-toolbar__count">
+        @if (start == 0)
+        {
+            @Localizer["Catalog.Count", Model.Total]
+        }
+        else
+        {
+            @Localizer["Catalog.Range", start, end, Model.Total]
+        }
+    </p>
+    <div class="catalog-sort" role="group" aria-label="@Localizer["Catalog.Sort"]">
+        <a href="@Model.Href(criteria.ForSort(ProductListSort.Recommended))"
+           aria-current="@(criteria.Sort == ProductListSort.Recommended ? "true" : null)">@Localizer["Catalog.SortRecommended"]</a>
+        <a href="@Model.Href(criteria.ForSort(ProductListSort.Name))"
+           aria-current="@(criteria.Sort == ProductListSort.Name ? "true" : null)">@Localizer["Catalog.SortName"]</a>
+        <a href="@Model.Href(criteria.ForSort(ProductListSort.PriceAsc))"
+           aria-current="@(criteria.Sort == ProductListSort.PriceAsc ? "true" : null)">@Localizer["Catalog.SortPriceAsc"]</a>
+        <a href="@Model.Href(criteria.ForSort(ProductListSort.PriceDesc))"
+           aria-current="@(criteria.Sort == ProductListSort.PriceDesc ? "true" : null)">@Localizer["Catalog.SortPriceDesc"]</a>
+    </div>
+</div>
+
+@if (criteria.TagSlug is not null || criteria.MinPrice is not null || criteria.MaxPrice is not null)
+{
+    <ul class="catalog-chips">
+        @if (criteria.TagSlug is not null)
+        {
+            <li>
+                <a class="catalog-chip" href="@Model.Href(criteria.ForTag(null))">
+                    <span>@tagLabel</span>
+                    <span aria-hidden="true">×</span>
+                    <span class="visually-hidden">@Localizer["Catalog.RemoveFilter", tagLabel]</span>
+                </a>
+            </li>
+        }
+        @if (criteria.MinPrice is not null || criteria.MaxPrice is not null)
+        {
+            var priceLabel = criteria.MinPrice is decimal min && criteria.MaxPrice is decimal max
+                ? $"{MoneyFormat.Vnd(min)} - {MoneyFormat.Vnd(max)}"
+                : criteria.MinPrice is decimal onlyMin
+                    ? MoneyFormat.Vnd(onlyMin)
+                    : MoneyFormat.Vnd(criteria.MaxPrice!.Value);
+            <li>
+                <a class="catalog-chip" href="@Model.Href(criteria.ForPrice(null, null))">
+                    <span>@priceLabel</span>
+                    <span aria-hidden="true">×</span>
+                    <span class="visually-hidden">@Localizer["Catalog.RemoveFilter", priceLabel]</span>
+                </a>
+            </li>
+        }
+    </ul>
+}

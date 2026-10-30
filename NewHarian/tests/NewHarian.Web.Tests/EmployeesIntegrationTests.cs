@@ -24,6 +24,7 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         Assert.Contains("href=\"/admin/Employees\"", list, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("name=\"role\"", list);
         Assert.Contains("Tất cả role", list);
+        Assert.Contains("Tất cả vị trí", list);
         Assert.Contains(AppRoles.Label(AppRoles.WarehouseStaff), list);
         Assert.Contains("Chưa bổ sung hồ sơ", list);
         Assert.Contains("btn-add-employee", list);
@@ -132,6 +133,78 @@ public class EmployeesIntegrationTests : IClassFixture<NewHarianWebApplicationFa
         using var scope = _factory.Services.CreateScope();
         var list = await scope.ServiceProvider.GetRequiredService<IAdminEmployeeService>().ListAsync("AnNK", null);
         Assert.Contains(list, r => r.EmployeeCode is not null && r.EmployeeCode.StartsWith("AnNK") && !r.HasAccount);
+    }
+
+    [Fact]
+    public async Task Employee_list_shows_date_of_birth_and_phone()
+    {
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.HrManager);
+        var token = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync("/admin/Employees/Create"))!;
+        var name = "Sinh " + Guid.NewGuid().ToString("N")[..6];
+
+        var response = await client.PostAsync("/admin/Employees/Save", Form(token, null, null, new()
+        {
+            ["FullName"] = name,
+            ["DateOfBirth"] = "1992-03-15",
+            ["Phone"] = "0909111222",
+            ["Status"] = nameof(EmployeeStatus.Active),
+        }));
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("ok").GetBoolean());
+
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync("/admin/Employees?q=" + Uri.EscapeDataString(name)));
+        Assert.Contains("Ngày sinh", html);
+        Assert.Contains("Số điện thoại", html);
+        Assert.Contains("15/03/1992", html);
+        Assert.Contains("0909111222", html);
+    }
+
+    [Fact]
+    public async Task Employee_list_filters_by_job_position()
+    {
+        var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.HrManager);
+        var token = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync("/admin/JobPositions/Edit"))!;
+        var suffix = Guid.NewGuid().ToString("N")[..6];
+        var salesName = "Loc KD " + suffix;
+        var warehouseName = "Loc Kho " + suffix;
+
+        async Task<int> AddPosition(string name)
+        {
+            var save = await client.PostAsync("/admin/JobPositions/Save", Form(token, null, null, new()
+            {
+                ["Name"] = name,
+                ["IsActive"] = "true"
+            }));
+            using var json = JsonDocument.Parse(await save.Content.ReadAsStringAsync());
+            Assert.True(json.RootElement.GetProperty("ok").GetBoolean());
+            using var scope = _factory.Services.CreateScope();
+            var rows = await scope.ServiceProvider.GetRequiredService<IAdminJobPositionService>().ListAsync();
+            return rows.Single(p => p.Name == name).Id;
+        }
+
+        var salesId = await AddPosition("KD " + suffix);
+        var warehouseId = await AddPosition("Kho " + suffix);
+        var createToken = AdminLoginHelper.ExtractRequestVerificationToken(await client.GetStringAsync("/admin/Employees/Create"))!;
+
+        async Task AddEmployee(string fullName, int positionId)
+        {
+            var save = await client.PostAsync("/admin/Employees/Save", Form(createToken, null, null, new()
+            {
+                ["FullName"] = fullName,
+                ["JobPositionId"] = positionId.ToString(),
+                ["Status"] = nameof(EmployeeStatus.Active)
+            }));
+            using var json = JsonDocument.Parse(await save.Content.ReadAsStringAsync());
+            Assert.True(json.RootElement.GetProperty("ok").GetBoolean());
+        }
+
+        await AddEmployee(salesName, salesId);
+        await AddEmployee(warehouseName, warehouseId);
+
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync($"/admin/Employees?position={salesId}"));
+        Assert.Contains(salesName, html);
+        Assert.DoesNotContain(warehouseName, html);
+        Assert.Contains($"value=\"{salesId}\" selected", html);
     }
 
     [Fact]

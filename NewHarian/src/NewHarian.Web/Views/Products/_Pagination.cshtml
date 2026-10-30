@@ -1,0 +1,47 @@
+@model ProductListingPageModel
+@using NewHarian.Application.Catalog
+@{
+    if (Model.TotalPages <= 1)
+    {
+        return;
+    }
+
+    var page = Model.Criteria.Page;
+    var window = ProductListCriteria.PageWindow(page, Model.TotalPages);
+}
+
+<nav class="catalog-pager" aria-label="@Localizer["Catalog.Pagination"]">
+    @if (page > 1 && page <= Model.TotalPages)
+    {
+        <a rel="prev" href="@Model.Href(Model.Criteria.ForPage(page - 1))">@Localizer["Catalog.Previous"]</a>
+    }
+    else
+    {
+        <span class="is-disabled">@Localizer["Catalog.Previous"]</span>
+    }
+    <ol class="catalog-pager__pages">
+        @foreach (var item in window)
+        {
+            if (item is null)
+            {
+                <li><span class="catalog-pager__gap" aria-hidden="true">…</span></li>
+            }
+            else if (item == page)
+            {
+                <li><span aria-current="page">@item</span></li>
+            }
+            else
+            {
+                <li><a href="@Model.Href(Model.Criteria.ForPage(item.Value))">@item</a></li>
+            }
+        }
+    </ol>
+    @if (page < Model.TotalPages)
+    {
+        <a rel="next" href="@Model.Href(Model.Criteria.ForPage(page + 1))">@Localizer["Catalog.Next"]</a>
+    }
+    else
+    {
+        <span class="is-disabled">@Localizer["Catalog.Next"]</span>
+    }
+</nav>

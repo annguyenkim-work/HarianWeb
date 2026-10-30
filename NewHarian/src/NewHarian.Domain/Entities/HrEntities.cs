@@ -28,7 +28,21 @@ public class EmployeeProfile
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
     public string? HrNotes { get; set; }
 
+    public int? JobPositionId { get; set; }
+    public JobPosition? JobPosition { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public string? UpdatedByUserId { get; set; }
+}
+
+/// <summary>HR job title. Independent of the login role on the user account.</summary>
+public class JobPosition
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }

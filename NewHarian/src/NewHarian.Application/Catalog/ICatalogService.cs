@@ -19,7 +19,10 @@ public record ProductCardDto(
     decimal? FromPrice,
     string? ImageUrl,
     bool HidePrice = false,
-    string? ShortDescription = null);
+    string? ShortDescription = null,
+    string? CategoryName = null,
+    bool IsFeatured = false,
+    IReadOnlyList<string>? Tags = null);
 
 public record ProductVariantDto(
     int Id,
@@ -60,10 +63,17 @@ public interface ICatalogService
     /// <summary>Published items filtered by CatalogKind (Product=0, Service=1), queried from the matching table.</summary>
     Task<(IReadOnlyList<ProductCardDto> Items, int Total)> GetProductsByTypeAsync(
         CatalogKind kind, string lang, int page, int pageSize, CancellationToken ct = default);
+    /// <summary>
+    /// Published physical products for the guest listing.
+    /// Recommended sort is category SortOrder, then product SortOrder, then Id. Tag, price, and name sorts apply before paging.
+    /// </summary>
+    Task<(IReadOnlyList<ProductCardDto> Items, int Total)> ListProductsAsync(
+        string lang, ProductListCriteria criteria, CancellationToken ct = default);
     /// <summary>Searches across both Products and Services; optional tag filter applies to physical products only.</summary>
     Task<(IReadOnlyList<ProductCardDto> Items, int Total)> SearchProductsAsync(
         string query, string lang, int page, int pageSize, string? tagSlug = null, CancellationToken ct = default);
-    Task<IReadOnlyList<TagChipDto>> GetPublishedProductTagsAsync(CancellationToken ct = default);
+    /// <summary>Tags on published products. Pass a category slug to limit the set to that category.</summary>
+    Task<IReadOnlyList<TagChipDto>> GetPublishedProductTagsAsync(string? categorySlug = null, CancellationToken ct = default);
     Task<ProductDetailDto?> GetProductAsync(string categorySlug, string productSlug, string lang, CancellationToken ct = default);
     Task<ProductDetailDto?> GetServiceAsync(string categorySlug, string productSlug, string lang, CancellationToken ct = default);
     /// <summary>

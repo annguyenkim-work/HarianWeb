@@ -114,6 +114,72 @@ public class CatalogService(AppDbContext db) : ICatalogService
         }
     }
 
+    public async Task<(IReadOnlyList<ProductCardDto> Items, int Total)> ListProductsAsync(
+        string lang, ProductListCriteria criteria, CancellationToken ct = default)
+    {
+        lang = NormalizeLang(lang);
+        var query = db.Products.AsNoTracking()
+            .Where(p => p.Status == ProductStatus.Published && p.Category.IsActive);
+
+        if (!string.IsNullOrEmpty(criteria.CategorySlug))
+            query = query.Where(p => p.Category.Slug == criteria.CategorySlug);
+
+        if (!string.IsNullOrEmpty(criteria.TagSlug))
+            query = query.Where(p => p.ProductTags.Any(pt => pt.Tag.Slug == criteria.TagSlug));
+
+        if (criteria.MinPrice is decimal minPrice)
+        {
+            query = query.Where(p =>
+                p.Variants.Where(v => v.IsActive)
+                    .OrderByDescending(v => v.IsDefault)
+                    .ThenBy(v => v.SortOrder)
+                    .Select(v => (decimal?)v.Price)
+                    .FirstOrDefault() >= minPrice);
+        }
+
+        if (criteria.MaxPrice is decimal maxPrice)
+        {
+            query = query.Where(p =>
+                p.Variants.Where(v => v.IsActive)
+                    .OrderByDescending(v => v.IsDefault)
+                    .ThenBy(v => v.SortOrder)
+                    .Select(v => (decimal?)v.Price)
+                    .FirstOrDefault() <= maxPrice);
+        }
+
+        var total = await query.CountAsync(ct);
+        query = criteria.Sort switch
+        {
+            ProductListSort.Name => query
+                .OrderBy(p => p.Translations.Where(t => t.LanguageCode == lang).Select(t => t.Name).FirstOrDefault() ?? p.Slug)
+                .ThenBy(p => p.Id),
+            ProductListSort.PriceAsc => query
+                .OrderBy(p => p.Variants.Where(v => v.IsActive)
+                    .OrderByDescending(v => v.IsDefault)
+                    .ThenBy(v => v.SortOrder)
+                    .Select(v => (decimal?)v.Price)
+                    .FirstOrDefault() ?? decimal.MaxValue)
+                .ThenBy(p => p.Id),
+            ProductListSort.PriceDesc => query
+                .OrderByDescending(p => p.Variants.Where(v => v.IsActive)
+                    .OrderByDescending(v => v.IsDefault)
+                    .ThenBy(v => v.SortOrder)
+                    .Select(v => (decimal?)v.Price)
+                    .FirstOrDefault() ?? decimal.MinValue)
+                .ThenBy(p => p.Id),
+            _ => query
+                .OrderBy(p => p.Category.SortOrder)
+                .ThenBy(p => p.SortOrder)
+                .ThenBy(p => p.Id)
+        };
+
+        var items = await ProjectProductCards(
+                query.Skip((criteria.Page - 1) * ProductListCriteria.PageSize).Take(ProductListCriteria.PageSize),
+                lang)
+            .ToListAsync(ct);
+        return (await WithTagsAsync(items, ct), total);
+    }
+
     public async Task<(IReadOnlyList<ProductCardDto> Items, int Total)> SearchProductsAsync(
         string query, string lang, int page, int pageSize, string? tagSlug = null, CancellationToken ct = default)
     {
@@ -162,11 +228,14 @@ public class CatalogService(AppDbContext db) : ICatalogService
         return (items, total);
     }
 
-    public async Task<IReadOnlyList<TagChipDto>> GetPublishedProductTagsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<TagChipDto>> GetPublishedProductTagsAsync(string? categorySlug = null, CancellationToken ct = default)
     {
+        var category = string.IsNullOrWhiteSpace(categorySlug) ? null : categorySlug.Trim();
         return await db.Tags.AsNoTracking()
             .Where(t => t.ProductTags.Any(pt =>
-                pt.Product.Status == ProductStatus.Published && pt.Product.Category.IsActive))
+                pt.Product.Status == ProductStatus.Published &&
+                pt.Product.Category.IsActive &&
+                (category == null || pt.Product.Category.Slug == category)))
             .OrderBy(t => t.Name)
             .Select(t => new TagChipDto(t.Slug, t.Name))
             .ToListAsync(ct);
@@ -418,7 +487,11 @@ public class CatalogService(AppDbContext db) : ICatalogService
             p.MainImage != null ? p.MainImage.StoredPath : null,
             false,
             p.Translations.Where(t => t.LanguageCode == lang).Select(t => t.ShortDescription).FirstOrDefault()
-                ?? p.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.ShortDescription).FirstOrDefault()));
+                ?? p.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.ShortDescription).FirstOrDefault(),
+            p.Category.Translations.Where(t => t.LanguageCode == lang).Select(t => t.Name).FirstOrDefault()
+                ?? p.Category.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.Name).FirstOrDefault()
+                ?? p.Category.Slug,
+            p.IsFeatured));
 
     private static IQueryable<ProductCardDto> ProjectServiceCards(IQueryable<Domain.Entities.Service> query, string lang)
         => query.Select(s => new ProductCardDto(
@@ -436,7 +509,32 @@ public class CatalogService(AppDbContext db) : ICatalogService
             s.MainImage != null ? s.MainImage.StoredPath : null,
             s.HidePrice,
             s.Translations.Where(t => t.LanguageCode == lang).Select(t => t.ShortDescription).FirstOrDefault()
-                ?? s.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.ShortDescription).FirstOrDefault()));
+                ?? s.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.ShortDescription).FirstOrDefault(),
+            s.Category.Translations.Where(t => t.LanguageCode == lang).Select(t => t.Name).FirstOrDefault()
+                ?? s.Category.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.Name).FirstOrDefault()
+                ?? s.Category.Slug,
+            s.IsFeatured));
+
+    private async Task<List<ProductCardDto>> WithTagsAsync(List<ProductCardDto> items, CancellationToken ct)
+    {
+        var ids = items.Where(i => i.Kind == CatalogKind.Product).Select(i => i.Id).Distinct().ToList();
+        if (ids.Count == 0) return items;
+
+        var rows = await db.ProductTags.AsNoTracking()
+            .Where(pt => ids.Contains(pt.ProductId))
+            .OrderBy(pt => pt.Tag.Name)
+            .Select(pt => new { pt.ProductId, pt.Tag.Name })
+            .ToListAsync(ct);
+        var map = rows
+            .GroupBy(r => r.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<string>)g.Select(x => x.Name).Distinct().ToList());
+
+        return items
+            .Select(i => i.Kind == CatalogKind.Product && map.TryGetValue(i.Id, out var tags) ? i with { Tags = tags } : i)
+            .ToList();
+    }
 
     private IQueryable<Domain.Entities.Product> FilterProductsByTerm(IQueryable<Domain.Entities.Product> query, string term)
     {

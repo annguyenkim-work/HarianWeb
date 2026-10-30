@@ -1,0 +1,70 @@
+@model NewHarian.Application.Catalog.ProductCardDto
+@using System.Globalization
+@using NewHarian.Application.Formatting
+@{
+    var tags = Model.Tags ?? Array.Empty<string>();
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<li class="catalog-card">
+    <article class="catalog-card__article">
+        <a class="catalog-card__link"
+           asp-controller="@CatalogNav.ControllerName(Model.Kind)"
+           asp-action="Detail"
+           asp-route-categorySlug="@Model.CategorySlug"
+           asp-route-productSlug="@Model.Slug">
+            <div class="catalog-card__media">
+                @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="" loading="lazy" decoding="async" />
+                }
+                else
+                {
+                    <span class="catalog-card__placeholder" aria-hidden="true"></span>
+                }
+            </div>
+            <div class="catalog-card__body">
+                @if (!string.IsNullOrWhiteSpace(Model.CategoryName))
+                {
+                    <p class="catalog-card__eyebrow">@Model.CategoryName</p>
+                }
+                <h2 class="catalog-card__name">@Model.Name</h2>
+                @if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
+                {
+                    <p class="catalog-card__desc">@Model.ShortDescription</p>
+                }
+                @if (Model.Kind == NewHarian.Domain.Enums.CatalogKind.Service || Model.IsFeatured || tags.Count > 0)
+                {
+                    <ul class="catalog-card__tags">
+                        @if (Model.Kind == NewHarian.Domain.Enums.CatalogKind.Service)
+                        {
+                            <li class="catalog-tag">@Localizer["Products.BookLabel"]</li>
+                        }
+                        @if (Model.IsFeatured)
+                        {
+                            <li class="catalog-tag catalog-tag--featured">@Localizer["Catalog.Featured"]</li>
+                        }
+                        @foreach (var tag in tags)
+                        {
+                            <li class="catalog-tag">@tag</li>
+                        }
+                    </ul>
+                }
+                @if (Model.HidePrice)
+                {
+                    <p class="catalog-card__price catalog-card__price--quiet">
+                        <span class="catalog-card__price-value">@Localizer["Products.PriceOnRequest"]</span>
+                    </p>
+                }
+                else if (Model.FromPrice is decimal price)
+                {
+                    <p class="catalog-card__price">
+                        <span class="catalog-card__price-kicker">@Localizer["Products.From"]</span>
+                        <span class="catalog-card__price-value">@price.ToString("N0", vi)</span>
+                        <span class="catalog-card__price-currency">@MoneyFormat.CurrencySuffix</span>
+                    </p>
+                }
+            </div>
+        </a>
+    </article>
+</li>

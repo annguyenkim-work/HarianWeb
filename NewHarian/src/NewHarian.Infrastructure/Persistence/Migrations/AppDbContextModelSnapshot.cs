@@ -947,6 +947,9 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<int?>("JobPositionId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("PersonalEmail")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -974,6 +977,8 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EmployeeCode")
                         .IsUnique();
+
+                    b.HasIndex("JobPositionId");
 
                     b.HasIndex("UserId")
                         .IsUnique()
@@ -1201,6 +1206,41 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("JobApplications");
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.JobPosition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("SortOrder");
+
+                    b.ToTable("JobPositions", (string)null);
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.MediaFile", b =>
@@ -2920,10 +2960,17 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("NewHarian.Domain.Entities.EmployeeProfile", b =>
                 {
+                    b.HasOne("NewHarian.Domain.Entities.JobPosition", "JobPosition")
+                        .WithMany()
+                        .HasForeignKey("JobPositionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("NewHarian.Infrastructure.Identity.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("NewHarian.Domain.Entities.EmployeeProfile", "UserId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("JobPosition");
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.HomeSlide", b =>

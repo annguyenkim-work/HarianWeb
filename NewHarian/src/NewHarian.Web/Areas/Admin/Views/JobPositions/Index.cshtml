@@ -1,0 +1,101 @@
+@model IReadOnlyList<NewHarian.Application.Hr.JobPositionListItemDto>
+@using NewHarian.Web.Areas.Admin
+@{
+    ViewData["Title"] = "Vị trí công việc";
+    Layout = "_AdminLayout";
+    var pager = ViewBag.Pager as AdminPagerModel;
+    var offset = pager?.Offset ?? 0;
+    var total = pager?.TotalCount ?? Model.Count;
+}
+
+<div class="admin-toolbar">
+    <h1>Vị trí công việc</h1>
+    <button type="button" class="btn-icon btn-primary" id="btn-add-position" title="Thêm" aria-label="Thêm"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+</div>
+
+<p class="muted">Vị trí mới tự xếp cuối. Dùng mũi tên lên xuống để đổi thứ tự. Vị trí này khác role đăng nhập.</p>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Tên</th>
+            <th class="sort-cell">Thứ tự</th>
+            <th>Đang dùng</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @for (var i = 0; i < Model.Count; i++)
+    {
+        var p = Model[i];
+        var abs = offset + i;
+        <tr>
+            <td>@p.Name</td>
+            <td class="sort-cell">
+                <div class="sort-controls">
+                    <span class="sort-controls__pos">@(abs + 1)</span>
+                    <form asp-action="Move" method="post" class="sort-controls__move">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <button name="direction" value="-1" type="submit" class="btn-icon" title="Lên" aria-label="Lên" @(abs == 0 ? "disabled" : null)><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+                        <button name="direction" value="1" type="submit" class="btn-icon" title="Xuống" aria-label="Xuống" @(abs >= total - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+                    </form>
+                </div>
+            </td>
+            <td>@(p.IsActive ? "✓" : "-")</td>
+            <td class="actions">
+                <button type="button" class="btn-icon btn-edit-position" data-id="@p.Id" title="Sửa" aria-label="Sửa"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+            </td>
+        </tr>
+    }
+    @if (Model.Count == 0)
+    {
+        <tr><td colspan="4" class="muted">Chưa có vị trí công việc.</td></tr>
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />
+
+<dialog id="position-modal" class="modal">
+    <div class="modal__box" id="position-modal-body"></div>
+</dialog>
+
+@section Scripts {
+<script>
+(() => {
+  const modal = document.getElementById('position-modal');
+  const body = document.getElementById('position-modal-body');
+
+  async function openForm(url) {
+    body.innerHTML = await (await fetch(url)).text();
+    modal.showModal();
+    bindForm();
+  }
+
+  function bindForm() {
+    body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
+    const form = body.querySelector('form');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) { adminToast.reloadWith(data.message); return; }
+        adminToast.jsonError(data);
+      } else {
+        body.innerHTML = await res.text();
+        bindForm();
+        adminToast.formErrors(body);
+      }
+    });
+  }
+
+  document.getElementById('btn-add-position')?.addEventListener('click', () => openForm('/admin/JobPositions/Edit'));
+  document.querySelectorAll('.btn-edit-position').forEach(b => b.addEventListener('click', () =>
+    openForm('/admin/JobPositions/Edit?id=' + encodeURIComponent(b.dataset.id))));
+})();
+</script>
+}

@@ -66,7 +66,7 @@
             <li><strong>@AppRoles.Label(AppRoles.SalesStaff):</strong> tạo / xử lý đơn (không hủy, không export), đặt lịch, liên hệ, xem catalog và đại lý.</li>
             <li><strong>@AppRoles.Label(AppRoles.WarehouseManager):</strong> toàn bộ kho (nhập, điều chỉnh, vị trí, cài đặt kho), giao đơn (Processing / Shipped / Delivered).</li>
             <li><strong>@AppRoles.Label(AppRoles.WarehouseStaff):</strong> nhập kho, xem lô và lịch sử kho, giao đơn.</li>
-            <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> hồ sơ nhân viên (thêm / sửa), hồ sơ ứng tuyển, tin tức / tin tuyển dụng, trang nội dung, menu, slide.</li>
+            <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> hồ sơ nhân viên (thêm / sửa), vị trí công việc, hồ sơ ứng tuyển, tin tức / tin tuyển dụng, trang nội dung, menu, slide.</li>
             <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> xem hồ sơ nhân viên (không sửa); hồ sơ ứng tuyển / tin / CMS như @AppRoles.Label(AppRoles.HrManager) trừ sửa meta trang và menu.</li>
         </ul>
         <p class="muted" style="margin:0.5rem 0 0">Mỗi tài khoản chỉ có <strong>một</strong> vai trò. Cần thêm quyền: liên hệ Super Admin. Thông báo (chuông) cũng chỉ hiện loại thuộc quyền của bạn.</p>
@@ -329,10 +329,13 @@
 
     <h3>Ai làm gì</h3>
     <ul>
-        <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> thêm / sửa hồ sơ NV (không đổi email sau khi đã tạo).</li>
+        <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> thêm / sửa hồ sơ NV (không đổi email sau khi đã tạo), quản lý danh mục <strong>Vị trí công việc</strong>.</li>
         <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> chỉ xem hồ sơ.</li>
-        <li><strong>@AppRoles.Label(AppRoles.SuperAdmin):</strong> cấp tài khoản, gắn NV trên Users, đổi email NV / email đăng nhập.</li>
+        <li><strong>@AppRoles.Label(AppRoles.SuperAdmin):</strong> cấp tài khoản, gắn NV trên Users, đổi email NV / email đăng nhập, và quản lý vị trí công việc.</li>
     </ul>
+    <h3>6. Vị trí công việc</h3>
+    <p>Menu <strong>Nhân sự → Vị trí công việc</strong> (<code>/admin/JobPositions</code>). HR thêm tên vị trí, sửa, tắt, và đổi thứ tự bằng mũi tên lên xuống. Trên hồ sơ nhân viên, ô <strong>Vị trí công việc</strong> chọn một vị trí trong danh mục đó.</p>
+    <p>Vị trí là thông tin nhân sự. <strong>Role</strong> là quyền đăng nhập, đổi ở trang Users. Đổi vị trí không tạo tài khoản và không đổi role. Nhân viên chưa có tài khoản vẫn gán được vị trí. Tắt một vị trí thì hồ sơ đang gắn vẫn hiện tên cũ. Form chọn mới chỉ còn vị trí đang dùng.</p>
 </section>
 }
 
@@ -342,8 +345,8 @@
         <h2>Danh mục / Sản phẩm / Dịch vụ / Màu sắc</h2>
         <p>Các màn danh sách dùng pattern modal: <em>Thêm</em> / <em>Sửa</em> mở form trong dialog, không sang trang Edit riêng. Nếu chỉ có quyền xem, danh sách không hiện nút Thêm / Sửa / Xóa / ↑↓.</p>
         <ul>
-            <li><strong>Danh mục</strong> - nhóm sản phẩm/dịch vụ; thứ tự hiển thị bằng ↑/↓.</li>
-            <li><strong>Sản phẩm</strong> - hàng hóa bán qua giỏ; bật/tắt biến thể size/màu theo từng sản phẩm; ảnh chính + ảnh theo SKU. Ô <em>Đơn giá</em> / giá vốn: nhập số, khi rời ô hiện dạng <code>1.500.000 VNĐ</code>.</li>
+            <li><strong>Danh mục</strong> - nhóm sản phẩm/dịch vụ; thứ tự hiển thị bằng ↑/↓. Trên trang khách <code>/products</code>, mục <em>Đề xuất</em> dùng đúng thứ tự này: danh mục đứng trước hiện hết sản phẩm của nó, rồi mới tới danh mục sau.</li>
+            <li><strong>Sản phẩm</strong> - hàng hóa bán qua giỏ; bật/tắt biến thể size/màu theo từng sản phẩm; ảnh chính + ảnh theo SKU. ↑/↓ chỉ đổi thứ tự trong cùng danh mục. Khi khách chọn <em>Đề xuất</em>, sản phẩm trong một danh mục hiện theo thứ tự này. Ô <em>Đơn giá</em> / giá vốn: nhập số, khi rời ô hiện dạng <code>1.500.000 VNĐ</code>.</li>
             <li><strong>Dịch vụ</strong> - dịch vụ đặt lịch (không qua giỏ).</li>
             <li><strong>Màu sắc</strong> - chỉ <em>Name</em> + <em>Meaning</em> (VI/EN/JA); không có trường Description riêng.</li>
         </ul>

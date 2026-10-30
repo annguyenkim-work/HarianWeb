@@ -20,7 +20,11 @@ public sealed record EmployeeListItemDto(
     string? EmployeeCode,
     EmployeeStatus? Status,
     bool IsPersonalComplete,
-    bool HasAccount);
+    bool HasAccount,
+    string? JobPositionName = null,
+    DateOnly? DateOfBirth = null,
+    string? Phone = null,
+    int? JobPositionId = null);
 
 public sealed record EmployeeLinkOptionDto(int Id, string EmployeeCode, string FullName, string? PersonalEmail);
 
@@ -50,6 +54,7 @@ public sealed class EmployeeProfileForm
     public DateOnly? TerminationDate { get; set; }
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
     public string? HrNotes { get; set; }
+    public int? JobPositionId { get; set; }
 }
 
 public sealed class GrantEmployeeAccountRequest
@@ -65,7 +70,7 @@ public interface IAdminEmployeeService
 {
     /// <param name="role">AspNet role code from the linked account. Null/empty = all. No-account rows never match a role filter.</param>
     Task<IReadOnlyList<EmployeeListItemDto>> ListAsync(
-        string? q, EmployeeStatus? status, string? role = null, CancellationToken ct = default);
+        string? q, EmployeeStatus? status, string? role = null, int? positionId = null, CancellationToken ct = default);
 
     Task<EmployeeProfileForm?> GetByIdAsync(int id, CancellationToken ct = default);
 
