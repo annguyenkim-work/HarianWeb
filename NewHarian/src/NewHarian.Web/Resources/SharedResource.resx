@@ -98,8 +98,6 @@
   <data name="Checkout.Summary" xml:space="preserve"><value>Tóm tắt đơn</value></data>
   <data name="Checkout.Shipping" xml:space="preserve"><value>Phí vận chuyển</value></data>
   <data name="Checkout.Total" xml:space="preserve"><value>Tổng cộng</value></data>
-  <data name="Checkout.FreeHint" xml:space="preserve"><value>Miễn phí ship từ</value></data>
-  <data name="Checkout.FreeShip" xml:space="preserve"><value>Miễn phí vận chuyển</value></data>
   <data name="Checkout.Confirm" xml:space="preserve"><value>Xác nhận đơn hàng</value></data>
   <data name="Checkout.Customer" xml:space="preserve"><value>Thông tin khách</value></data>
   <data name="Checkout.ShipTo" xml:space="preserve"><value>Địa chỉ giao hàng</value></data>

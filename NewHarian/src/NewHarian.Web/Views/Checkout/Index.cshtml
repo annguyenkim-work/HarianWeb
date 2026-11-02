@@ -3,7 +3,6 @@
     ViewData["Title"] = Localizer["Checkout.Title"];
     var priced = (NewHarian.Application.Cart.PricedCart)ViewBag.Priced;
     var dealer = ViewBag.Dealer as NewHarian.Application.Dealers.DealerOptionDto;
-    var threshold = (decimal)ViewBag.FreeThreshold;
     var citizenIdOptional = dealer?.BusinessType == NewHarian.Domain.Enums.DealerBusinessType.Company;
 }
 
@@ -81,7 +80,6 @@
         }
         <p>@Localizer["Checkout.Shipping"]: <span id="sum-ship">-</span></p>
         <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total">@priced.NetSubTotal.ToString("N0") VNĐ</span></strong></p>
-        <p class="muted">@Localizer["Checkout.FreeHint"] @threshold.ToString("N0") VNĐ</p>
     </aside>
 </div>
 
@@ -91,14 +89,13 @@
   const form = document.getElementById('checkout-form');
   const shipEl = document.getElementById('sum-ship');
   const totalEl = document.getElementById('sum-total');
-  const freeShipLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Checkout.FreeShip"].Value));
   async function refresh() {
     const sel = form?.querySelector('[data-address-province]');
     if (!sel?.value) { if (shipEl) shipEl.textContent = '-'; return; }
     const res = await fetch('/checkout/shipping-fee?provinceCode=' + encodeURIComponent(sel.value));
     if (!res.ok) return;
     const data = await res.json();
-    if (shipEl) shipEl.textContent = data.isFree ? freeShipLabel : data.feeText;
+    if (shipEl) shipEl.textContent = data.feeText;
     if (totalEl) totalEl.textContent = data.totalText;
   }
   form?.addEventListener('change', e => {

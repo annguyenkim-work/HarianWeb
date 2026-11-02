@@ -78,13 +78,12 @@ public class CheckoutController(
     {
         var dealer = (await dealerCheckout.GetAsync(ct)).Dealer;
         var priced = await pricing.PriceAsync(cart.GetCart(), dealer?.Id, ct);
-        var (fee, isFree) = await shipping.CalculateFeeAsync(priced.NetSubTotal, provinceCode ?? "", ct);
+        var fee = await shipping.CalculateFeeAsync(provinceCode ?? "", ct);
         var total = priced.NetSubTotal + fee;
         return Json(new
         {
             fee,
             feeText = MoneyFormat.Vnd(fee),
-            isFree,
             subTotal = priced.SubTotal,
             subTotalText = MoneyFormat.Vnd(priced.SubTotal),
             total,
@@ -101,12 +100,11 @@ public class CheckoutController(
 
         var dealer = await LoadDealerAsync(ct);
         var priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
-        var (fee, isFree) = await shipping.CalculateFeeAsync(priced.NetSubTotal, draft.ShippingProvinceCode, ct);
+        var fee = await shipping.CalculateFeeAsync(draft.ShippingProvinceCode, ct);
         catalog.TryResolve(draft.ShippingProvinceCode, draft.ShippingCommuneCode, out var addr);
         ViewBag.Priced = priced;
         ViewBag.Dealer = dealer;
         ViewBag.ShippingFee = fee;
-        ViewBag.IsFreeShipping = isFree;
         ViewBag.ShipTo = AddressFormat.Join(draft.ShippingAddress, addr.CommuneName, addr.ProvinceName);
         ViewBag.Total = priced.NetSubTotal + fee;
         return View(draft);
@@ -210,7 +208,6 @@ public class CheckoutController(
     {
         ViewBag.Priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
         ViewBag.Dealer = dealer;
-        ViewBag.FreeThreshold = await shipping.GetFreeThresholdAsync(ct);
         ViewBag.DealerBox = new DealerCodeBoxModel(dealer, returnUrl, TempData[DealerCodeErrorKey] as string);
     }
 

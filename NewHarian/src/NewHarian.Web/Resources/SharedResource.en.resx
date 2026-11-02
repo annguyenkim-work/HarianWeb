@@ -98,8 +98,6 @@
   <data name="Checkout.Summary" xml:space="preserve"><value>Order summary</value></data>
   <data name="Checkout.Shipping" xml:space="preserve"><value>Shipping</value></data>
   <data name="Checkout.Total" xml:space="preserve"><value>Total</value></data>
-  <data name="Checkout.FreeHint" xml:space="preserve"><value>Free shipping from</value></data>
-  <data name="Checkout.FreeShip" xml:space="preserve"><value>Free shipping</value></data>
   <data name="Checkout.Confirm" xml:space="preserve"><value>Confirm order</value></data>
   <data name="Checkout.Customer" xml:space="preserve"><value>Customer</value></data>
   <data name="Checkout.ShipTo" xml:space="preserve"><value>Ship to</value></data>

@@ -52,7 +52,7 @@ Menu admin nằm ở `src/NewHarian.Web/Areas/Admin/AdminNavigation.cs`. Mỗi m
 |------|-----|
 | Vận hành | Thống kê, Danh mục, Sản phẩm, Dịch vụ, Màu sắc, Đặt lịch, Đơn hàng, Kho, Liên hệ, Đại lý, Chiết khấu đại lý, Hồ sơ ứng tuyển, Hướng dẫn, Tin tức (`/admin/Posts?kind=News`), Tin tuyển dụng (`/admin/Posts?kind=Job`) |
 | Nhân sự | Nhân viên (`/admin/Employees`) |
-| Cài đặt website | Trang nội dung, Menus, Slides, Media, Phí ship (`/admin/Shipping`), Users, Thương hiệu & logo, Email & thông báo, Mẫu email, Cài đặt kho (`/admin/InventorySettings`), Ngân hàng / QR |
+| Cài đặt website | Trang nội dung, Menus, Slides, Media, Phí ship theo tỉnh (`/admin/Shipping`, không miễn theo giá trị đơn), Users, Thương hiệu & logo, Email & thông báo, Mẫu email, Cài đặt kho (`/admin/InventorySettings`), Ngân hàng / QR |
 
 Ngoài menu: `/admin/logs`, `/admin/audit-logs`, `/admin/MyProfile`.
 

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NewHarian.Application.Address;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Email;
+using NewHarian.Application.Shipping;
 using NewHarian.Domain.Entities;
 using NewHarian.Domain.Enums;
 using NewHarian.Infrastructure.Email;
@@ -95,7 +96,6 @@ public static class DbSeeder
                 new SiteSetting { Key = "contactcta.button.ja", Value = "お問い合わせ", Group = "contactcta" },
                 new SiteSetting { Key = "contactcta.button.url", Value = "/contact", Group = "contactcta" },
                 new SiteSetting { Key = "contactcta.visible", Value = "true", Group = "contactcta" },
-                new SiteSetting { Key = "shipping.free_threshold", Value = "1000000", Group = "shipping" },
                 new SiteSetting { Key = "notifications.inquiry_email", Value = "info@harian.local", Group = "notifications" },
                 new SiteSetting { Key = "notifications.application_email", Value = "info@harian.local", Group = "notifications" },
                 new SiteSetting { Key = "notifications.service_booking_email", Value = "info@harian.local", Group = "notifications" },
@@ -138,6 +138,8 @@ public static class DbSeeder
         }
 
         await EnsureSettingAsync(db, "notifications.dealer_email", "info@harian.local", "notifications");
+
+        await RemoveSettingAsync(db, "shipping.free_threshold");
 
         // Legacy setting removed (header overlays hero; no menu background image)
         var obsoleteHeaderBg = await db.SiteSettings.Where(s => s.Key == "company.header_bg").ToListAsync();
@@ -973,7 +975,7 @@ public static class DbSeeder
                     NameJa = p.Name,
                     SortOrder = sort++,
                     IsActive = true,
-                    Rate = new ShippingRate { Fee = 30000m }
+                    Rate = new ShippingRate { Fee = ShippingFees.DefaultVnd }
                 });
             }
             else
@@ -984,7 +986,7 @@ public static class DbSeeder
                 row.SortOrder = sort++;
                 row.IsActive = true;
                 if (row.Rate is null)
-                    row.Rate = new ShippingRate { Fee = 30000m };
+                    row.Rate = new ShippingRate { Fee = ShippingFees.DefaultVnd };
             }
         }
         await db.SaveChangesAsync();

@@ -16,7 +16,7 @@ public sealed record PricedCartLine(
 
 public sealed record PricedCart(IReadOnlyList<PricedCartLine> Lines, decimal SubTotal, decimal DiscountAmount, bool IsDealer)
 {
-    /// <summary>Amount actually paid for goods; also the base for the free-shipping threshold.</summary>
+    /// <summary>Amount actually paid for goods.</summary>
     public decimal NetSubTotal => SubTotal - DiscountAmount;
 }
 
