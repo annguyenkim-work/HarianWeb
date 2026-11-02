@@ -24,21 +24,16 @@ public class ShippingService(AppDbContext db) : IShippingService
             })).ToList();
     }
 
-    public async Task<(decimal Fee, bool IsFreeShipping)> CalculateFeeAsync(decimal subTotal, int provinceId, CancellationToken ct = default)
+    public async Task<decimal> CalculateFeeAsync(int provinceId, CancellationToken ct = default)
     {
-        var threshold = await GetFreeThresholdAsync(ct);
-        if (subTotal >= threshold)
-            return (0m, true);
-
         var fee = await db.ShippingRates.AsNoTracking()
             .Where(r => r.ProvinceId == provinceId)
             .Select(r => (decimal?)r.Fee)
-            .FirstOrDefaultAsync(ct) ?? 30000m;
-
-        return (fee, false);
+            .FirstOrDefaultAsync(ct);
+        return fee ?? ShippingFees.DefaultVnd;
     }
 
-    public async Task<(decimal Fee, bool IsFreeShipping)> CalculateFeeAsync(decimal subTotal, string provinceCode, CancellationToken ct = default)
+    public async Task<decimal> CalculateFeeAsync(string provinceCode, CancellationToken ct = default)
     {
         var code = provinceCode?.Trim() ?? "";
         var id = await db.ShippingProvinces.AsNoTracking()
@@ -46,16 +41,7 @@ public class ShippingService(AppDbContext db) : IShippingService
             .Select(p => (int?)p.Id)
             .FirstOrDefaultAsync(ct);
         if (id is null)
-            return (30000m, false);
-        return await CalculateFeeAsync(subTotal, id.Value, ct);
-    }
-
-    public async Task<decimal> GetFreeThresholdAsync(CancellationToken ct = default)
-    {
-        var raw = await db.SiteSettings.AsNoTracking()
-            .Where(s => s.Key == "shipping.free_threshold")
-            .Select(s => s.Value)
-            .FirstOrDefaultAsync(ct);
-        return decimal.TryParse(raw, out var v) ? v : 1_000_000m;
+            return ShippingFees.DefaultVnd;
+        return await CalculateFeeAsync(id.Value, ct);
     }
 }

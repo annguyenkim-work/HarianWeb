@@ -74,7 +74,7 @@ public partial class OrderService(
 
             var priced = await cartPricing.PriceAsync(basket, dealer?.Id, ct);
             var subTotal = priced.SubTotal;
-            var (shipFee, _) = await shipping.CalculateFeeAsync(priced.NetSubTotal, province.Id, ct);
+            var shipFee = await shipping.CalculateFeeAsync(province.Id, ct);
             var total = priced.NetSubTotal + shipFee;
 
             var orderNumber = await NextOrderNumberAsync(ct);

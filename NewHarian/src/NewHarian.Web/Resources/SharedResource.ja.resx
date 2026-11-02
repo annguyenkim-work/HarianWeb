@@ -98,8 +98,6 @@
   <data name="Checkout.Summary" xml:space="preserve"><value>ご注文内容</value></data>
   <data name="Checkout.Shipping" xml:space="preserve"><value>送料</value></data>
   <data name="Checkout.Total" xml:space="preserve"><value>合計</value></data>
-  <data name="Checkout.FreeHint" xml:space="preserve"><value>送料無料の閾値</value></data>
-  <data name="Checkout.FreeShip" xml:space="preserve"><value>送料無料</value></data>
   <data name="Checkout.Confirm" xml:space="preserve"><value>注文確認</value></data>
   <data name="Checkout.Customer" xml:space="preserve"><value>お客様情報</value></data>
   <data name="Checkout.ShipTo" xml:space="preserve"><value>お届け先</value></data>

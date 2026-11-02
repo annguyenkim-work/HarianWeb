@@ -6,7 +6,6 @@
     var fee = (decimal)ViewBag.ShippingFee;
     var total = (decimal)ViewBag.Total;
     var shipTo = (string)(ViewBag.ShipTo ?? "");
-    var isFree = (bool)ViewBag.IsFreeShipping;
     var colspan = priced.IsDealer ? 3 : 2;
 }
 
@@ -88,7 +87,7 @@
         {
             <tr><td colspan="@colspan">@Localizer["Checkout.DealerDiscount"]</td><td data-confirm-discount>-@priced.DiscountAmount.ToString("N0") VNĐ</td></tr>
         }
-        <tr><td colspan="@colspan">@Localizer["Checkout.Shipping"]</td><td>@(isFree ? Localizer["Checkout.FreeShip"].ToString() : fee.ToString("N0") + " VNĐ")</td></tr>
+        <tr><td colspan="@colspan">@Localizer["Checkout.Shipping"]</td><td>@fee.ToString("N0") VNĐ</td></tr>
         <tr><td colspan="@colspan"><strong>@Localizer["Checkout.Total"]</strong></td><td><strong data-confirm-total>@total.ToString("N0") VNĐ</strong></td></tr>
     </tfoot>
 </table>
