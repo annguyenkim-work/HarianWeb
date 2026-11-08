@@ -203,21 +203,39 @@
 
   function wireDealerPicker(form, onChange) {
     const sel = form.querySelector('#dealer-select');
-    const wrapSel = form.querySelector('#dealer-select-wrap');
     const invoice = form.querySelector('#dealer-invoice');
-    const name = form.querySelector('[name="CustomerName"]');
-    const phone = form.querySelector('[name="CustomerPhone"]');
-    const email = form.querySelector('[name="CustomerEmail"]');
-    const address = form.querySelector('[data-address-line]');
-    const province = form.querySelector('[data-address-province]');
-    const commune = form.querySelector('[data-address-commune]');
-    const citizenId = form.querySelector('[name="CitizenId"]');
-    const citizenMark = form.querySelector('#citizen-required-mark');
+    const dealerPanel = form.querySelector('[data-order-panel="dealer"]');
+
+    function panelFields(panel) {
+      return {
+        name: panel?.querySelector('[name="CustomerName"]'),
+        phone: panel?.querySelector('[name="CustomerPhone"]'),
+        email: panel?.querySelector('[name="CustomerEmail"]'),
+        address: panel?.querySelector('[data-address-line]'),
+        province: panel?.querySelector('[data-address-province]'),
+        commune: panel?.querySelector('[data-address-commune]'),
+        citizenId: panel?.querySelector('[name="CitizenId"]'),
+        citizenMark: panel?.querySelector('.citizen-required-mark')
+      };
+    }
+
+    function setPanel(panel, on) {
+      if (!panel) return;
+      panel.hidden = !on;
+      panel.classList.toggle('is-active', on);
+      const box = panel.querySelector('fieldset');
+      if (box) box.disabled = !on;
+    }
 
     function applyKind() {
-      const kind = form.querySelector('input[name="customerKind"]:checked')?.value;
+      const kind = form.querySelector('input[name="customerKind"]:checked')?.value === 'dealer' ? 'dealer' : 'retail';
       const isDealer = kind === 'dealer';
-      if (wrapSel) wrapSel.hidden = !isDealer;
+      form.querySelectorAll('[data-order-kind]').forEach(tab => {
+        const on = tab.dataset.orderKind === kind;
+        tab.classList.toggle('is-active', on);
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      form.querySelectorAll('[data-order-panel]').forEach(panel => setPanel(panel, panel.dataset.orderPanel === kind));
       if (sel) sel.required = isDealer;
       if (!isDealer && sel) sel.value = '';
       const opt = sel?.selectedOptions[0];
@@ -232,26 +250,28 @@
           });
         }
       }
+      const fields = panelFields(isDealer ? dealerPanel : form.querySelector('[data-order-panel="retail"]'));
       const optionalCitizen = hasDealer && opt.dataset.type === 'Company';
-      if (citizenId) citizenId.required = !optionalCitizen;
-      if (citizenMark) citizenMark.hidden = optionalCitizen;
+      if (fields.citizenId) fields.citizenId.required = !optionalCitizen;
+      if (fields.citizenMark) fields.citizenMark.hidden = optionalCitizen;
       onChange?.();
     }
 
     form.querySelectorAll('input[name="customerKind"]').forEach(r => r.addEventListener('change', applyKind));
     sel?.addEventListener('change', () => {
       const opt = sel.selectedOptions[0];
+      const fields = panelFields(dealerPanel);
       if (opt && opt.value) {
-        if (name) name.value = opt.dataset.name || '';
-        if (phone) phone.value = opt.dataset.phone || '';
-        if (email) email.value = opt.dataset.email || '';
-        if (address) address.value = opt.dataset.address || '';
-        if (province) {
-          province.value = opt.dataset.province || '';
-          province.dispatchEvent(new Event('change'));
+        if (fields.name) fields.name.value = opt.dataset.name || '';
+        if (fields.phone) fields.phone.value = opt.dataset.phone || '';
+        if (fields.email) fields.email.value = opt.dataset.email || '';
+        if (fields.address) fields.address.value = opt.dataset.address || '';
+        if (fields.province) {
+          fields.province.value = opt.dataset.province || '';
+          fields.province.dispatchEvent(new Event('change'));
         }
-        if (commune) commune.value = opt.dataset.commune || '';
-        if (citizenId) citizenId.value = opt.dataset.citizenid || '';
+        if (fields.commune) fields.commune.value = opt.dataset.commune || '';
+        if (fields.citizenId) fields.citizenId.value = opt.dataset.citizenid || '';
       }
       applyKind();
     });

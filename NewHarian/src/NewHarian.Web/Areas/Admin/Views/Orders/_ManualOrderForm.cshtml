@@ -65,60 +65,101 @@
             <span class="detail-field__label">Mã ngoài</span>
             <input asp-for="ExternalRef" class="form-control" maxlength="100" placeholder="Mã Shopee / TikTok…" />
         </label>
-        <label class="detail-field">
-            <span class="detail-field__label">Tên khách *</span>
-            <input asp-for="CustomerName" class="form-control" required maxlength="200" />
-        </label>
-        <label class="detail-field">
-            <span class="detail-field__label">SĐT *</span>
-            <input asp-for="CustomerPhone" class="form-control" required maxlength="30" />
-        </label>
-        <label class="detail-field">
-            <span class="detail-field__label">CCCD<span id="citizen-required-mark"> *</span></span>
-            <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" />
-        </label>
-        <label class="detail-field">
-            <span class="detail-field__label">Email</span>
-            <input asp-for="CustomerEmail" type="email" class="form-control" maxlength="200" />
-        </label>
-        <fieldset class="detail-field detail-field--wide">
-            <legend class="detail-field__label">Loại khách</legend>
-            <label class="radio-row"><input type="radio" name="customerKind" value="retail" @(isDealer ? null : "checked") /> Khách lẻ</label>
-            <label class="radio-row"><input type="radio" name="customerKind" value="dealer" @(isDealer ? "checked" : null) /> Đại lý</label>
-        </fieldset>
-        <label class="detail-field" id="dealer-select-wrap" hidden>
-            <span class="detail-field__label">Đại lý</span>
-            <select asp-for="DealerId" class="form-control" id="dealer-select">
-                <option value="">Chọn</option>
-                @foreach (var d in (ViewBag.Dealers as IReadOnlyList<NewHarian.Application.Dealers.DealerOptionDto>) ?? [])
-                {
-                    <option value="@d.Id"
-                            data-type="@d.BusinessType"
-                            data-name="@d.FullName"
-                            data-phone="@d.Phone"
-                            data-email="@d.Email"
-                            data-address="@d.ShipAddress"
-                            data-province="@d.ShipProvinceCode"
-                            data-commune="@d.ShipCommuneCode"
-                            data-citizenid="@d.CitizenId"
-                            data-invoice-name="@d.BusinessName"
-                            data-invoice-taxcode="@d.TaxCode"
-                            data-invoice-address="@d.InvoiceAddress"
-                            data-invoice-email="@d.InvoiceEmail">@d.BusinessName (@d.TaxCode)</option>
-                }
-            </select>
-        </label>
-        <div class="detail-field detail-field--wide" id="dealer-invoice" hidden>
-            <span class="detail-field__label">Thông tin xuất hóa đơn (theo hồ sơ đại lý)</span>
-            <span class="detail-field__value">
-                <span data-invoice="name"></span> / MST <span data-invoice="taxcode"></span><br />
-                <span data-invoice="address"></span><br />
-                Email nhận hóa đơn: <span data-invoice="email"></span>
-            </span>
+        <div class="detail-field detail-field--wide order-kind-tabs">
+            <div class="lang-tabs__bar" role="tablist" aria-label="Loại khách">
+                <label class="lang-tabs__tab@(isDealer ? "" : " is-active")" data-order-kind="retail" role="tab" aria-selected="@(!isDealer ? "true" : "false")">
+                    <input type="radio" class="visually-hidden" name="customerKind" value="retail" @(isDealer ? null : "checked") />
+                    Khách lẻ
+                </label>
+                <label class="lang-tabs__tab@(isDealer ? " is-active" : "")" data-order-kind="dealer" role="tab" aria-selected="@(isDealer ? "true" : "false")">
+                    <input type="radio" class="visually-hidden" name="customerKind" value="dealer" @(isDealer ? "checked" : null) />
+                    Đại lý
+                </label>
+            </div>
+            <p class="lang-tabs__hint">Mỗi tab giữ thông tin riêng. Đổi tab không mang dữ liệu của tab kia sang.</p>
+
+            <div class="lang-tabs__panel@(isDealer ? "" : " is-active")" id="order-kind-panel-retail" data-order-panel="retail" @(isDealer ? "hidden" : null)>
+                <fieldset class="fieldset-plain" @(isDealer ? "disabled" : null)>
+                    <div class="detail-grid">
+                        <label class="detail-field">
+                            <span class="detail-field__label">Tên khách *</span>
+                            <input name="CustomerName" value="@(isDealer ? "" : Model.CustomerName)" class="form-control" required maxlength="200" />
+                        </label>
+                        <label class="detail-field">
+                            <span class="detail-field__label">SĐT *</span>
+                            <input name="CustomerPhone" value="@(isDealer ? "" : Model.CustomerPhone)" class="form-control" required maxlength="30" />
+                        </label>
+                        <label class="detail-field">
+                            <span class="detail-field__label">CCCD<span class="citizen-required-mark"> *</span></span>
+                            <input name="CitizenId" value="@(isDealer ? "" : Model.CitizenId)" class="form-control" required maxlength="20" inputmode="numeric" />
+                        </label>
+                        <label class="detail-field">
+                            <span class="detail-field__label">Email</span>
+                            <input name="CustomerEmail" type="email" value="@(isDealer ? "" : Model.CustomerEmail)" class="form-control" maxlength="200" />
+                        </label>
+                        <div class="detail-field detail-field--wide">
+                            @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = isDealer ? "" : Model.ShippingProvinceCode, CommuneValue = isDealer ? "" : Model.ShippingCommuneCode, LineValue = isDealer ? "" : Model.ShippingAddress })
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="lang-tabs__panel@(isDealer ? " is-active" : "")" id="order-kind-panel-dealer" data-order-panel="dealer" @(!isDealer ? "hidden" : null)>
+                <fieldset class="fieldset-plain" @(!isDealer ? "disabled" : null)>
+                    <div class="detail-grid">
+                        <label class="detail-field detail-field--wide" id="dealer-select-wrap">
+                            <span class="detail-field__label">Đại lý *</span>
+                            <select asp-for="DealerId" class="form-control" id="dealer-select">
+                                <option value="">Chọn</option>
+                                @foreach (var d in (ViewBag.Dealers as IReadOnlyList<NewHarian.Application.Dealers.DealerOptionDto>) ?? [])
+                                {
+                                    <option value="@d.Id"
+                                            data-type="@d.BusinessType"
+                                            data-name="@d.FullName"
+                                            data-phone="@d.Phone"
+                                            data-email="@d.Email"
+                                            data-address="@d.ShipAddress"
+                                            data-province="@d.ShipProvinceCode"
+                                            data-commune="@d.ShipCommuneCode"
+                                            data-citizenid="@d.CitizenId"
+                                            data-invoice-name="@d.BusinessName"
+                                            data-invoice-taxcode="@d.TaxCode"
+                                            data-invoice-address="@d.InvoiceAddress"
+                                            data-invoice-email="@d.InvoiceEmail">@d.BusinessName (@d.TaxCode)</option>
+                                }
+                            </select>
+                        </label>
+                        <div class="detail-field detail-field--wide" id="dealer-invoice" hidden>
+                            <span class="detail-field__label">Thông tin xuất hóa đơn (theo hồ sơ đại lý)</span>
+                            <span class="detail-field__value">
+                                <span data-invoice="name"></span> / MST <span data-invoice="taxcode"></span><br />
+                                <span data-invoice="address"></span><br />
+                                Email nhận hóa đơn: <span data-invoice="email"></span>
+                            </span>
+                        </div>
+                        <label class="detail-field">
+                            <span class="detail-field__label">Tên khách *</span>
+                            <input name="CustomerName" value="@(isDealer ? Model.CustomerName : "")" class="form-control" required maxlength="200" />
+                        </label>
+                        <label class="detail-field">
+                            <span class="detail-field__label">SĐT *</span>
+                            <input name="CustomerPhone" value="@(isDealer ? Model.CustomerPhone : "")" class="form-control" required maxlength="30" />
+                        </label>
+                        <label class="detail-field">
+                            <span class="detail-field__label">CCCD<span class="citizen-required-mark"> *</span></span>
+                            <input name="CitizenId" value="@(isDealer ? Model.CitizenId : "")" class="form-control" required maxlength="20" inputmode="numeric" />
+                        </label>
+                        <label class="detail-field">
+                            <span class="detail-field__label">Email</span>
+                            <input name="CustomerEmail" type="email" value="@(isDealer ? Model.CustomerEmail : "")" class="form-control" maxlength="200" />
+                        </label>
+                        <div class="detail-field detail-field--wide">
+                            @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = isDealer ? Model.ShippingProvinceCode : "", CommuneValue = isDealer ? Model.ShippingCommuneCode : "", LineValue = isDealer ? Model.ShippingAddress : "" })
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
         </div>
-        <label class="detail-field detail-field--wide">
-            @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
-        </label>
         <label class="detail-field detail-field--wide">
             <span class="detail-field__label">Ghi chú KH</span>
             <textarea asp-for="Notes" class="form-control" rows="2"></textarea>

@@ -99,6 +99,8 @@ public class DealerOrderDiscountIntegrationTests : IClassFixture<NewHarianWebApp
         var client = await TestUsers.LoggedInClientAsync(_factory, AppRoles.SalesStaff);
         var form = WebUtility.HtmlDecode(await client.GetStringAsync("/admin/Orders/Create"));
         Assert.Contains($"data-invoice-taxcode=\"{s.Dealer.TaxCode}\"", form);
+        Assert.Contains("data-order-panel=\"retail\"", form);
+        Assert.Contains("data-order-panel=\"dealer\"", form);
         Assert.DoesNotContain("js-line-manual", form);
         Assert.DoesNotContain("DealerDiscountPercent", form);
         var fields = OrderFields(AdminLoginHelper.ExtractRequestVerificationToken(form)!, s);
