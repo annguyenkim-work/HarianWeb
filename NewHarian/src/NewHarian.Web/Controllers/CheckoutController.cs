@@ -9,6 +9,7 @@ using NewHarian.Application.Dealers;
 using NewHarian.Application.Formatting;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
+using NewHarian.Application.PromoCodes;
 using NewHarian.Application.Shipping;
 using NewHarian.Application.Validation;
 using NewHarian.Domain.Enums;
@@ -26,6 +27,7 @@ public class CheckoutController(
     IVietnamDivisionCatalog catalog,
     IDealerAccessCodeService accessCodes,
     IDealerCheckoutContext dealerCheckout,
+    IPromoCodeService promoCodes,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     private const string DraftKey = "CheckoutDraft";
@@ -41,13 +43,12 @@ public class CheckoutController(
         if (basket.Items.Count == 0) return RedirectToAction("Index", "Cart");
 
         var dealer = await LoadDealerAsync(ct);
-        await SetSummaryAsync(basket, dealer, "/checkout", ct);
-
         var draft = LoadDraft() ?? new CheckoutDraft
         {
             PaymentMethod = PaymentMethod.COD,
             LanguageCode = Lang
         };
+        await SetSummaryAsync(basket, dealer, "/checkout", draft.PromoCode, ct);
         return View(draft);
     }
 
@@ -61,10 +62,16 @@ public class CheckoutController(
         var dealer = await LoadDealerAsync(ct);
         model.LanguageCode = Lang;
         var error = ValidateDraft(model, CitizenIdOptional(dealer));
+        if (error is null)
+        {
+            var priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
+            var promo = await promoCodes.QuoteAsync(model.PromoCode, priced.NetSubTotal, dealer is not null, ct);
+            if (!promo.Ok) error = promo.Error;
+        }
         if (error is not null)
         {
             ModelState.AddModelError(string.Empty, error);
-            await SetSummaryAsync(basket, dealer, "/checkout", ct);
+            await SetSummaryAsync(basket, dealer, "/checkout", model.PromoCode, ct);
             return View(model);
         }
 
@@ -74,18 +81,27 @@ public class CheckoutController(
     }
 
     [HttpGet("/checkout/shipping-fee")]
-    public async Task<IActionResult> ShippingFee(string provinceCode, CancellationToken ct)
+    public async Task<IActionResult> ShippingFee(string provinceCode, string? promoCode, CancellationToken ct)
     {
         var dealer = (await dealerCheckout.GetAsync(ct)).Dealer;
         var priced = await pricing.PriceAsync(cart.GetCart(), dealer?.Id, ct);
         var fee = await shipping.CalculateFeeAsync(provinceCode ?? "", ct);
-        var total = priced.NetSubTotal + fee;
+        var promo = await promoCodes.QuoteAsync(promoCode, priced.NetSubTotal, dealer is not null, ct);
+        var goods = priced.NetSubTotal - (promo.HasDiscount ? promo.Amount : 0);
+        var total = goods + fee;
         return Json(new
         {
             fee,
             feeText = MoneyFormat.Vnd(fee),
             subTotal = priced.SubTotal,
             subTotalText = MoneyFormat.Vnd(priced.SubTotal),
+            promoOk = promo.Ok,
+            promoError = promo.Error,
+            promoAmount = promo.HasDiscount ? promo.Amount : 0,
+            promoText = promo.HasDiscount ? "-" + MoneyFormat.Vnd(promo.Amount) : "",
+            promoCode = promo.Code,
+            goods,
+            goodsText = MoneyFormat.Vnd(goods),
             total,
             totalText = MoneyFormat.Vnd(total)
         });
@@ -100,13 +116,20 @@ public class CheckoutController(
 
         var dealer = await LoadDealerAsync(ct);
         var priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
+        var promo = await promoCodes.QuoteAsync(draft.PromoCode, priced.NetSubTotal, dealer is not null, ct);
+        if (!promo.Ok)
+        {
+            TempData["Error"] = promo.Error;
+            return RedirectToAction(nameof(Index));
+        }
         var fee = await shipping.CalculateFeeAsync(draft.ShippingProvinceCode, ct);
         catalog.TryResolve(draft.ShippingProvinceCode, draft.ShippingCommuneCode, out var addr);
         ViewBag.Priced = priced;
         ViewBag.Dealer = dealer;
+        ViewBag.Promo = promo;
         ViewBag.ShippingFee = fee;
         ViewBag.ShipTo = AddressFormat.Join(draft.ShippingAddress, addr.CommuneName, addr.ProvinceName);
-        ViewBag.Total = priced.NetSubTotal + fee;
+        ViewBag.Total = priced.NetSubTotal - promo.Amount + fee;
         return View(draft);
     }
 
@@ -204,11 +227,13 @@ public class CheckoutController(
         return state.Dealer;
     }
 
-    private async Task SetSummaryAsync(CartDto basket, DealerOptionDto? dealer, string returnUrl, CancellationToken ct)
+    private async Task SetSummaryAsync(CartDto basket, DealerOptionDto? dealer, string returnUrl, string? promoCode, CancellationToken ct)
     {
-        ViewBag.Priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
+        var priced = await pricing.PriceAsync(basket, dealer?.Id, ct);
+        ViewBag.Priced = priced;
         ViewBag.Dealer = dealer;
         ViewBag.DealerBox = new DealerCodeBoxModel(dealer, returnUrl, TempData[DealerCodeErrorKey] as string);
+        ViewBag.Promo = await promoCodes.QuoteAsync(promoCode, priced.NetSubTotal, dealer is not null, ct);
     }
 
     private void PrefillDraft(DealerOptionDto dealer)
@@ -221,6 +246,7 @@ public class CheckoutController(
         draft.ShippingAddress = dealer.ShipAddress;
         draft.ShippingProvinceCode = dealer.ShipProvinceCode ?? "";
         draft.ShippingCommuneCode = dealer.ShipCommuneCode ?? "";
+        draft.PromoCode = null;
         SaveDraft(draft);
     }
 

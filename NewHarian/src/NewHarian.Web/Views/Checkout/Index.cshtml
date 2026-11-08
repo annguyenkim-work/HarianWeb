@@ -3,7 +3,9 @@
     ViewData["Title"] = Localizer["Checkout.Title"];
     var priced = (NewHarian.Application.Cart.PricedCart)ViewBag.Priced;
     var dealer = ViewBag.Dealer as NewHarian.Application.Dealers.DealerOptionDto;
+    var promo = ViewBag.Promo as NewHarian.Application.PromoCodes.PromoQuote ?? NewHarian.Application.PromoCodes.PromoQuote.None;
     var citizenIdOptional = dealer?.BusinessType == NewHarian.Domain.Enums.DealerBusinessType.Company;
+    var payableGoods = priced.NetSubTotal - (promo.HasDiscount ? promo.Amount : 0);
 }
 
 <nav class="breadcrumb">
@@ -17,6 +19,10 @@
     <p class="text-danger" data-dealer-notice>@notice</p>
 }
 <partial name="_DealerCodeBox" model="(DealerCodeBoxModel)ViewBag.DealerBox" />
+@if (TempData["Error"] is string banner)
+{
+    <p class="text-danger" data-promo-error>@banner</p>
+}
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
 <div class="checkout-layout">
@@ -29,16 +35,24 @@
             @if (citizenIdOptional)
             {
                 <input asp-for="CitizenId" class="form-control" maxlength="20" inputmode="numeric" autocomplete="off" />
-                <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdOptional"]</span>
+                <span class="muted field-hint">@Localizer["Checkout.CitizenIdOptional"]</span>
             }
             else
             {
                 <input asp-for="CitizenId" class="form-control" required maxlength="20" inputmode="numeric" autocomplete="off" />
-                <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
+                <span class="muted field-hint">@Localizer["Checkout.CitizenIdHint"]</span>
             }
         </label>
         @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
         <label>@Localizer["Checkout.Notes"] <textarea asp-for="Notes" class="form-control" rows="3" maxlength="2000"></textarea></label>
+
+        @if (dealer is null)
+        {
+            <label>@Localizer["Checkout.PromoCode"]
+                <input asp-for="PromoCode" class="form-control" maxlength="32" autocomplete="off" data-promo-input />
+                <span class="muted field-hint">@Localizer["Checkout.PromoHint"]</span>
+            </label>
+        }
 
         <fieldset>
             <legend>@Localizer["Checkout.Payment"]</legend>
@@ -73,13 +87,18 @@
                 </li>
             }
         </ul>
-        <p>@Localizer["Cart.Subtotal"]: <span id="sum-subtotal">@priced.SubTotal.ToString("N0") VNĐ</span></p>
+        <p>@Localizer["Cart.Subtotal"]: <span id="sum-subtotal" class="num">@priced.SubTotal.ToString("N0") VNĐ</span></p>
         @if (priced.IsDealer)
         {
-            <p>@Localizer["Checkout.DealerDiscount"]: <span id="sum-discount" data-sum-discount>-@priced.DiscountAmount.ToString("N0") VNĐ</span></p>
+            <p>@Localizer["Checkout.DealerDiscount"]: <span id="sum-discount" class="num" data-sum-discount>-@priced.DiscountAmount.ToString("N0") VNĐ</span></p>
         }
-        <p>@Localizer["Checkout.Shipping"]: <span id="sum-ship">-</span></p>
-        <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total">@priced.NetSubTotal.ToString("N0") VNĐ</span></strong></p>
+        <p id="sum-promo-row" @(promo.HasDiscount ? null : "hidden") data-promo-row>
+            @Localizer["Checkout.PromoDiscount"]@if (promo.Code is not null) { <text> (@promo.Code)</text> }:
+            <span id="sum-promo" class="num" data-promo-code="@promo.Code">-@promo.Amount.ToString("N0") VNĐ</span>
+        </p>
+        <p id="sum-promo-error" class="text-danger" @(string.IsNullOrEmpty(promo.Error) ? "hidden" : null)>@promo.Error</p>
+        <p>@Localizer["Checkout.Shipping"]: <span id="sum-ship" class="num">-</span></p>
+        <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total" class="num">@payableGoods.ToString("N0") VNĐ</span></strong></p>
     </aside>
 </div>
 
@@ -89,17 +108,30 @@
   const form = document.getElementById('checkout-form');
   const shipEl = document.getElementById('sum-ship');
   const totalEl = document.getElementById('sum-total');
+  const promoRow = document.getElementById('sum-promo-row');
+  const promoEl = document.getElementById('sum-promo');
+  const promoError = document.getElementById('sum-promo-error');
   async function refresh() {
     const sel = form?.querySelector('[data-address-province]');
-    if (!sel?.value) { if (shipEl) shipEl.textContent = '-'; return; }
-    const res = await fetch('/checkout/shipping-fee?provinceCode=' + encodeURIComponent(sel.value));
+    const code = form?.querySelector('[data-promo-input]')?.value || '';
+    const province = sel?.value || '';
+    const res = await fetch('/checkout/shipping-fee?provinceCode=' + encodeURIComponent(province) + '&promoCode=' + encodeURIComponent(code));
     if (!res.ok) return;
     const data = await res.json();
-    if (shipEl) shipEl.textContent = data.feeText;
-    if (totalEl) totalEl.textContent = data.totalText;
+    if (promoRow) {
+      const show = (data.promoAmount || 0) > 0;
+      promoRow.hidden = !show;
+      if (promoEl && show) promoEl.textContent = data.promoText;
+    }
+    if (promoError) {
+      promoError.hidden = !data.promoError;
+      promoError.textContent = data.promoError || '';
+    }
+    if (shipEl) shipEl.textContent = province ? data.feeText : '-';
+    if (totalEl) totalEl.textContent = province ? data.totalText : data.goodsText;
   }
   form?.addEventListener('change', e => {
-    if (e.target.matches('[data-address-province]')) refresh();
+    if (e.target.matches('[data-address-province], [data-promo-input]')) refresh();
   });
   form?.addEventListener('harian:address-ready', refresh);
   refresh();

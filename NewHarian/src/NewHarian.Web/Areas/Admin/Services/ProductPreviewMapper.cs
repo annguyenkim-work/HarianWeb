@@ -141,7 +141,8 @@ public static class ProductPreviewMapper
                 variantImageUrl,
                 slideIndex,
                 string.IsNullOrWhiteSpace(sizePart) ? null : sizePart,
-                string.IsNullOrWhiteSpace(colorName) ? null : colorName);
+                string.IsNullOrWhiteSpace(colorName) ? null : colorName,
+                snap.Request.Kind == CatalogKind.Product ? v.StockQuantity : null);
 
         }).ToList();
 

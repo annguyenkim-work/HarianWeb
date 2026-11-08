@@ -1,0 +1,94 @@
+@model IReadOnlyList<NewHarian.Application.PromoCodes.PromoCodeListItemDto>
+@{
+    ViewData["Title"] = "Mã giảm giá";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-toolbar">
+    <h1>Mã giảm giá</h1>
+    <button type="button" class="btn-icon btn-primary" id="btn-add-promo" title="Thêm" aria-label="Thêm"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+</div>
+
+<p class="muted">Mã chỉ áp dụng khi khách lẻ đặt hàng trên website. Thời gian theo giờ Việt Nam.</p>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Mã</th>
+            <th>%</th>
+            <th>Hiệu lực</th>
+            <th>Đã dùng</th>
+            <th>Trạng thái</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var p in Model)
+    {
+        <tr data-promo-code="@p.Code">
+            <td class="badge-code">@p.Code</td>
+            <td class="num">@p.DiscountPercent.ToString("0.##")</td>
+            <td>@p.ValidFromText - @p.ValidToText</td>
+            <td class="num">@p.UsedCount / @p.MaxUses</td>
+            <td>@p.StatusLabel</td>
+            <td class="actions">
+                <button type="button" class="btn-icon btn-edit-promo" data-id="@p.Id" title="Sửa" aria-label="Sửa"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                <form asp-action="Delete" method="post" class="inline" data-confirm="Xóa mã này?">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@p.Id" />
+                    <button type="submit" class="btn-icon btn-icon--danger" title="Xóa" aria-label="Xóa"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                </form>
+            </td>
+        </tr>
+    }
+    @if (Model.Count == 0)
+    {
+        <tr><td colspan="6" class="muted">Chưa có mã giảm giá.</td></tr>
+    }
+    </tbody>
+</table>
+
+<partial name="_AdminPager" />
+
+<dialog id="promo-modal" class="modal">
+    <div class="modal__box modal__box--wide" id="promo-modal-body"></div>
+</dialog>
+
+@section Scripts {
+<script>
+(() => {
+  const modal = document.getElementById('promo-modal');
+  const body = document.getElementById('promo-modal-body');
+
+  async function openForm(id) {
+    const url = id ? `/admin/PromoCodes/Edit/${id}` : '/admin/PromoCodes/Edit';
+    body.innerHTML = await (await fetch(url)).text();
+    modal.showModal();
+    bindForm();
+  }
+
+  function bindForm() {
+    const form = body.querySelector('form');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data.ok) { adminToast.reloadWith(data.message); return; }
+        adminToast.jsonError(data);
+      } else {
+        body.innerHTML = await res.text();
+        bindForm();
+        adminToast.formErrors(body);
+      }
+    });
+    body.querySelector('[data-close]')?.addEventListener('click', () => modal.close());
+  }
+
+  document.getElementById('btn-add-promo')?.addEventListener('click', () => openForm(null));
+  document.querySelectorAll('.btn-edit-promo').forEach(b => b.addEventListener('click', () => openForm(b.dataset.id)));
+})();
+</script>
+}

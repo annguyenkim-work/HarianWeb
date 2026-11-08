@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Hướng dẫn";
+    ViewData["AdminWidth"] = "narrow";
     var myRoles = AppRoles.Assignable.Append(AppRoles.LegacyStaff).Where(User.IsInRole).Select(AppRoles.Label).ToList();
     var showOrders = User.HasPermission(Permissions.Orders.View);
     var showBookings = User.HasPermission(Permissions.Bookings.View);
@@ -69,8 +70,8 @@
             <li><strong>@AppRoles.Label(AppRoles.HrManager):</strong> hồ sơ nhân viên (thêm / sửa), vị trí công việc, hồ sơ ứng tuyển, tin tức / tin tuyển dụng, trang nội dung, menu, slide.</li>
             <li><strong>@AppRoles.Label(AppRoles.HrStaff):</strong> xem hồ sơ nhân viên (không sửa); hồ sơ ứng tuyển / tin / CMS như @AppRoles.Label(AppRoles.HrManager) trừ sửa meta trang và menu.</li>
         </ul>
-        <p class="muted" style="margin:0.5rem 0 0">Mỗi tài khoản chỉ có <strong>một</strong> vai trò. Cần thêm quyền: liên hệ Super Admin. Thông báo (chuông) cũng chỉ hiện loại thuộc quyền của bạn.</p>
-        <p class="muted" style="margin:0.5rem 0 0">Trên lịch sử đơn / đặt lịch / kho / audit, người thao tác (Actor) ưu tiên hiện <strong>mã nhân viên</strong> (vd. <code>AnNK</code>), không còn hiện email.</p>
+        <p class="muted help-note">Mỗi tài khoản chỉ có <strong>một</strong> vai trò. Cần thêm quyền: liên hệ Super Admin. Thông báo (chuông) cũng chỉ hiện loại thuộc quyền của bạn.</p>
+        <p class="muted help-note">Trên lịch sử đơn / đặt lịch / kho / audit, người thao tác (Actor) ưu tiên hiện <strong>mã nhân viên</strong> (vd. <code>AnNK</code>), không còn hiện email.</p>
     </div>
 </section>
 

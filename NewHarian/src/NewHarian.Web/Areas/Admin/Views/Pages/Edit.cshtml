@@ -11,25 +11,36 @@
 </div>
 
 
-<form method="post" class="form-stack" style="max-width:720px">
+<form method="post" class="form-stack admin-sheet--lg">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
     <label><input asp-for="IsPublished" type="checkbox" /> Hiển thị công khai</label>
 
-    <h2>Tiếng Việt</h2>
-    <label>Tiêu đề trang * <input asp-for="TitleVi" class="form-control" required /></label>
-    <label>Tiêu đề SEO <input asp-for="MetaTitleVi" class="form-control" /></label>
-    <label>Mô tả SEO <textarea asp-for="MetaDescriptionVi" class="form-control" rows="2"></textarea></label>
-
-    <h2>English</h2>
-    <label>Page title <input asp-for="TitleEn" class="form-control" /></label>
-    <label>SEO title <input asp-for="MetaTitleEn" class="form-control" /></label>
-    <label>SEO description <textarea asp-for="MetaDescriptionEn" class="form-control" rows="2"></textarea></label>
-
-    <h2>日本語</h2>
-    <label>ページタイトル <input asp-for="TitleJa" class="form-control" /></label>
-    <label>SEOタイトル <input asp-for="MetaTitleJa" class="form-control" /></label>
-    <label>SEO説明 <textarea asp-for="MetaDescriptionJa" class="form-control" rows="2"></textarea></label>
+    <div class="lang-tabs" data-lang-tabs>
+        <partial name="_LangTabBar" model="@("page-lang")" />
+        <p class="lang-tabs__hint">Nội dung ở tab khác vẫn được lưu.</p>
+        <div class="lang-tabs__panel is-active" id="page-lang-panel-vi" role="tabpanel" aria-labelledby="page-lang-tab-vi" data-lang-panel="vi">
+            <div class="lang-tabs__fields">
+                <label>Tiêu đề trang * <input asp-for="TitleVi" class="form-control" required /></label>
+                <label>Tiêu đề SEO <input asp-for="MetaTitleVi" class="form-control" /></label>
+                <label>Mô tả SEO <textarea asp-for="MetaDescriptionVi" class="form-control" rows="2"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="page-lang-panel-en" role="tabpanel" aria-labelledby="page-lang-tab-en" data-lang-panel="en" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tiêu đề trang <input asp-for="TitleEn" class="form-control" /></label>
+                <label>Tiêu đề SEO <input asp-for="MetaTitleEn" class="form-control" /></label>
+                <label>Mô tả SEO <textarea asp-for="MetaDescriptionEn" class="form-control" rows="2"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="page-lang-panel-ja" role="tabpanel" aria-labelledby="page-lang-tab-ja" data-lang-panel="ja" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tiêu đề trang <input asp-for="TitleJa" class="form-control" /></label>
+                <label>Tiêu đề SEO <input asp-for="MetaTitleJa" class="form-control" /></label>
+                <label>Mô tả SEO <textarea asp-for="MetaDescriptionJa" class="form-control" rows="2"></textarea></label>
+            </div>
+        </div>
+    </div>
 
     <button type="submit" class="btn-primary">Lưu</button>
 </form>

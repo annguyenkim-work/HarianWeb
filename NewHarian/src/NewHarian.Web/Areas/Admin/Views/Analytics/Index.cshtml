@@ -12,7 +12,7 @@
 
 <div class="admin-toolbar">
     <h1>Thống kê truy cập</h1>
-    <p class="muted" style="margin:0">Lượt xem trang guest (không đếm unique)</p>
+    <p class="muted u-m0">Lượt xem trang guest (không đếm unique)</p>
 </div>
 
 <form method="get" class="dash-range filter-bar filter-bar--row" data-analytics-filter>
@@ -50,11 +50,11 @@
     </section>
 </div>
 
-<section class="admin-panel" style="margin-top:1.5rem">
+<section class="admin-panel">
     <h2>Theo loại trang</h2>
     @if (Model.ByPageKind.Count == 0)
     {
-        <p class="muted">Chưa có dữ liệu trong khoảng ngày này.</p>
+        <p class="empty-note">Chưa có dữ liệu trong khoảng ngày này.</p>
     }
     else
     {
@@ -78,11 +78,11 @@
     }
 </section>
 
-<section class="admin-panel" style="margin-top:1.5rem">
+<section class="admin-panel">
     <h2>Top sản phẩm theo lượt xem</h2>
     @if (Model.TopProducts.Count == 0)
     {
-        <p class="muted">Chưa có lượt xem chi tiết sản phẩm trong khoảng ngày này.</p>
+        <p class="empty-note">Chưa có lượt xem chi tiết sản phẩm trong khoảng ngày này.</p>
     }
     else
     {

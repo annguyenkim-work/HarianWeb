@@ -19,7 +19,10 @@
 <h2 class="section-title">@Localizer["Careers.Openings"]</h2>
 @if (jobs.Count == 0)
 {
-    <p class="muted">@Localizer["Careers.NoOpenings"]</p>
+    <div class="empty-state" role="status">
+        <h2>@Localizer["Careers.NoOpenings"]</h2>
+        <a asp-controller="Contact" asp-action="Index" class="btn-primary">@Localizer["Nav.Contact"]</a>
+    </div>
 }
 else
 {
@@ -35,7 +38,7 @@ else
                     <h3>@p.Title</h3>
                     @if (p.PublishedAt is DateTime dt)
                     {
-                        <p class="muted">@dt.ToLocalTime().ToString("dd/MM/yyyy")</p>
+                        <p class="post-card__meta">@dt.ToLocalTime().ToString("dd/MM/yyyy")</p>
                     }
                     @if (!string.IsNullOrWhiteSpace(p.Excerpt))
                     {

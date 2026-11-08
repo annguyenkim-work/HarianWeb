@@ -21,7 +21,7 @@
     <span>/</span>
     <span>@Localizer["Dealers.Confirm"]</span>
 </nav>
-<main class="content-main content-main--full" style="max-width:640px">
+<main class="content-main content-main--full content-main--sheet">
     <dl class="confirm-dl" id="dealer-confirm">
         <dt>@Localizer["Dealers.BusinessType"]</dt><dd>@(household ? Localizer["Dealers.TypeHousehold"] : Localizer["Dealers.TypeCompany"])</dd>
         <dt>@(household ? Localizer["Dealers.HouseholdName"] : Localizer["Dealers.CompanyName"])</dt><dd>@Model.BusinessName</dd>
@@ -48,10 +48,10 @@
         <dt>@Localizer["Dealers.InvoiceEmail"]</dt><dd>@(Model.InvoiceEmail ?? Model.Email)</dd>
         @if (!string.IsNullOrWhiteSpace(Model.Message))
         {
-            <dt>@Localizer["Contact.Message"]</dt><dd style="white-space:pre-wrap">@Model.Message</dd>
+            <dt>@Localizer["Contact.Message"]</dt><dd class="pre-wrap">@Model.Message</dd>
         }
     </dl>
-    <form action="/dealers/submit" method="post" class="form-inline" style="gap:1rem"
+    <form action="/dealers/submit" method="post" class="form-inline action-row"
           data-submit-once
           data-busy-label="@Localizer["Common.Processing"]">
         @Html.AntiForgeryToken()

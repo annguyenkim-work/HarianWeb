@@ -17,6 +17,8 @@ public class CheckoutDraft
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
     public string LanguageCode { get; set; } = "vi";
     public string CheckoutId { get; set; } = Guid.NewGuid().ToString("N");
+    /// <summary>Optional retail discount code. Ignored for a dealer session.</summary>
+    public string? PromoCode { get; set; }
 }
 
 public record OrderLineDto(
@@ -51,7 +53,9 @@ public record OrderSummaryDto(
     decimal? DealerDiscountPercent,
     DateTime CreatedAt,
     IReadOnlyList<OrderLineDto> Items,
-    OrderInvoiceDto? Invoice = null);
+    OrderInvoiceDto? Invoice = null,
+    string? PromoCode = null,
+    decimal? PromoDiscountPercent = null);
 
 public record AdminOrderListItemDto(
     int Id,

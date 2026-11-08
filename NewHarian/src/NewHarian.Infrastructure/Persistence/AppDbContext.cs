@@ -28,6 +28,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<DealerDiscountTier> DealerDiscountTiers => Set<DealerDiscountTier>();
     public DbSet<DealerDiscountRate> DealerDiscountRates => Set<DealerDiscountRate>();
     public DbSet<DealerDiscountOverride> DealerDiscountOverrides => Set<DealerDiscountOverride>();
+    public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     public DbSet<OrderHistory> OrderHistories => Set<OrderHistory>();
     public DbSet<ServiceBookingHistory> ServiceBookingHistories => Set<ServiceBookingHistory>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
@@ -215,6 +216,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.ShippingFee).HasPrecision(18, 2);
             e.Property(x => x.DiscountAmount).HasPrecision(18, 2);
             e.Property(x => x.DealerDiscountPercent).HasPrecision(5, 2);
+            e.Property(x => x.PromoCode).HasMaxLength(32);
+            e.Property(x => x.PromoDiscountPercent).HasPrecision(5, 2);
+            e.HasOne(x => x.AppliedPromo).WithMany().HasForeignKey(x => x.PromoCodeId).OnDelete(DeleteBehavior.Restrict);
             e.Property(x => x.InvoiceBuyerName).HasMaxLength(300);
             e.Property(x => x.InvoiceTaxCode).HasMaxLength(20);
             e.Property(x => x.InvoiceAddress).HasMaxLength(700);
@@ -286,6 +290,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Percent).HasPrecision(5, 2);
             e.HasOne(x => x.Tier).WithMany(t => t.Rates).HasForeignKey(x => x.TierId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.ProductVariant).WithMany().HasForeignKey(x => x.ProductVariantId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PromoCode>(e =>
+        {
+            e.ToTable("PromoCodes");
+            e.HasIndex(x => x.Code).IsUnique();
+            e.Property(x => x.Code).HasMaxLength(32);
+            e.Property(x => x.DiscountPercent).HasPrecision(5, 2);
+            e.HasIndex(x => new { x.IsActive, x.ValidFrom, x.ValidTo });
         });
 
         builder.Entity<DealerDiscountOverride>(e =>

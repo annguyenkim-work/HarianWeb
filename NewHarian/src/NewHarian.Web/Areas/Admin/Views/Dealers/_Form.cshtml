@@ -18,7 +18,7 @@
             <span class="detail-field__label">Loại hình kinh doanh *</span>
             <span>
                 <label><input type="radio" name="BusinessType" value="Company" checked="@(Model.BusinessType != DealerBusinessType.Household)" /> Doanh nghiệp</label>
-                <label style="margin-left:1rem"><input type="radio" name="BusinessType" value="Household" checked="@(Model.BusinessType == DealerBusinessType.Household)" /> Hộ kinh doanh</label>
+                <label class="choice-gap"><input type="radio" name="BusinessType" value="Household" checked="@(Model.BusinessType == DealerBusinessType.Household)" /> Hộ kinh doanh</label>
             </span>
         </div>
     </div>
@@ -49,7 +49,7 @@
             {
                 <span>
                     <a href="@Url.Action("Document", "Dealers", new { area = "Admin", id = Model.Id })">@Model.BusinessLicenseFileName</a>
-                    <label style="margin-left:1rem"><input type="checkbox" name="RemoveBusinessLicense" value="true" /> Xóa file</label>
+                    <label class="choice-gap"><input type="checkbox" name="RemoveBusinessLicense" value="true" /> Xóa file</label>
                 </span>
             }
             else if (!string.IsNullOrEmpty(Model.BusinessLicenseFileName))
@@ -98,7 +98,7 @@
         <label class="detail-field detail-field--wide">
             <span><input asp-for="ShipToHeadOffice" /> Giao hàng tới địa chỉ trụ sở</span>
         </label>
-        <fieldset class="detail-field detail-field--wide" data-dealer-shipping style="border:0;padding:0;margin:0;min-width:0"
+        <fieldset class="detail-field detail-field--wide fieldset-plain" data-dealer-shipping
                   hidden="@Model.ShipToHeadOffice" disabled="@Model.ShipToHeadOffice">
             <span class="detail-field__label">Địa chỉ nhận hàng *</span>
             @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })

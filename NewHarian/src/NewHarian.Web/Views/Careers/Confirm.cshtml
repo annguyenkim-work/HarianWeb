@@ -7,7 +7,7 @@
     var addressText = AddressFormat.Join(Model.Address, addr.CommuneName, addr.ProvinceName);
 }
 <section class="page-hero"><h1>@Localizer["Careers.Confirm"]</h1></section>
-<main style="max-width:640px">
+<main class="content-main content-main--full content-main--sheet">
     <dl class="confirm-dl">
         @if (!string.IsNullOrWhiteSpace(Model.JobTitle))
         {
@@ -20,12 +20,12 @@
         <dt>@Localizer["Contact.Address"]</dt><dd>@addressText</dd>
         @if (!string.IsNullOrWhiteSpace(Model.Message))
         {
-            <dt>@Localizer["Careers.Message"]</dt><dd style="white-space:pre-wrap">@Model.Message</dd>
+            <dt>@Localizer["Careers.Message"]</dt><dd class="pre-wrap">@Model.Message</dd>
         }
         <dt>@Localizer["Careers.Cv"]</dt><dd>@(Model.AttachmentMediaFileId is > 0 ? Localizer["Careers.CvAttached"].Value : "-")</dd>
     </dl>
 
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center">
+    <div class="action-row">
         <a href="@(string.IsNullOrWhiteSpace(Model.JobSlug) ? "/careers" : $"/careers/{Model.JobSlug}/apply")" class="btn-secondary">@Localizer["Checkout.Edit"]</a>
         <form action="/careers/submit" method="post"
               data-submit-once

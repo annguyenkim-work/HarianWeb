@@ -1,5 +1,6 @@
 @model NewHarian.Application.Catalog.ProductCardDto
 @using System.Globalization
+@using NewHarian.Application.Catalog
 @using NewHarian.Application.Formatting
 @{
     var tags = Model.Tags ?? Array.Empty<string>();
@@ -21,6 +22,10 @@
                 else
                 {
                     <span class="catalog-card__placeholder" aria-hidden="true"></span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Sku))
+                {
+                    <span class="badge-code catalog-card__code">@Model.Sku</span>
                 }
             </div>
             <div class="catalog-card__body">
@@ -50,6 +55,7 @@
                         }
                     </ul>
                 }
+                <div class="catalog-card__buyline">
                 @if (Model.HidePrice)
                 {
                     <p class="catalog-card__price catalog-card__price--quiet">
@@ -64,6 +70,11 @@
                         <span class="catalog-card__price-currency">@MoneyFormat.CurrencySuffix</span>
                     </p>
                 }
+                @if (Model.AvailableQty is int qty)
+                {
+                    <partial name="_StockBadge" model="new StockBadgeModel(qty, Model.LowStockThreshold)" />
+                }
+                </div>
             </div>
         </a>
     </article>

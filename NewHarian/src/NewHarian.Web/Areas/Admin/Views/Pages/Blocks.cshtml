@@ -30,7 +30,7 @@
 
 
 
-<div class="admin-add-block" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1rem 0">
+<div class="admin-add-block">
 
     <a class="btn-primary"
 
@@ -70,7 +70,7 @@
 
 
 
-<table class="data-table" style="margin-top:1rem">
+<table class="data-table table-follow">
 
     <thead>
 
@@ -123,7 +123,7 @@
 
                 <a asp-action="EditBlock" asp-route-pageId="@cmsPage?.Id" asp-route-id="@b.Id">Sửa</a>
 
-                <form asp-action="DeleteBlock" method="post" class="inline" onsubmit="return confirm('Xóa khối nội dung này?');">
+                <form asp-action="DeleteBlock" method="post" class="inline" data-confirm="Xóa khối nội dung này?">
 
                     @Html.AntiForgeryToken()
 

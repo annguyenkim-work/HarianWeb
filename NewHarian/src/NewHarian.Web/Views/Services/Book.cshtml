@@ -35,7 +35,7 @@
     <label>@Localizer["Book.Phone"] <input asp-for="CustomerPhone" class="form-control" required /></label>
     <label>@Localizer["Checkout.CitizenId"]
         <input asp-for="CitizenId" class="form-control" maxlength="20" inputmode="numeric" autocomplete="off" />
-        <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Book.CitizenIdHint"]</span>
+        <span class="muted field-hint">@Localizer["Book.CitizenIdHint"]</span>
     </label>
     <label>@Localizer["Book.Date"] <input asp-for="PreferredDate" type="date" class="form-control" required /></label>
     <label>

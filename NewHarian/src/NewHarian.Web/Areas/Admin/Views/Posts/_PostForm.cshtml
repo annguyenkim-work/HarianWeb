@@ -1,0 +1,70 @@
+@model NewHarian.Application.Posts.SitePostSaveRequest
+@using NewHarian.Domain.Enums
+@{
+    var isJob = Model.Kind == PostKind.Job;
+    var heading = Model.Id.HasValue
+        ? (isJob ? "Sửa tin tuyển dụng" : "Sửa tin tức")
+        : (isJob ? "Thêm tin tuyển dụng" : "Thêm tin tức");
+}
+
+<form asp-area="Admin" asp-controller="Posts" asp-action="Edit" method="post" enctype="multipart/form-data" class="form-stack" id="post-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="Kind" />
+    <input type="hidden" asp-for="CoverImageMediaFileId" />
+    <input type="hidden" asp-for="CoverImageUrl" />
+    <h2>@heading</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <label><input asp-for="IsPublished" type="checkbox" /> Xuất bản (hiện công khai)</label>
+
+    @if (Model.Id.HasValue)
+    {
+        <p class="muted">Slug: <code>@Model.Slug</code></p>
+        <input type="hidden" asp-for="Slug" />
+    }
+    else
+    {
+        <p class="muted">Slug tự tạo từ tiêu đề VI.</p>
+    }
+
+    <label>Ảnh đại diện (list)
+        <input type="file" name="coverFile" accept="image/*" class="form-control" />
+    </label>
+    <p class="img-size-hint"><strong>Kích thước đề xuất:</strong> 1200×630 px (ngang ~1.9:1). Ảnh list bị cắt theo khung thẻ; chi tiết bài cũng cover theo chiều ngang.</p>
+    @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl))
+    {
+        <img src="@Model.CoverImageUrl" alt="" class="img-cover-preview" />
+    }
+
+    <div class="lang-tabs" data-lang-tabs>
+        <partial name="_LangTabBar" model="@("post-lang")" />
+        <p class="lang-tabs__hint">Tiêu đề tiếng Việt dùng để tạo slug. Nội dung ở tab khác vẫn được lưu.</p>
+        <div class="lang-tabs__panel is-active" id="post-lang-panel-vi" role="tabpanel" aria-labelledby="post-lang-tab-vi" data-lang-panel="vi">
+            <div class="lang-tabs__fields">
+                <label>Tiêu đề * <input asp-for="TitleVi" class="form-control" required id="title-vi" /></label>
+                <label>Tóm tắt <input asp-for="ExcerptVi" class="form-control" /></label>
+                <label>Nội dung <textarea asp-for="BodyVi" class="form-control richtext" rows="12"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="post-lang-panel-en" role="tabpanel" aria-labelledby="post-lang-tab-en" data-lang-panel="en" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tiêu đề <input asp-for="TitleEn" class="form-control" /></label>
+                <label>Tóm tắt <input asp-for="ExcerptEn" class="form-control" /></label>
+                <label>Nội dung <textarea asp-for="BodyEn" class="form-control richtext" rows="8"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="post-lang-panel-ja" role="tabpanel" aria-labelledby="post-lang-tab-ja" data-lang-panel="ja" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tiêu đề <input asp-for="TitleJa" class="form-control" /></label>
+                <label>Tóm tắt <input asp-for="ExcerptJa" class="form-control" /></label>
+                <label>Nội dung <textarea asp-for="BodyJa" class="form-control richtext" rows="8"></textarea></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal__actions">
+        <button type="button" class="btn-secondary" data-close-post-modal>Hủy</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+    </div>
+</form>

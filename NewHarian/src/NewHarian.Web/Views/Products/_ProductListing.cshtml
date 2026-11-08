@@ -32,7 +32,13 @@
             <partial name="_ProductToolbar" model="Model" />
             @if (Model.Products.Count == 0)
             {
-                <p class="catalog-empty" role="status">@Localizer["Catalog.Empty"]</p>
+                <div class="catalog-empty empty-state" role="status">
+                    <h2>@Localizer["Catalog.Empty"]</h2>
+                    @if (Model.Criteria.ActiveFilterCount > 0)
+                    {
+                        <a class="btn-primary" href="@Model.Href(Model.Criteria.WithoutTagOrPrice())">@Localizer["Catalog.Clear"]</a>
+                    }
+                </div>
             }
             else
             {

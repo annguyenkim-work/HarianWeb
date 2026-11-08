@@ -154,7 +154,7 @@
 <h3 class="detail-section-title">Chiết khấu</h3>
 @if (discounts is null || discounts.Groups.Count == 0)
 {
-    <p class="muted">Chưa có bảng chiết khấu đại lý.</p>
+    <p class="empty-note">Chưa có bảng chiết khấu đại lý.</p>
 }
 else
 {
@@ -166,7 +166,7 @@ else
     }
 }
 
-<div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+<div class="order-actions">
     @if (canApprove && (Model.Status is DealerStatus.Pending or DealerStatus.Rejected))
     {
         <button type="button" class="btn-primary" data-action="approve" data-id="@Model.Id">Duyệt</button>

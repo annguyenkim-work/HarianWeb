@@ -17,7 +17,7 @@
         <h1>@Model.Title</h1>
         @if (Model.PublishedAt is DateTime dt)
         {
-            <p class="muted">@dt.ToLocalTime().ToString("dd/MM/yyyy")</p>
+            <p class="post-card__meta">@dt.ToLocalTime().ToString("dd/MM/yyyy")</p>
         }
     </header>
     @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl))

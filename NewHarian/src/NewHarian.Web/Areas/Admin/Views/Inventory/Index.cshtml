@@ -9,7 +9,7 @@
 
 <div class="admin-toolbar">
     <h1>Kho</h1>
-    <div class="admin-toolbar__actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+    <div class="admin-toolbar__actions">
         @if (User.HasPermission(Permissions.Inventory.ViewHistory))
         {
             <a class="btn-secondary" asp-action="History">Lịch sử</a>
@@ -50,7 +50,7 @@
 <table class="data-table" id="location-table">
     <thead>
         <tr>
-            <th style="width:3rem"></th>
+            <th class="col-handle"></th>
             <th>Mã</th>
             <th>Tên</th>
             <th>Số lô</th>
@@ -89,11 +89,11 @@
 {
     @if (User.HasPermission(Permissions.Inventory.ManageSettings))
     {
-        <p class="muted">Chưa có vị trí kho. Tạo tại <a asp-area="Admin" asp-controller="InventorySettings" asp-action="Index">Cài đặt kho</a>.</p>
+        <p class="empty-note">Chưa có vị trí kho. Tạo tại <a asp-area="Admin" asp-controller="InventorySettings" asp-action="Index">Cài đặt kho</a>.</p>
     }
     else
     {
-        <p class="muted">Chưa có vị trí kho. Trưởng kho tạo tại Cài đặt kho.</p>
+        <p class="empty-note">Chưa có vị trí kho. Trưởng kho tạo tại Cài đặt kho.</p>
     }
 }
 

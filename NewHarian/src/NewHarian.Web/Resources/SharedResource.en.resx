@@ -29,12 +29,16 @@
   <data name="Home.Intro" xml:space="preserve"><value>Commerce website.</value></data>
   <data name="Home.Categories" xml:space="preserve"><value>I'll help you</value></data>
   <data name="Home.Featured" xml:space="preserve"><value>What we offer</value></data>
+  <data name="Home.CategoriesEmpty" xml:space="preserve"><value>No categories yet.</value></data>
+  <data name="Home.FeaturedEmpty" xml:space="preserve"><value>No featured products yet.</value></data>
   <data name="Products.HubIntro" xml:space="preserve"><value>Physical products.</value></data>
   <data name="Services.HubIntro" xml:space="preserve"><value>Services - book an appointment (no cart checkout).</value></data>
   <data name="Products.Items" xml:space="preserve"><value>items</value></data>
   <data name="Products.From" xml:space="preserve"><value>From</value></data>
   <data name="Products.PriceOnRequest" xml:space="preserve"><value>Contact for price</value></data>
   <data name="Products.BookLabel" xml:space="preserve"><value>Book</value></data>
+  <data name="Products.InStock" xml:space="preserve"><value>{0} left</value></data>
+  <data name="Products.OutOfStock" xml:space="preserve"><value>Out of stock</value></data>
   <data name="Products.BookCta" xml:space="preserve"><value>Book appointment</value></data>
   <data name="Products.Variant" xml:space="preserve"><value>Size</value></data>
   <data name="Products.ServiceOption" xml:space="preserve"><value>Option</value></data>
@@ -79,6 +83,7 @@
   <data name="Orders.Step.Shipped" xml:space="preserve"><value>Shipped</value></data>
   <data name="Orders.Step.Delivered" xml:space="preserve"><value>Delivered</value></data>
   <data name="Orders.Step.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Orders.Step.Refunded" xml:space="preserve"><value>Refunded</value></data>
   <data name="Orders.Step.Updated" xml:space="preserve"><value>Updated</value></data>
   <data name="Orders.Cancel" xml:space="preserve"><value>Cancel order</value></data>
   <data name="Orders.CancelConfirm" xml:space="preserve"><value>Cancel this unpaid order?</value></data>
@@ -181,6 +186,9 @@
   <data name="Checkout.DealerCode.Expired" xml:space="preserve"><value>Your dealer code is no longer valid. Please enter it again.</value></data>
   <data name="Checkout.DealerCode.TooMany" xml:space="preserve"><value>Too many attempts. Please try again in 15 minutes.</value></data>
   <data name="Checkout.DealerDiscount" xml:space="preserve"><value>Dealer discount</value></data>
+  <data name="Checkout.PromoCode" xml:space="preserve"><value>Discount code</value></data>
+  <data name="Checkout.PromoHint" xml:space="preserve"><value>Enter a code if you have one. Retail customers only.</value></data>
+  <data name="Checkout.PromoDiscount" xml:space="preserve"><value>Discount code</value></data>
   <data name="Checkout.DealerUnconfigured" xml:space="preserve"><value>No dealer discount</value></data>
   <data name="Checkout.Invoice" xml:space="preserve"><value>Invoice details</value></data>
   <data name="Checkout.InvoiceName" xml:space="preserve"><value>Company name</value></data>
@@ -247,4 +255,5 @@
   <data name="Catalog.Pagination" xml:space="preserve"><value>Pagination</value></data>
   <data name="Catalog.Breadcrumb" xml:space="preserve"><value>Breadcrumb</value></data>
   <data name="Catalog.RemoveFilter" xml:space="preserve"><value>Remove filter {0}</value></data>
+  <data name="News.Empty" xml:space="preserve"><value>No articles yet.</value></data>
 </root>

@@ -418,7 +418,9 @@ public class CatalogService(AppDbContext db) : ICatalogService
             variantImagePath,
             slideIndex,
             string.IsNullOrWhiteSpace(sizePart) ? null : sizePart,
-            string.IsNullOrWhiteSpace(colorName) ? null : colorName);
+            string.IsNullOrWhiteSpace(colorName) ? null : colorName,
+            v.StockQuantity,
+            v.LowStockThreshold);
     }
 
     private static ProductVariantDto MapVariant(
@@ -491,7 +493,13 @@ public class CatalogService(AppDbContext db) : ICatalogService
             p.Category.Translations.Where(t => t.LanguageCode == lang).Select(t => t.Name).FirstOrDefault()
                 ?? p.Category.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.Name).FirstOrDefault()
                 ?? p.Category.Slug,
-            p.IsFeatured));
+            p.IsFeatured,
+            p.Variants.Where(v => v.IsActive).OrderByDescending(v => v.IsDefault).ThenBy(v => v.SortOrder)
+                .Select(v => v.Sku).FirstOrDefault(),
+            p.Variants.Where(v => v.IsActive).OrderByDescending(v => v.IsDefault).ThenBy(v => v.SortOrder)
+                .Select(v => (int?)v.StockQuantity).FirstOrDefault(),
+            p.Variants.Where(v => v.IsActive).OrderByDescending(v => v.IsDefault).ThenBy(v => v.SortOrder)
+                .Select(v => v.LowStockThreshold).FirstOrDefault()));
 
     private static IQueryable<ProductCardDto> ProjectServiceCards(IQueryable<Domain.Entities.Service> query, string lang)
         => query.Select(s => new ProductCardDto(
@@ -513,7 +521,9 @@ public class CatalogService(AppDbContext db) : ICatalogService
             s.Category.Translations.Where(t => t.LanguageCode == lang).Select(t => t.Name).FirstOrDefault()
                 ?? s.Category.Translations.Where(t => t.LanguageCode == "vi").Select(t => t.Name).FirstOrDefault()
                 ?? s.Category.Slug,
-            s.IsFeatured));
+            s.IsFeatured,
+            s.Variants.Where(v => v.IsActive).OrderByDescending(v => v.IsDefault).ThenBy(v => v.SortOrder)
+                .Select(v => v.Sku).FirstOrDefault()));
 
     private async Task<List<ProductCardDto>> WithTagsAsync(List<ProductCardDto> items, CancellationToken ct)
     {

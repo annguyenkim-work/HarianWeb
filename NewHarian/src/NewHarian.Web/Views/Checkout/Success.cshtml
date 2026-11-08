@@ -7,7 +7,7 @@
 
 <section class="page-hero">
     <h1>@Localizer["Checkout.Success"]</h1>
-    <p>@Localizer["Checkout.OrderNo"]: <strong id="order-no">@Model.OrderNumber</strong></p>
+    <p class="note note-ok">@Localizer["Checkout.OrderNo"]: <strong id="order-no" class="badge-code">@Model.OrderNumber</strong></p>
     @if (!string.IsNullOrWhiteSpace(Model.CitizenId))
     {
         <p>@Localizer["Checkout.CitizenId"]: <strong>@Model.CitizenId</strong></p>
@@ -30,14 +30,18 @@ else if (isBank)
         <tr>
             <td>@(string.IsNullOrWhiteSpace(i.VariantLabel) ? i.ProductName : $"{i.ProductName} - {i.VariantLabel}")</td>
             <td>× @i.Quantity</td>
-            <td>@i.LineTotal.ToString("N0") VNĐ</td>
+            <td class="num">@i.LineTotal.ToString("N0") VNĐ</td>
         </tr>
     }
-    @if (Model.DiscountAmount > 0)
+    @if (!string.IsNullOrEmpty(Model.PromoCode))
     {
-        <tr><td colspan="2">@Localizer["Checkout.DealerDiscount"]</td><td data-success-discount>-@Model.DiscountAmount.ToString("N0") VNĐ</td></tr>
+        <tr data-success-promo data-promo-code="@Model.PromoCode"><td colspan="2">@Localizer["Checkout.PromoDiscount"] (@Model.PromoCode)</td><td class="num">-@Model.DiscountAmount.ToString("N0") VNĐ</td></tr>
     }
-    <tr><td colspan="2">@Localizer["Checkout.Total"]</td><td><strong>@Model.Total.ToString("N0") VNĐ</strong></td></tr>
+    else if (Model.DiscountAmount > 0)
+    {
+        <tr><td colspan="2">@Localizer["Checkout.DealerDiscount"]</td><td class="num" data-success-discount>-@Model.DiscountAmount.ToString("N0") VNĐ</td></tr>
+    }
+    <tr><td colspan="2">@Localizer["Checkout.Total"]</td><td class="num"><strong>@Model.Total.ToString("N0") VNĐ</strong></td></tr>
     </tbody>
 </table>
 

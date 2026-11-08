@@ -24,7 +24,7 @@
 @if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 <h1>@Localizer["Careers.FormTitle"]</h1>
-<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:640px">
+<form method="post" enctype="multipart/form-data" class="form-stack">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="SitePostId" />
     <input type="hidden" asp-for="JobSlug" />

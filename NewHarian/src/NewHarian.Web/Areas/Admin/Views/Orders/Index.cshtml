@@ -359,16 +359,16 @@
           const shortfall = line.shortfallQty ?? line.ShortfallQty ?? 0;
           const expired = line.expiredQty ?? line.ExpiredQty ?? 0;
           const suggestions = line.suggestions ?? line.Suggestions ?? [];
-          let html = `<div style="margin-top:0.5rem"><div>${escapeHtml(sku)} - ${escapeHtml(name)} × ${req}`;
+          let html = `<div class="stock-pick-line"><div>${escapeHtml(sku)} - ${escapeHtml(name)} × ${req}`;
           if (shortfall > 0) {
             const expiredNote = expired > 0 ? `, ${expired} trong lô hết hạn không xuất` : '';
             html += ` <span class="text-danger">(thiếu ${shortfall}${expiredNote})</span>`;
           }
           html += '</div>';
           if (!suggestions.length) {
-            html += '<p class="muted" style="margin:0.25rem 0 0">Chưa có lô tồn.</p>';
+            html += '<p class="muted help-note">Chưa có lô tồn.</p>';
           } else {
-            html += '<ul style="margin:0.25rem 0 0;padding-left:1.25rem">';
+            html += '<ul class="stock-pick-list">';
             suggestions.forEach(s => {
               const loc = `${s.locationCode ?? s.LocationCode} (${s.locationName ?? s.LocationName})`;
               const lot = s.lotCode ?? s.LotCode ?? '-';

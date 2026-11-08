@@ -6,8 +6,8 @@
     <h2>@(Model.Id.HasValue ? "Sửa danh mục" : "Thêm danh mục")</h2>
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="form-grid">
-        <label><input asp-for="IsActive" /> Active</label>
-        <label><input asp-for="ShowOnHome" /> Show on home</label>
+        <label><input asp-for="IsActive" /> Đang hiện</label>
+        <label><input asp-for="ShowOnHome" /> Hiện trên trang chủ</label>
         <label class="full">Ảnh danh mục
             <input type="file" name="imageFile" id="category-image-input" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" />
             <span id="category-image-status" class="muted"></span>
@@ -17,20 +17,38 @@
         {
             <div class="full" id="category-image-preview-wrap">
                 <p class="muted">Ảnh hiện tại:</p>
-                <img id="category-image-preview" src="@Model.ImageUrl" alt="" style="max-width:180px;height:auto;border:1px solid #ddd" />
+                <img id="category-image-preview" src="@Model.ImageUrl" alt="" class="img-preview" />
             </div>
         }
         else
         {
             <div class="full" id="category-image-preview-wrap" hidden>
                 <p class="muted">Ảnh sau khi cắt:</p>
-                <img id="category-image-preview" alt="" style="max-width:180px;height:auto;border:1px solid #ddd" />
+                <img id="category-image-preview" alt="" class="img-preview" />
             </div>
         }
-        <label>Tên VI * <input asp-for="NameVi" class="form-control" required id="name-vi" /></label>
-        <label>Tên EN * <input asp-for="NameEn" class="form-control" required /></label>
-        <label>Tên JA * <input asp-for="NameJa" class="form-control" required /></label>
-        <label class="full">Mô tả VI <textarea asp-for="DescVi" class="form-control" rows="2"></textarea></label>
+    </div>
+    <div class="lang-tabs" data-lang-tabs>
+        <partial name="_LangTabBar" model="@("category-lang")" />
+        <p class="lang-tabs__hint">Tên cả ba ngôn ngữ đều bắt buộc. Chấm đỏ là tab còn thiếu.</p>
+        <div class="lang-tabs__panel is-active" id="category-lang-panel-vi" role="tabpanel" aria-labelledby="category-lang-tab-vi" data-lang-panel="vi">
+            <div class="lang-tabs__fields">
+                <label>Tên * <input asp-for="NameVi" class="form-control" required id="name-vi" /></label>
+                <label>Mô tả <textarea asp-for="DescVi" class="form-control" rows="2"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="category-lang-panel-en" role="tabpanel" aria-labelledby="category-lang-tab-en" data-lang-panel="en" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tên * <input asp-for="NameEn" class="form-control" required /></label>
+                <label>Mô tả <textarea asp-for="DescEn" class="form-control" rows="2"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="category-lang-panel-ja" role="tabpanel" aria-labelledby="category-lang-tab-ja" data-lang-panel="ja" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tên * <input asp-for="NameJa" class="form-control" required /></label>
+                <label>Mô tả <textarea asp-for="DescJa" class="form-control" rows="2"></textarea></label>
+            </div>
+        </div>
     </div>
     <div class="modal__actions">
         <button type="button" data-close class="btn-secondary">Hủy</button>

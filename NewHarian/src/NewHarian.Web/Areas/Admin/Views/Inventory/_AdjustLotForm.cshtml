@@ -15,8 +15,8 @@
     }
     <label>Số lượng còn lại <input asp-for="QuantityOnHand" type="number" class="form-control" required /></label>
     <label>Ghi chú <input asp-for="Notes" class="form-control" maxlength="1000" /></label>
-    <div style="margin-top:1rem;display:flex;gap:0.5rem">
+    <div class="form-actions">
         <button type="submit" class="btn-primary">Lưu</button>
-        <button type="button" class="btn-link" data-close-inventory-modal>Đóng</button>
+        <button type="button" class="btn-secondary" data-close-inventory-modal>Đóng</button>
     </div>
 </form>

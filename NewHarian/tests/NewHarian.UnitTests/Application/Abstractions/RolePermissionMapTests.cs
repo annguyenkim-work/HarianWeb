@@ -56,6 +56,7 @@ public class RolePermissionMapTests
     [InlineData(Permissions.Inventory.ManageSettings, new[] { AppRoles.SuperAdmin, AppRoles.WarehouseManager })]
     [InlineData(Permissions.Dealers.Approve, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager, AppRoles.LegacyStaff })]
     [InlineData(Permissions.Dealers.ManageDiscounts, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager })]
+    [InlineData(Permissions.PromoCodes.Manage, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager })]
     [InlineData(Permissions.Orders.OverrideDiscount, new[] { AppRoles.SuperAdmin, AppRoles.SalesManager })]
     [InlineData(Permissions.Applications.DownloadCv, new[] { AppRoles.SuperAdmin, AppRoles.HrManager, AppRoles.HrStaff, AppRoles.LegacyStaff })]
     [InlineData(Permissions.CmsPages.EditMeta, new[] { AppRoles.SuperAdmin, AppRoles.HrManager })]

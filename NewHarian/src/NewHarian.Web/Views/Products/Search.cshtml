@@ -70,7 +70,14 @@ else
 
 @if ((!string.IsNullOrWhiteSpace(q) || !string.IsNullOrWhiteSpace(tag)) && Model.Count == 0)
 {
-    <p>@Localizer["Search.NoResults"]</p>
+    <div class="empty-state" role="status">
+        <h2>@Localizer["Search.NoResults"]</h2>
+        @if (!string.IsNullOrWhiteSpace(q))
+        {
+            <p>@q</p>
+        }
+        <a class="btn-primary" href="/products">@Localizer["Nav.Products"]</a>
+    </div>
 }
 else if (Model.Count > 0)
 {
@@ -88,6 +95,19 @@ else if (Model.Count > 0)
                     <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
                 }
                 <h2>@item.Name</h2>
+                @if (!string.IsNullOrWhiteSpace(item.Sku) || item.AvailableQty is int)
+                {
+                    <p class="product-codes">
+                        @if (!string.IsNullOrWhiteSpace(item.Sku))
+                        {
+                            <span class="badge-code">@item.Sku</span>
+                        }
+                        @if (item.AvailableQty is int searchQty)
+                        {
+                            <partial name="_StockBadge" model="new NewHarian.Application.Catalog.StockBadgeModel(searchQty, item.LowStockThreshold)" />
+                        }
+                    </p>
+                }
                 @if (!string.IsNullOrWhiteSpace(item.ShortDescription))
                 {
                     <p class="card-short">@item.ShortDescription</p>

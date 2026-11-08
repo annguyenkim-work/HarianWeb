@@ -11,7 +11,7 @@
 </div>
 
 
-<section class="admin-card" style="margin-bottom:1.5rem;max-width:520px">
+<section class="admin-card admin-card--gap admin-sheet--md">
     <h2>Ngưỡng cảnh báo</h2>
     <p class="muted">Dùng trên màn Kho và Dashboard.</p>
     <form method="post" class="form-stack">
@@ -30,8 +30,8 @@
 </section>
 
 <section class="admin-card">
-    <div class="admin-toolbar" style="margin-bottom:0.75rem">
-        <h2 style="margin:0">Vị trí kho</h2>
+    <div class="admin-toolbar toolbar-tight">
+        <h2 class="u-m0">Vị trí kho</h2>
         <button type="button" class="btn-secondary" id="btn-add-location">Thêm vị trí</button>
     </div>
     <table class="data-table" id="settings-location-table">
@@ -65,7 +65,7 @@
     </table>
     @if (locations.Count == 0)
     {
-        <p class="muted">Chưa có vị trí. Bấm Thêm vị trí để tạo.</p>
+        <p class="empty-note">Chưa có vị trí. Bấm Thêm vị trí để tạo.</p>
     }
 </section>
 

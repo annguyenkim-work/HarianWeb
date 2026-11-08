@@ -1,0 +1,45 @@
+@model NewHarian.Application.PromoCodes.PromoCodeSaveRequest
+
+<form asp-area="Admin" asp-controller="PromoCodes" asp-action="Save" method="post" id="promo-edit-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="UsedCount" />
+
+    <h2>@(Model.Id.HasValue ? "Sửa mã giảm giá" : "Thêm mã giảm giá")</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-grid">
+        <label>
+            Mã *
+            <input asp-for="Code" class="form-control" required maxlength="32" autocomplete="off" />
+        </label>
+        <label>
+            Phần trăm giảm *
+            <input name="DiscountPercent" value="@Model.DiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" type="number" min="0.01" max="100" step="0.01" required />
+        </label>
+        <label>
+            Bắt đầu hiệu lực *
+            <input asp-for="ValidFromLocal" class="form-control" type="datetime-local" required />
+        </label>
+        <label>
+            Kết thúc hiệu lực *
+            <input asp-for="ValidToLocal" class="form-control" type="datetime-local" required />
+        </label>
+        <label>
+            Số lượng mã *
+            <input asp-for="MaxUses" class="form-control" type="number" min="1" step="1" required />
+        </label>
+        <label class="full">
+            <input asp-for="IsActive" /> Đang bật
+        </label>
+        @if (Model.Id.HasValue)
+        {
+            <p class="muted full">Đã dùng @Model.UsedCount / @Model.MaxUses. Số lượng mới không được nhỏ hơn số lần đã dùng.</p>
+        }
+    </div>
+
+    <div class="modal__actions">
+        <button type="button" data-close class="btn-secondary">Hủy</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+    </div>
+</form>

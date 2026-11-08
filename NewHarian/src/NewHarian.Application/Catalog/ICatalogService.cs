@@ -22,6 +22,9 @@ public record ProductCardDto(
     string? ShortDescription = null,
     string? CategoryName = null,
     bool IsFeatured = false,
+    string? Sku = null,
+    int? AvailableQty = null,
+    int? LowStockThreshold = null,
     IReadOnlyList<string>? Tags = null);
 
 public record ProductVariantDto(
@@ -34,7 +37,9 @@ public record ProductVariantDto(
     string? ImageUrl,
     int GallerySlideIndex,
     string? SizeLabel = null,
-    string? ColorName = null);
+    string? ColorName = null,
+    int? AvailableQty = null,
+    int? LowStockThreshold = null);
 
 public record ProductDetailDto(
     int Id,

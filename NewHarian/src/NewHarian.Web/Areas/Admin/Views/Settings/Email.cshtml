@@ -1,12 +1,13 @@
 @model NewHarian.Application.Settings.EmailSettingsDto
 @{
     ViewData["Title"] = "Email & thông báo";
+    ViewData["AdminWidth"] = "narrow";
 }
 
 <h1>Email &amp; thông báo</h1>
 
 
-<section class="admin-card" style="margin-bottom:1.5rem">
+<section class="admin-card admin-card--gap">
     <h2>Trạng thái SMTP</h2>
     <p class="muted">Cấu hình máy chủ nằm trong <code>appsettings.json</code> / biến môi trường (không nhập mật khẩu trên web). Nội dung thư chỉnh tại <a asp-controller="EmailTemplates" asp-action="Index">Mẫu email</a>.</p>
     <dl class="detail-list">
@@ -29,7 +30,7 @@
     </dl>
 </section>
 
-<section class="admin-card" style="margin-bottom:1.5rem">
+<section class="admin-card admin-card--gap">
     <h2>Email nhận thông báo (staff)</h2>
     <p class="muted">Khi khách đặt hàng / liên hệ / ứng tuyển / đặt lịch / đăng ký đại lý, hệ thống gửi mail tới các địa chỉ dưới đây.</p>
     <form asp-action="Email" method="post" class="form-grid">
@@ -50,7 +51,7 @@
         <label>Đại lý (dealer)
             <input asp-for="DealerEmail" class="form-control" type="email" required />
         </label>
-        <div class="full modal__actions" style="justify-content:flex-start">
+        <div class="full modal__actions modal__actions--start">
             <button type="submit" class="btn-primary">Lưu</button>
         </div>
     </form>

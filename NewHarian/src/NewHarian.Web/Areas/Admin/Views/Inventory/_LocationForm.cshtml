@@ -9,8 +9,8 @@
     <label>Tên <input asp-for="Name" class="form-control" required maxlength="200" placeholder="vd. Kệ 2" /></label>
     <label>Thứ tự <input asp-for="SortOrder" type="number" class="form-control" /></label>
     <label class="form-check-row__item"><input asp-for="IsActive" /> Active</label>
-    <div style="margin-top:1rem;display:flex;gap:0.5rem">
+    <div class="form-actions">
         <button type="submit" class="btn-primary">Lưu</button>
-        <button type="button" class="btn-link" data-close-inventory-modal data-close-settings-inv-modal>Đóng</button>
+        <button type="button" class="btn-secondary" data-close-inventory-modal data-close-settings-inv-modal>Đóng</button>
     </div>
 </form>

@@ -51,12 +51,6 @@
             <input type="hidden" asp-for="HidePrice" value="false" />
         }
 
-        <label class="full">Tên VI * <input asp-for="NameVi" class="form-control" required id="name-vi" /></label>
-        <label class="full">Tên EN <input asp-for="NameEn" class="form-control" /></label>
-        <label class="full">Tên JA <input asp-for="NameJa" class="form-control" /></label>
-        <label class="full">Mô tả ngắn VI <input asp-for="ShortVi" class="form-control" /></label>
-        <label class="full">Mô tả ngắn EN <input asp-for="ShortEn" class="form-control" /></label>
-        <label class="full">Mô tả ngắn JA <input asp-for="ShortJa" class="form-control" /></label>
         @if (!isService)
         {
             <label class="full">Tags
@@ -66,30 +60,30 @@
         }
     </div>
 
-
-
-    <h3>Mô tả chi tiết</h3>
-
-    <div class="richtext-stack">
-
-        <label>Mô tả VI
-
-            <textarea asp-for="DescVi" class="form-control richtext" rows="8"></textarea>
-
-        </label>
-
-        <label>Mô tả EN
-
-            <textarea asp-for="DescEn" class="form-control richtext" rows="8"></textarea>
-
-        </label>
-
-        <label>Mô tả JA
-
-            <textarea asp-for="DescJa" class="form-control richtext" rows="8"></textarea>
-
-        </label>
-
+    <div class="lang-tabs" data-lang-tabs>
+        <partial name="_LangTabBar" model="@("product-lang")" />
+        <p class="lang-tabs__hint">Tên English hoặc 日本語 để trống sẽ dùng tên tiếng Việt. Nội dung ở tab khác vẫn được lưu.</p>
+        <div class="lang-tabs__panel is-active" id="product-lang-panel-vi" role="tabpanel" aria-labelledby="product-lang-tab-vi" data-lang-panel="vi">
+            <div class="lang-tabs__fields">
+                <label>Tên * <input asp-for="NameVi" class="form-control" required id="name-vi" /></label>
+                <label>Mô tả ngắn <input asp-for="ShortVi" class="form-control" /></label>
+                <label>Mô tả chi tiết <textarea asp-for="DescVi" class="form-control richtext" rows="8"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="product-lang-panel-en" role="tabpanel" aria-labelledby="product-lang-tab-en" data-lang-panel="en" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tên <input asp-for="NameEn" class="form-control" /></label>
+                <label>Mô tả ngắn <input asp-for="ShortEn" class="form-control" /></label>
+                <label>Mô tả chi tiết <textarea asp-for="DescEn" class="form-control richtext" rows="8"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="product-lang-panel-ja" role="tabpanel" aria-labelledby="product-lang-tab-ja" data-lang-panel="ja" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tên <input asp-for="NameJa" class="form-control" /></label>
+                <label>Mô tả ngắn <input asp-for="ShortJa" class="form-control" /></label>
+                <label>Mô tả chi tiết <textarea asp-for="DescJa" class="form-control richtext" rows="8"></textarea></label>
+            </div>
+        </div>
     </div>
 
 
@@ -131,10 +125,10 @@
 
 
 
-    <h3>Variants</h3>
+    <h3>SKUs</h3>
     <p class="img-size-hint"><strong>Ảnh SKU đề xuất:</strong> 800×800 px (vuông), cùng tỷ lệ ảnh sản phẩm. Chọn ảnh xong sẽ cắt khung vuông trước khi tải lên. Chỉ cần khi muốn gallery nhảy sang ảnh riêng theo biến thể.</p>
 
-    <div class="variants-table">
+    <div class="variants-table@(isService ? " variants-table--service" : "")">
 
         <div class="variant-row variant-row--head">
 
@@ -228,7 +222,7 @@
         </div>
     </div>
 
-    <button type="button" class="btn-secondary" data-add-variant>Thêm variant</button>
+    <button type="button" class="btn-secondary" data-add-variant>Thêm SKU</button>
 
 
 

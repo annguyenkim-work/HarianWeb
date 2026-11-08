@@ -37,7 +37,7 @@
             <td>
                 @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
                 {
-                    <img src="@c.ImageUrl" alt="" style="width:48px;height:48px;object-fit:cover" />
+                    <img src="@c.ImageUrl" alt="" class="thumb-48" />
                 }
                 else { <span class="muted">-</span> }
             </td>
@@ -65,7 +65,7 @@
                 }
                 @if (canEdit && c.IsActive)
                 {
-                    <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Vô hiệu hóa danh mục này? (không xóa dữ liệu)');">
+                    <form asp-action="Delete" method="post" class="inline" data-confirm="Vô hiệu hóa danh mục này? (không xóa dữ liệu)">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@c.Id" />
                         <button type="submit" class="btn-icon btn-icon--danger" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>

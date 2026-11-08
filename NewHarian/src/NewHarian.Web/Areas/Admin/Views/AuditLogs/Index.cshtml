@@ -62,11 +62,11 @@
         foreach (var row in Model)
         {
             <tr>
-                <td style="white-space:nowrap">@row.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td class="nowrap">@row.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
                 <td>@row.ActorLabel</td>
                 <td>@row.Action</td>
                 <td>@row.EntityType #<strong>@row.EntityId</strong></td>
-                <td style="max-width:28rem;font-size:0.85rem;word-break:break-word">
+                <td class="cell-clip">
                     <div class="muted">@row.OldValues</div>
                     <div>→ @row.NewValues</div>
                 </td>

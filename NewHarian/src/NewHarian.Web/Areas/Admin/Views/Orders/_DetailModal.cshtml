@@ -32,6 +32,13 @@
                 {<text>@Model.DealerDiscountPercent.Value.ToString("0.##")% </text>}-@Model.DiscountAmount.ToString("N0") VNĐ</span>
         </div>
     }
+    @if (!string.IsNullOrEmpty(Model.PromoCode))
+    {
+        <div class="detail-field" data-order-promo>
+            <span class="detail-field__label">Mã giảm giá</span>
+            <span class="detail-field__value">@Model.PromoCode / @(Model.PromoDiscountPercent?.ToString("0.##"))% / -@Model.DiscountAmount.ToString("N0") VNĐ</span>
+        </div>
+    }
     @if (Model.Invoice is not null)
     {
         <div class="detail-field detail-field--wide" data-order-invoice>
@@ -73,7 +80,14 @@
             <span class="muted">(SP @Model.SubTotal.ToString("N0") VNĐ
             @if (Model.DiscountAmount > 0)
             {
-                <text> − CK @Model.DiscountAmount.ToString("N0") VNĐ</text>
+                if (!string.IsNullOrEmpty(Model.PromoCode))
+                {
+                    <text> − giảm @Model.DiscountAmount.ToString("N0") VNĐ</text>
+                }
+                else
+                {
+                    <text> − CK @Model.DiscountAmount.ToString("N0") VNĐ</text>
+                }
             }
             + ship @Model.ShippingFee.ToString("N0") VNĐ)</span>
         </span>
@@ -97,11 +111,11 @@
 }
 @if (stockPick is not null && stockPick.Lines.Count > 0)
 {
-    <div class="order-stock-pick" style="margin:1rem 0;padding:0.75rem;border:1px solid var(--border, #ddd);border-radius:6px">
+    <div class="order-stock-pick">
         <strong>@(stockPick.AlreadyDeducted ? "Đã lấy hàng (FEFO)" : "Gợi ý lấy hàng (FEFO)")</strong>
         @foreach (var line in stockPick.Lines)
         {
-            <div style="margin-top:0.5rem">
+            <div class="stock-pick-line">
                 <div>@line.Sku - @line.ProductName × @line.RequestedQty
                     @if (line.ShortfallQty > 0)
                     {
@@ -110,11 +124,11 @@
                 </div>
                 @if (line.Suggestions.Count == 0)
                 {
-                    <p class="muted" style="margin:0.25rem 0 0">Chưa có lô tồn.</p>
+                    <p class="muted help-note">Chưa có lô tồn.</p>
                 }
                 else
                 {
-                    <ul style="margin:0.25rem 0 0;padding-left:1.25rem">
+                    <ul class="stock-pick-list">
                     @foreach (var s in line.Suggestions)
                     {
                         <li>@s.LocationCode (@s.LocationName) · lô @(s.LotCode ?? "-") · HSD @s.ExpiryDate.ToString("dd/MM/yyyy") · lấy @s.AllocateQty</li>
@@ -133,7 +147,7 @@
 @{
     var canUpdateStatus = User.HasPermission(Permissions.Orders.UpdateStatus);
 }
-<div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+<div class="order-actions">
 @if (OrderStatusPolicy.CanConfirmCod(Model.Status, Model.PaymentMethod)
      && User.HasPermission(Permissions.Orders.ConfirmCod))
 {

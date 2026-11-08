@@ -1,0 +1,9 @@
+@model string
+@{
+    var prefix = string.IsNullOrWhiteSpace(Model) ? "lang" : Model;
+}
+<div class="lang-tabs__bar" role="tablist" aria-label="Ngôn ngữ">
+    <button type="button" class="lang-tabs__tab is-active" role="tab" id="@(prefix)-tab-vi" aria-selected="true" aria-controls="@(prefix)-panel-vi" data-lang-tab="vi">Tiếng Việt</button>
+    <button type="button" class="lang-tabs__tab" role="tab" id="@(prefix)-tab-en" aria-selected="false" aria-controls="@(prefix)-panel-en" data-lang-tab="en" tabindex="-1">English</button>
+    <button type="button" class="lang-tabs__tab" role="tab" id="@(prefix)-tab-ja" aria-selected="false" aria-controls="@(prefix)-panel-ja" data-lang-tab="ja" tabindex="-1">日本語</button>
+</div>
