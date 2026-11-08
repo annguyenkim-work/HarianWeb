@@ -23,7 +23,6 @@ namespace NewHarian.Infrastructure.Orders;
 public partial class OrderService(
     AppDbContext db,
     ICartService cart,
-    IShippingService shipping,
     IEmailSender email,
     IEmailTemplateService emailTemplates,
     IAuditService audit,
@@ -79,8 +78,8 @@ public partial class OrderService(
             if (!promo.Ok)
                 return RejectPlaceOrder(promo.Error ?? PromoCodeRules.Invalid);
             var subTotal = priced.SubTotal;
-            var shipFee = await shipping.CalculateFeeAsync(province.Id, ct);
-            var total = priced.NetSubTotal - promo.Amount + shipFee;
+            const decimal shipFee = 0m;
+            var total = priced.NetSubTotal - promo.Amount;
 
             var orderNumber = await NextOrderNumberAsync(ct);
             var orderStatus = draft.PaymentMethod == PaymentMethod.COD
@@ -838,6 +837,7 @@ public partial class OrderService(
             ["OrderLinesHtml"] = lines,
             ["SubTotal"] = (order.SubTotal - order.DiscountAmount).ToString("N0"),
             ["ShippingFee"] = order.ShippingFee.ToString("N0"),
+            ["ShippingNote"] = ShippingFeeCopy.EmailNote(order.ShippingFee),
             ["Total"] = order.Total.ToString("N0"),
             ["BankBlockHtml"] = bankBlock
         };

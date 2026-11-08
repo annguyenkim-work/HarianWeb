@@ -102,6 +102,7 @@
   <data name="Checkout.Continue" xml:space="preserve"><value>Tiếp tục</value></data>
   <data name="Checkout.Summary" xml:space="preserve"><value>Tóm tắt đơn</value></data>
   <data name="Checkout.Shipping" xml:space="preserve"><value>Phí vận chuyển</value></data>
+  <data name="Checkout.ShippingPending" xml:space="preserve"><value>Sẽ được nhân viên thông báo khi xác nhận đơn</value></data>
   <data name="Checkout.Total" xml:space="preserve"><value>Tổng cộng</value></data>
   <data name="Checkout.Confirm" xml:space="preserve"><value>Xác nhận đơn hàng</value></data>
   <data name="Checkout.Customer" xml:space="preserve"><value>Thông tin khách</value></data>

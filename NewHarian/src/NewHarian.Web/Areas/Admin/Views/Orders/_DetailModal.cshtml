@@ -89,7 +89,15 @@
                     <text> − CK @Model.DiscountAmount.ToString("N0") VNĐ</text>
                 }
             }
-            + ship @Model.ShippingFee.ToString("N0") VNĐ)</span>
+            @if (Model.ShippingFee > 0)
+            {
+                <text>+ ship @Model.ShippingFee.ToString("N0") VNĐ</text>
+            }
+            else
+            {
+                <span data-shipping-pending>+ ship: sẽ báo khi xác nhận</span>
+            }
+            )</span>
         </span>
     </div>
 </div>

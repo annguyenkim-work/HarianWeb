@@ -123,7 +123,8 @@ public class PromoCodeIntegrationTests : IClassFixture<NewHarianWebApplicationFa
             Assert.Equal(10m, order.PromoDiscountPercent);
             Assert.Equal(20_000m, order.DiscountAmount);
             Assert.Equal(200_000m, order.SubTotal);
-            Assert.Equal(180_000m + order.ShippingFee, order.Total);
+            Assert.Equal(0m, order.ShippingFee);
+            Assert.Equal(180_000m, order.Total);
             Assert.Equal(1, await db.PromoCodes.Where(p => p.Code == code).Select(p => p.UsedCount).SingleAsync());
         }
 

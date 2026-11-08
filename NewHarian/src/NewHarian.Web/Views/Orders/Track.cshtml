@@ -76,7 +76,7 @@
                 {
                     <tr><td colspan="2">@Localizer["Checkout.DealerDiscount"]</td><td class="num">-@order.DiscountAmount.ToString("N0") VNĐ</td></tr>
                 }
-                <tr><td colspan="2">@Localizer["Checkout.Shipping"]</td><td class="num">@order.ShippingFee.ToString("N0") VNĐ</td></tr>
+                <partial name="_ShippingFeeLine" model="order.ShippingFee" />
                 <tr><td colspan="2"><strong>@Localizer["Checkout.Total"]</strong></td><td class="num"><strong>@order.Total.ToString("N0") VNĐ</strong></td></tr>
             </tfoot>
         </table>

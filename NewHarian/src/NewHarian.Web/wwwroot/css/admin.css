@@ -1039,6 +1039,9 @@
 }
 .form-grid .full { grid-column: 1 / -1; }
 .lang-tabs { margin: 1.15rem 0 1.35rem; }
+.order-kind-tabs { margin-top: 0.15rem; }
+.order-kind-tabs .lang-tabs__tab { cursor: pointer; }
+.order-kind-tabs .lang-tabs__panel .detail-grid { margin-top: 0.85rem; margin-bottom: 0; }
 .lang-tabs__bar {
   display: flex;
   flex-wrap: wrap;
@@ -1408,6 +1411,7 @@
 .status-history__meta time { white-space: nowrap; }
 .status-history__actor { color: #64748b; }
 
+.manual-order-form [hidden] { display: none !important; }
 .manual-order-form__lines-title { font-size: 1rem; margin: 1.25rem 0 0.5rem; }
 .manual-order-form__hint { margin: 0.5rem 0; font-size: 0.85rem; }
 .manual-order-lines { display: grid; gap: 0.65rem; margin-bottom: 0.75rem; }

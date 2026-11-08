@@ -23,7 +23,6 @@ using NewHarian.Application.Inventory;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Posts;
 using NewHarian.Application.PromoCodes;
-using NewHarian.Application.Shipping;
 using NewHarian.Application.Settings;
 using NewHarian.Infrastructure.Address;
 using NewHarian.Infrastructure.Admin;
@@ -47,7 +46,6 @@ using NewHarian.Infrastructure.Persistence;
 using NewHarian.Infrastructure.Posts;
 using NewHarian.Infrastructure.PromoCodes;
 using NewHarian.Infrastructure.Security;
-using NewHarian.Infrastructure.Shipping;
 using NewHarian.Infrastructure.Settings;
 
 namespace NewHarian.Infrastructure.DependencyInjection;
@@ -140,8 +138,6 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IServiceBookingService, ServiceBookingService>();
         services.AddScoped<ICartService, SessionCartService>();
         services.AddScoped<IMediaStorage, LocalMediaStorage>();
-        services.AddScoped<IShippingService, ShippingService>();
-        services.AddScoped<IAdminShippingService, AdminShippingService>();
         services.AddScoped<OrderService>();
         services.AddScoped<IOrderService>(sp => sp.GetRequiredService<OrderService>());
         services.AddScoped<IOrderAdminService>(sp => sp.GetRequiredService<OrderService>());

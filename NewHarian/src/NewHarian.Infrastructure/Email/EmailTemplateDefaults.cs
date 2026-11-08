@@ -9,7 +9,7 @@ public static class EmailTemplateDefaults
     public static IReadOnlyList<EmailTemplate> All() =>
     [
         T(EmailTemplateCodes.OrderCustomer, "Đơn hàng - xác nhận khách",
-            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, CitizenId, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, Total, BankBlockHtml",
+            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, CitizenId, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, ShippingNote, Total, BankBlockHtml",
             "Xác nhận đơn {{OrderNumber}} - Harian",
             """
             <p>Cảm ơn bạn đã đặt hàng.</p>
@@ -19,12 +19,12 @@ public static class EmailTemplateDefaults
             <p>{{ShippingAddress}}, {{ProvinceName}}</p>
             <p>PT thanh toán: {{PaymentMethod}}</p>
             <p>{{OrderLinesHtml}}</p>
-            <p>Tạm tính {{SubTotal}} VNĐ + Ship {{ShippingFee}} VNĐ = <strong>{{Total}} VNĐ</strong></p>
+            <p>Tạm tính {{SubTotal}} VNĐ. {{ShippingNote}} <strong>Tổng tiền hàng: {{Total}} VNĐ</strong></p>
             {{BankBlockHtml}}
             """),
 
         T(EmailTemplateCodes.OrderStaff, "Đơn hàng - notify staff",
-            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, CitizenId, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, Total, AdminUrl",
+            "OrderNumber, CustomerName, CustomerEmail, CustomerPhone, CitizenId, ShippingAddress, ProvinceName, PaymentMethod, OrderLinesHtml, SubTotal, ShippingFee, ShippingNote, Total, AdminUrl",
             "[Harian] Đơn mới {{OrderNumber}}",
             """
             <p>Đơn <strong>{{OrderNumber}}</strong></p>
@@ -33,7 +33,7 @@ public static class EmailTemplateDefaults
             <p>{{ShippingAddress}}, {{ProvinceName}}</p>
             <p>PT: {{PaymentMethod}}</p>
             <p>{{OrderLinesHtml}}</p>
-            <p>Tạm tính {{SubTotal}} VNĐ + Ship {{ShippingFee}} VNĐ = <strong>{{Total}} VNĐ</strong></p>
+            <p>Tạm tính {{SubTotal}} VNĐ. {{ShippingNote}} <strong>Tổng tiền hàng: {{Total}} VNĐ</strong></p>
             """),
 
         T(EmailTemplateCodes.OrderCancelStaff, "Đơn hàng - khách hủy (staff)",

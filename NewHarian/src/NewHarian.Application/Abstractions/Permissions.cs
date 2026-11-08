@@ -148,11 +148,6 @@ public static class Permissions
         public const string Manage = "Media.Manage";
     }
 
-    public static class Shipping
-    {
-        public const string Manage = "Shipping.Manage";
-    }
-
     public static class Users
     {
         public const string Manage = "Users.Manage";

@@ -2,38 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewHarian.Application.Abstractions;
 using NewHarian.Application.Cms;
-using NewHarian.Application.Shipping;
 using NewHarian.Domain.Entities;
 using NewHarian.Infrastructure.Persistence;
 using NewHarian.Web.Authorization;
 
 namespace NewHarian.Web.Areas.Admin.Controllers;
-
-[Area("Admin")]
-[HasPermission(Permissions.Shipping.Manage)]
-public class ShippingController(IAdminShippingService shipping) : Controller
-{
-    public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
-    {
-        var rows = await shipping.ListAsync(ct);
-        var (items, pager) = AdminPaging.Apply(rows, page);
-        ViewBag.Pager = pager;
-        return View(items);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Save(int provinceId, decimal fee, bool isActive, CancellationToken ct)
-    {
-        if (!await shipping.SaveAsync(provinceId, fee, isActive, ct))
-        {
-            this.FlashError("Không tìm thấy tỉnh / thành để lưu phí ship.");
-            return AdminListRedirect.ToRefererOrIndex(this);
-        }
-        this.FlashSuccess("Đã lưu phí ship.");
-        return AdminListRedirect.ToRefererOrIndex(this);
-    }
-}
 
 [Area("Admin")]
 [HasPermission(Permissions.Media.Manage)]

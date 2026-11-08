@@ -3,7 +3,6 @@
     ViewData["Title"] = Localizer["Checkout.Confirm"];
     var priced = (NewHarian.Application.Cart.PricedCart)ViewBag.Priced;
     var dealer = ViewBag.Dealer as NewHarian.Application.Dealers.DealerOptionDto;
-    var fee = (decimal)ViewBag.ShippingFee;
     var total = (decimal)ViewBag.Total;
     var shipTo = (string)(ViewBag.ShipTo ?? "");
     var promo = ViewBag.Promo as NewHarian.Application.PromoCodes.PromoQuote ?? NewHarian.Application.PromoCodes.PromoQuote.None;
@@ -92,7 +91,8 @@
         {
             <tr data-confirm-promo data-promo-code="@promo.Code"><td colspan="@colspan">@Localizer["Checkout.PromoDiscount"] (@promo.Code)</td><td class="num">-@promo.Amount.ToString("N0") VNĐ</td></tr>
         }
-        <tr><td colspan="@colspan">@Localizer["Checkout.Shipping"]</td><td class="num">@fee.ToString("N0") VNĐ</td></tr>
+        @{ ViewData["ShipColSpan"] = colspan; }
+        <partial name="_ShippingFeeLine" model="0m" />
         <tr><td colspan="@colspan"><strong>@Localizer["Checkout.Total"]</strong></td><td class="num"><strong data-confirm-total>@total.ToString("N0") VNĐ</strong></td></tr>
     </tfoot>
 </table>

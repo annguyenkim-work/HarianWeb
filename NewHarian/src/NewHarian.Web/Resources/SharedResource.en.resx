@@ -102,6 +102,7 @@
   <data name="Checkout.Continue" xml:space="preserve"><value>Continue</value></data>
   <data name="Checkout.Summary" xml:space="preserve"><value>Order summary</value></data>
   <data name="Checkout.Shipping" xml:space="preserve"><value>Shipping</value></data>
+  <data name="Checkout.ShippingPending" xml:space="preserve"><value>Quoted by staff when the order is confirmed</value></data>
   <data name="Checkout.Total" xml:space="preserve"><value>Total</value></data>
   <data name="Checkout.Confirm" xml:space="preserve"><value>Confirm order</value></data>
   <data name="Checkout.Customer" xml:space="preserve"><value>Customer</value></data>

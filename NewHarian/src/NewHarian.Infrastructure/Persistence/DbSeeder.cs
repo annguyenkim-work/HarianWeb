@@ -311,24 +311,26 @@ public static class DbSeeder
                     {
                         LanguageCode = "vi",
                         Title = "Điều khoản sử dụng",
-                        Body = "<p>Khi sử dụng website Harian, bạn đồng ý với các điều khoản sau.</p><h2>Đơn hàng</h2><p>Đơn hàng có hiệu lực sau khi chúng tôi xác nhận (COD) hoặc xác nhận thanh toán (chuyển khoản).</p><h2>Giá &amp; phí ship</h2><p>Giá hiển thị bằng VND; phí vận chuyển tính theo tỉnh/thành tại checkout.</p>"
+                        Body = "<p>Khi sử dụng website Harian, bạn đồng ý với các điều khoản sau.</p><h2>Đơn hàng</h2><p>Đơn hàng có hiệu lực sau khi chúng tôi xác nhận (COD) hoặc xác nhận thanh toán (chuyển khoản).</p><h2>Giá &amp; phí ship</h2><p>Giá hiển thị bằng VND; phí vận chuyển do nhân viên thông báo khi xác nhận đơn, không tính trên website.</p>"
                     },
                     new ContentBlockTranslation
                     {
                         LanguageCode = "en",
                         Title = "Terms of use",
-                        Body = "<p>By using the Harian website, you agree to these terms.</p><h2>Orders</h2><p>Orders take effect after confirmation (COD) or payment confirmation (bank transfer).</p><h2>Pricing &amp; shipping</h2><p>Prices are in VND; shipping is calculated by province at checkout.</p>"
+                        Body = "<p>By using the Harian website, you agree to these terms.</p><h2>Orders</h2><p>Orders take effect after confirmation (COD) or payment confirmation (bank transfer).</p><h2>Pricing &amp; shipping</h2><p>Prices are in VND; shipping is quoted by staff when the order is confirmed and is not calculated on the website.</p>"
                     },
                     new ContentBlockTranslation
                     {
                         LanguageCode = "ja",
                         Title = "利用規約",
-                        Body = "<p>本サイトの利用をもって、以下の規約に同意したものとみなします。</p><h2>注文</h2><p>COD確認後、または振込確認後に注文が確定します。</p><h2>価格・送料</h2><p>表示価格はVND、送料はチェックアウト時に都道府県で計算します。</p>"
+                        Body = "<p>本サイトの利用をもって、以下の規約に同意したものとみなします。</p><h2>注文</h2><p>COD確認後、または振込確認後に注文が確定します。</p><h2>価格・送料</h2><p>表示価格はVND。送料は注文確認時にスタッフから案内し、サイト上では計算しません。</p>"
                     }
                 }
             });
             await db.SaveChangesAsync();
         }
+
+        await ReplaceLegacyShippingTermsAsync(db);
 
         if (!await db.Menus.AnyAsync(m => m.Code == "sidebar-legal"))
         {
@@ -960,7 +962,7 @@ public static class DbSeeder
             await db.SaveChangesAsync();
         }
 
-        var existing = await db.ShippingProvinces.Include(p => p.Rate).ToListAsync();
+        var existing = await db.ShippingProvinces.ToListAsync();
         var byCode = existing.ToDictionary(p => p.Code, StringComparer.Ordinal);
         var sort = 1;
         foreach (var p in catalog.Provinces)
@@ -974,8 +976,7 @@ public static class DbSeeder
                     NameEn = p.Name,
                     NameJa = p.Name,
                     SortOrder = sort++,
-                    IsActive = true,
-                    Rate = new ShippingRate { Fee = ShippingFees.DefaultVnd }
+                    IsActive = true
                 });
             }
             else
@@ -985,8 +986,6 @@ public static class DbSeeder
                 row.NameJa ??= p.Name;
                 row.SortOrder = sort++;
                 row.IsActive = true;
-                if (row.Rate is null)
-                    row.Rate = new ShippingRate { Fee = ShippingFees.DefaultVnd };
             }
         }
         await db.SaveChangesAsync();
@@ -1026,6 +1025,20 @@ public static class DbSeeder
                 row.BodyHtml = row.BodyHtml.Replace("}}đ", "}} VNĐ", StringComparison.Ordinal);
                 changed = true;
             }
+            var rewritten = ShippingFeeCopy.ReplaceLegacyEmailShipLine(row.BodyHtml);
+            if (!string.Equals(rewritten, row.BodyHtml, StringComparison.Ordinal))
+            {
+                row.BodyHtml = rewritten;
+                changed = true;
+            }
+            if (row.Code is EmailTemplateCodes.OrderCustomer or EmailTemplateCodes.OrderStaff
+                && !row.PlaceholdersHelp.Contains("ShippingNote", StringComparison.Ordinal))
+            {
+                row.PlaceholdersHelp = string.IsNullOrWhiteSpace(row.PlaceholdersHelp)
+                    ? "ShippingNote"
+                    : row.PlaceholdersHelp.TrimEnd() + ", ShippingNote";
+                changed = true;
+            }
             if (changed) row.UpdatedAt = DateTime.UtcNow;
         }
 
@@ -1047,6 +1060,22 @@ public static class DbSeeder
         }
 
         if (db.ChangeTracker.HasChanges())
+            await db.SaveChangesAsync();
+    }
+
+    private static async Task ReplaceLegacyShippingTermsAsync(AppDbContext db)
+    {
+        var translations = await db.ContentBlockTranslations.ToListAsync();
+        var changed = false;
+        foreach (var row in translations)
+        {
+            var updated = ShippingFeeCopy.ReplaceLegacyTerms(row.Body);
+            if (string.Equals(updated, row.Body, StringComparison.Ordinal))
+                continue;
+            row.Body = updated;
+            changed = true;
+        }
+        if (changed)
             await db.SaveChangesAsync();
     }
 }

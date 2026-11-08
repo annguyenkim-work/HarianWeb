@@ -10,7 +10,6 @@ using NewHarian.Application.Formatting;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
 using NewHarian.Application.PromoCodes;
-using NewHarian.Application.Shipping;
 using NewHarian.Application.Validation;
 using NewHarian.Domain.Enums;
 using NewHarian.Web.Models;
@@ -21,7 +20,6 @@ namespace NewHarian.Web.Controllers;
 public class CheckoutController(
     ICartService cart,
     ICartPricingService pricing,
-    IShippingService shipping,
     IOrderService orders,
     IBankTransferDisplayService bankTransfer,
     IVietnamDivisionCatalog catalog,
@@ -80,19 +78,15 @@ public class CheckoutController(
         return RedirectToAction(nameof(Confirm));
     }
 
-    [HttpGet("/checkout/shipping-fee")]
-    public async Task<IActionResult> ShippingFee(string provinceCode, string? promoCode, CancellationToken ct)
+    [HttpGet("/checkout/quote")]
+    public async Task<IActionResult> Quote(string? promoCode, CancellationToken ct)
     {
         var dealer = (await dealerCheckout.GetAsync(ct)).Dealer;
         var priced = await pricing.PriceAsync(cart.GetCart(), dealer?.Id, ct);
-        var fee = await shipping.CalculateFeeAsync(provinceCode ?? "", ct);
         var promo = await promoCodes.QuoteAsync(promoCode, priced.NetSubTotal, dealer is not null, ct);
         var goods = priced.NetSubTotal - (promo.HasDiscount ? promo.Amount : 0);
-        var total = goods + fee;
         return Json(new
         {
-            fee,
-            feeText = MoneyFormat.Vnd(fee),
             subTotal = priced.SubTotal,
             subTotalText = MoneyFormat.Vnd(priced.SubTotal),
             promoOk = promo.Ok,
@@ -102,8 +96,8 @@ public class CheckoutController(
             promoCode = promo.Code,
             goods,
             goodsText = MoneyFormat.Vnd(goods),
-            total,
-            totalText = MoneyFormat.Vnd(total)
+            total = goods,
+            totalText = MoneyFormat.Vnd(goods)
         });
     }
 
@@ -122,14 +116,12 @@ public class CheckoutController(
             TempData["Error"] = promo.Error;
             return RedirectToAction(nameof(Index));
         }
-        var fee = await shipping.CalculateFeeAsync(draft.ShippingProvinceCode, ct);
         catalog.TryResolve(draft.ShippingProvinceCode, draft.ShippingCommuneCode, out var addr);
         ViewBag.Priced = priced;
         ViewBag.Dealer = dealer;
         ViewBag.Promo = promo;
-        ViewBag.ShippingFee = fee;
         ViewBag.ShipTo = AddressFormat.Join(draft.ShippingAddress, addr.CommuneName, addr.ProvinceName);
-        ViewBag.Total = priced.NetSubTotal - promo.Amount + fee;
+        ViewBag.Total = priced.NetSubTotal - promo.Amount;
         return View(draft);
     }
 

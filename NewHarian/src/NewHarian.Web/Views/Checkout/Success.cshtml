@@ -41,6 +41,7 @@ else if (isBank)
     {
         <tr><td colspan="2">@Localizer["Checkout.DealerDiscount"]</td><td class="num" data-success-discount>-@Model.DiscountAmount.ToString("N0") VNĐ</td></tr>
     }
+    <partial name="_ShippingFeeLine" model="Model.ShippingFee" />
     <tr><td colspan="2">@Localizer["Checkout.Total"]</td><td class="num"><strong>@Model.Total.ToString("N0") VNĐ</strong></td></tr>
     </tbody>
 </table>
