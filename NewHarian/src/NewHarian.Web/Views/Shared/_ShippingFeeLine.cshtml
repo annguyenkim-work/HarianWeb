@@ -1,0 +1,18 @@
+@model decimal
+@{
+    var span = ViewData["ShipColSpan"] is int columns ? columns : 2;
+}
+@if (Model > 0)
+{
+    <tr data-shipping-fee="@Model.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+        <td colspan="@span">@Localizer["Checkout.Shipping"]</td>
+        <td class="num">@Model.ToString("N0") VNĐ</td>
+    </tr>
+}
+else
+{
+    <tr data-shipping-pending>
+        <td colspan="@span">@Localizer["Checkout.Shipping"]</td>
+        <td>@Localizer["Checkout.ShippingPending"]</td>
+    </tr>
+}

@@ -97,7 +97,7 @@
             <span id="sum-promo" class="num" data-promo-code="@promo.Code">-@promo.Amount.ToString("N0") VNĐ</span>
         </p>
         <p id="sum-promo-error" class="text-danger" @(string.IsNullOrEmpty(promo.Error) ? "hidden" : null)>@promo.Error</p>
-        <p>@Localizer["Checkout.Shipping"]: <span id="sum-ship" class="num">-</span></p>
+        <p data-shipping-pending>@Localizer["Checkout.Shipping"]: @Localizer["Checkout.ShippingPending"]</p>
         <p><strong>@Localizer["Checkout.Total"]: <span id="sum-total" class="num">@payableGoods.ToString("N0") VNĐ</span></strong></p>
     </aside>
 </div>
@@ -106,16 +106,13 @@
 <script>
 (() => {
   const form = document.getElementById('checkout-form');
-  const shipEl = document.getElementById('sum-ship');
   const totalEl = document.getElementById('sum-total');
   const promoRow = document.getElementById('sum-promo-row');
   const promoEl = document.getElementById('sum-promo');
   const promoError = document.getElementById('sum-promo-error');
   async function refresh() {
-    const sel = form?.querySelector('[data-address-province]');
     const code = form?.querySelector('[data-promo-input]')?.value || '';
-    const province = sel?.value || '';
-    const res = await fetch('/checkout/shipping-fee?provinceCode=' + encodeURIComponent(province) + '&promoCode=' + encodeURIComponent(code));
+    const res = await fetch('/checkout/quote?promoCode=' + encodeURIComponent(code));
     if (!res.ok) return;
     const data = await res.json();
     if (promoRow) {
@@ -127,13 +124,11 @@
       promoError.hidden = !data.promoError;
       promoError.textContent = data.promoError || '';
     }
-    if (shipEl) shipEl.textContent = province ? data.feeText : '-';
-    if (totalEl) totalEl.textContent = province ? data.totalText : data.goodsText;
+    if (totalEl) totalEl.textContent = data.goodsText;
   }
   form?.addEventListener('change', e => {
-    if (e.target.matches('[data-address-province], [data-promo-input]')) refresh();
+    if (e.target.matches('[data-promo-input]')) refresh();
   });
-  form?.addEventListener('harian:address-ready', refresh);
   refresh();
 })();
 </script>

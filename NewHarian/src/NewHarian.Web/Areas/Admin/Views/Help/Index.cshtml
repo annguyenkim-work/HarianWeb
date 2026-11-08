@@ -13,7 +13,7 @@
     var showPosts = User.HasPermission(Permissions.Posts.Manage);
     var showCms = User.HasPermission(Permissions.CmsPages.View) || User.HasPermission(Permissions.Menus.Manage)
                   || User.HasPermission(Permissions.HomeSlides.Manage) || User.HasPermission(Permissions.Media.Manage);
-    var showSettings = User.HasPermission(Permissions.SiteSettings.Manage) || User.HasPermission(Permissions.Shipping.Manage)
+    var showSettings = User.HasPermission(Permissions.SiteSettings.Manage)
                        || User.HasPermission(Permissions.Users.Manage) || User.HasPermission(Permissions.EmailTemplates.Manage);
     var showEmployees = User.HasPermission(Permissions.Employees.View);
 }
@@ -90,7 +90,7 @@
     <h3>Quy trình theo phương thức thanh toán (bước đầu)</h3>
     <div class="help-callout">
         <ul>
-            <li><strong>COD</strong>: đơn mới thường ở <code>AwaitingConfirmation</code> → gọi/email xác nhận → ghi <em>Ghi chú nội bộ</em> → nhấn <strong>Xác nhận COD</strong> → <code>Confirmed</code>.</li>
+            <li><strong>COD</strong>: đơn mới thường ở <code>AwaitingConfirmation</code> → gọi/email xác nhận (báo phí vận chuyển cho khách, web không tính phí) → ghi <em>Ghi chú nội bộ</em> → nhấn <strong>Xác nhận COD</strong> → <code>Confirmed</code>.</li>
             <li><strong>Chuyển khoản</strong>: đơn ở <code>PendingPayment</code> → đối chiếu đã nhận tiền → <strong>Xác nhận CK</strong> → <code>Confirmed</code> (Super Admin / @AppRoles.Label(AppRoles.SalesManager)).</li>
         </ul>
     </div>
@@ -392,7 +392,7 @@
     <section id="cai-dat" class="help-section admin-help-section">
         <h2>Cài đặt website</h2>
         <ul>
-            <li><strong>Phí ship</strong> - theo 34 tỉnh/thành (mã <code>idProvince</code>). Ô phí nhập/hiện theo định dạng tiền VNĐ.</li>
+            <li><strong>Phí vận chuyển</strong> - không cấu hình trên web. Nhân viên báo phí khi xác nhận đơn. Đơn cũ vẫn hiện phí đã lưu.</li>
             <li><strong>Users</strong> - tạo/khóa tài khoản, gán <strong>một</strong> vai trò; có thể <em>Gắn nhân viên</em> (hồ sơ NV đã tạo). Đổi vai trò có hiệu lực nhanh (security stamp). Xem thêm mục <a href="#nhan-vien">Nhân viên &amp; tài khoản</a>.</li>
             <li><strong>Thương hiệu &amp; logo</strong> - tên thương hiệu, logo header/footer.</li>
             <li><strong>Email &amp; thông báo</strong> / <strong>Mẫu email</strong> - SMTP và nội dung email đơn hàng, đặt lịch, …</li>

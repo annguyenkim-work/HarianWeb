@@ -66,7 +66,6 @@ public static class AdminNavigation
             new("Thương hiệu và logo", "Settings", "Brand", Permissions.SiteSettings.Manage),
             new("Email và thông báo", "Settings", "Email", Permissions.SiteSettings.Manage),
             new("Mẫu email", "EmailTemplates", "Index", Permissions.EmailTemplates.Manage),
-            new("Phí ship", "Shipping", "Index", Permissions.Shipping.Manage),
             new("Ngân hàng / QR", "Settings", "Index", Permissions.SiteSettings.Manage),
             new("Tài khoản", "Users", "Index", Permissions.Users.Manage),
         ]),

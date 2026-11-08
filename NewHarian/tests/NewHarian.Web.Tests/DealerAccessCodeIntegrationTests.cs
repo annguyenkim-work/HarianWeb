@@ -262,7 +262,8 @@ public class DealerAccessCodeIntegrationTests : IClassFixture<DealerCodeWebAppli
         Assert.Equal(OrderSource.Website, order.Source);
         Assert.Equal(595_000m, order.DiscountAmount);
         Assert.Equal(2_500_000m, order.SubTotal);
-        Assert.Equal(2_500_000m - 595_000m + order.ShippingFee, order.Total);
+        Assert.Equal(0m, order.ShippingFee);
+        Assert.Equal(2_500_000m - 595_000m, order.Total);
         Assert.True(string.IsNullOrEmpty(order.CitizenId));
         var coral = order.Items.Single(i => i.Sku == shop.CoralSku);
         Assert.Equal((25m, 375_000m, DealerDiscountSource.Default), (coral.DiscountPercent, coral.DiscountAmount, coral.DiscountSource));
