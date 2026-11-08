@@ -19,7 +19,7 @@
 @if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 <p class="muted">@Localizer["Dealers.Intro"]</p>
-<form method="post" enctype="multipart/form-data" class="form-stack form-table" style="max-width:640px" data-dealer-form id="dealer-register-form">
+<form method="post" enctype="multipart/form-data" class="form-stack" data-dealer-form id="dealer-register-form">
     @Html.AntiForgeryToken()
     <label class="hp" aria-hidden="true"><input asp-for="Website" tabindex="-1" autocomplete="off" /></label>
 
@@ -36,8 +36,8 @@
     </label>
     <label>@Localizer["Dealers.TaxCode"] *
         <input asp-for="TaxCode" class="form-control" required maxlength="20" autocomplete="off" />
-        <span class="muted" style="display:block;margin-top:0.25rem" data-dealer-text="Company">@Localizer["Dealers.TaxCodeHintCompany"]</span>
-        <span class="muted" style="display:block;margin-top:0.25rem" data-dealer-text="Household" hidden>@Localizer["Dealers.TaxCodeHintHousehold"]</span>
+        <span class="muted field-hint" data-dealer-text="Company">@Localizer["Dealers.TaxCodeHintCompany"]</span>
+        <span class="muted field-hint" data-dealer-text="Household" hidden>@Localizer["Dealers.TaxCodeHintHousehold"]</span>
     </label>
     <label data-dealer-only="Household" hidden>@Localizer["Dealers.HouseholdRegistrationNo"] *
         <input asp-for="HouseholdRegistrationNo" class="form-control" required maxlength="50" />
@@ -48,7 +48,7 @@
     </div>
     <label>@Localizer["Dealers.BusinessLicense"]
         <input type="file" name="businessLicenseFile" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
-        <span class="muted" style="display:block;margin-top:0.25rem">
+        <span class="muted field-hint">
             @if (!string.IsNullOrEmpty(Model.BusinessLicenseFileName))
             {
                 @string.Format(Localizer["Dealers.BusinessLicenseKeep"].Value, Model.BusinessLicenseFileName)
@@ -71,7 +71,7 @@
     <label>
         <span data-dealer-text="Company">@Localizer["Dealers.RepresentativeCitizenId"]</span><span data-dealer-text="Household" hidden>@Localizer["Dealers.OwnerCitizenId"] *</span>
         <input asp-for="CitizenId" class="form-control" maxlength="20" inputmode="numeric" autocomplete="off" data-required-for="Household" />
-        <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Checkout.CitizenIdHint"]</span>
+        <span class="muted field-hint">@Localizer["Checkout.CitizenIdHint"]</span>
     </label>
 
     <h2 class="form-section-title">@Localizer["Dealers.SectionContact"]</h2>
@@ -81,20 +81,20 @@
 
     <h2 class="form-section-title">@Localizer["Dealers.SectionShipping"]</h2>
     <label class="form-check"><input asp-for="ShipToHeadOffice" /> @Localizer["Dealers.ShipToHeadOffice"]</label>
-    <fieldset data-dealer-shipping style="border:0;padding:0;margin:0;min-width:0" hidden="@Model.ShipToHeadOffice" disabled="@Model.ShipToHeadOffice">
+    <fieldset class="fieldset-plain" data-dealer-shipping hidden="@Model.ShipToHeadOffice" disabled="@Model.ShipToHeadOffice">
         <strong>@Localizer["Dealers.ShippingAddress"]</strong>
         @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ShippingProvinceCode", CommuneField = "ShippingCommuneCode", LineField = "ShippingAddress", ProvinceValue = Model.ShippingProvinceCode, CommuneValue = Model.ShippingCommuneCode, LineValue = Model.ShippingAddress })
     </fieldset>
     <label>@Localizer["Dealers.InvoiceEmail"]
         <input asp-for="InvoiceEmail" type="email" class="form-control" maxlength="200" />
-        <span class="muted" style="display:block;margin-top:0.25rem">@Localizer["Dealers.InvoiceEmailHint"]</span>
+        <span class="muted field-hint">@Localizer["Dealers.InvoiceEmailHint"]</span>
     </label>
 
     <label>@Localizer["Contact.Message"] <textarea asp-for="Message" class="form-control" rows="5" maxlength="2000"></textarea></label>
     <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>
 </form>
 </main>
-<style>.hp{position:absolute;left:-9999px;height:0;overflow:hidden}.dealer-type{border:0;padding:0;margin:0;display:flex;gap:1.5rem;flex-wrap:wrap}.form-section-title{font-size:1.1rem;margin:1rem 0 0}</style>
+<style>.hp{position:absolute;left:-9999px;height:0;overflow:hidden}.dealer-type{border:0;padding:0;margin:0;display:flex;gap:0.75rem;flex-wrap:wrap}</style>
 @section Scripts {
     <script src="~/js/dealer-form.js" asp-append-version="true"></script>
 }

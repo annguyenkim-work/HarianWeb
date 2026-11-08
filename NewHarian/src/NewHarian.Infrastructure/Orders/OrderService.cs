@@ -9,6 +9,7 @@ using NewHarian.Application.Email;
 using NewHarian.Application.Formatting;
 using NewHarian.Application.Orders;
 using NewHarian.Application.Payments;
+using NewHarian.Application.PromoCodes;
 using NewHarian.Application.Inventory;
 using NewHarian.Application.Shipping;
 using NewHarian.Application.Validation;
@@ -33,6 +34,7 @@ public partial class OrderService(
     IOrderStockService orderStock,
     IManualOrderPricingService manualPricing,
     ICartPricingService cartPricing,
+    IPromoCodeService promoCodes,
     ILogger<OrderService> logger) : IOrderService, IOrderAdminService, IOrderImportExportService
 {
     public async Task<(bool Ok, string? Error, string? OrderNumber)> PlaceOrderAsync(
@@ -73,9 +75,12 @@ public partial class OrderService(
                 return RejectPlaceOrder("Phương thức thanh toán không hợp lệ.");
 
             var priced = await cartPricing.PriceAsync(basket, dealer?.Id, ct);
+            var promo = await promoCodes.TryConsumeAsync(draft.PromoCode, priced.NetSubTotal, dealer is not null, ct);
+            if (!promo.Ok)
+                return RejectPlaceOrder(promo.Error ?? PromoCodeRules.Invalid);
             var subTotal = priced.SubTotal;
             var shipFee = await shipping.CalculateFeeAsync(province.Id, ct);
-            var total = priced.NetSubTotal + shipFee;
+            var total = priced.NetSubTotal - promo.Amount + shipFee;
 
             var orderNumber = await NextOrderNumberAsync(ct);
             var orderStatus = draft.PaymentMethod == PaymentMethod.COD
@@ -90,7 +95,10 @@ public partial class OrderService(
                 CustomerPhone = draft.CustomerPhone.Trim(),
                 CitizenId = GuestValidation.NormalizeCitizenId(draft.CitizenId),
                 DealerId = dealer?.Id,
-                DiscountAmount = priced.DiscountAmount,
+                DiscountAmount = priced.DiscountAmount + promo.Amount,
+                PromoCodeId = promo.PromoCodeId,
+                PromoCode = promo.Code,
+                PromoDiscountPercent = promo.HasDiscount ? promo.Percent : null,
                 InvoiceBuyerName = dealer?.BusinessName,
                 InvoiceTaxCode = dealer?.TaxCode,
                 InvoiceAddress = dealer is null
@@ -217,6 +225,7 @@ public partial class OrderService(
 
             o.Status = OrderStatus.Cancelled;
             o.UpdatedAt = DateTime.UtcNow;
+            await promoCodes.ReleaseAsync(o.PromoCodeId, ct);
             await db.SaveChangesAsync(ct);
 
             await audit.WriteAsync(
@@ -594,6 +603,8 @@ public partial class OrderService(
             if (status == OrderStatus.Confirmed) o.ConfirmedAt ??= DateTime.UtcNow;
             if (status == OrderStatus.Shipped) o.ShippedAt ??= DateTime.UtcNow;
             if (status == OrderStatus.Delivered) o.DeliveredAt ??= DateTime.UtcNow;
+            if (status == OrderStatus.Cancelled)
+                await promoCodes.ReleaseAsync(o.PromoCodeId, ct);
             await db.SaveChangesAsync(ct);
 
             if (OrderStatusPolicy.RequiresStockDeduction(status))
@@ -770,7 +781,9 @@ public partial class OrderService(
             i.DiscountPercent, i.DiscountAmount, i.DiscountTierLabel, i.DiscountSource)).ToList(),
         string.IsNullOrEmpty(o.InvoiceTaxCode)
             ? null
-            : new OrderInvoiceDto(o.InvoiceBuyerName ?? "", o.InvoiceTaxCode, o.InvoiceAddress ?? "", o.InvoiceEmail));
+            : new OrderInvoiceDto(o.InvoiceBuyerName ?? "", o.InvoiceTaxCode, o.InvoiceAddress ?? "", o.InvoiceEmail),
+        o.PromoCode,
+        o.PromoDiscountPercent);
 
     private async Task<string> NextOrderNumberAsync(CancellationToken ct)
     {
@@ -795,6 +808,8 @@ public partial class OrderService(
                 : $" (CK {i.DiscountPercent:0.##}%: -{MoneyFormat.Vnd(i.DiscountAmount)})")));
         if (dealer is not null)
             lines += DealerOrderEmailBlock(order, dealer);
+        else if (!string.IsNullOrEmpty(order.PromoCode))
+            lines += $"<br/>Mã giảm giá {EmailTemplateService.Enc(order.PromoCode)} ({order.PromoDiscountPercent:0.##}%): -{MoneyFormat.Vnd(order.DiscountAmount)}";
 
         var bankBlock = "";
         if (order.PaymentMethod == PaymentMethod.BankTransfer)

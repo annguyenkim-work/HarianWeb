@@ -14,6 +14,10 @@ public class Order
     public int? DealerId { get; set; }
     /// <summary>Legacy single % for the whole order; new dealer orders store % per line.</summary>
     public decimal? DealerDiscountPercent { get; set; }
+    public int? PromoCodeId { get; set; }
+    /// <summary>Code text at the time the retail customer redeemed it.</summary>
+    public string? PromoCode { get; set; }
+    public decimal? PromoDiscountPercent { get; set; }
     public decimal DiscountAmount { get; set; }
     public string? InvoiceBuyerName { get; set; }
     public string? InvoiceTaxCode { get; set; }
@@ -44,6 +48,7 @@ public class Order
 
     public ShippingProvince? ShippingProvince { get; set; }
     public Dealer? Dealer { get; set; }
+    public PromoCode? AppliedPromo { get; set; }
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     public Payment? Payment { get; set; }
     public ICollection<OrderHistory> Histories { get; set; } = new List<OrderHistory>();

@@ -1,11 +1,14 @@
 @model NewHarian.Domain.Entities.Menu?
 @{
-    ViewData["Title"] = "Menu header";
+    ViewData["Title"] = "Menu đầu trang";
     Layout = "_AdminLayout";
 }
 
 <div class="admin-toolbar">
-    <h1>Menu header (top)</h1>
+    <div>
+        <h1>Menu đầu trang</h1>
+        <p class="muted u-m0">Các mục trên thanh điều hướng của website.</p>
+    </div>
 </div>
 
 
@@ -76,7 +79,7 @@ else
                     var childLabel = child.Translations.FirstOrDefault(t => t.LanguageCode == "vi")?.Label
                                     ?? child.ItemKey;
                     <tr class="menu-child-row">
-                        <td style="padding-left:1.75rem">↳ @childLabel</td>
+                        <td class="indent-child">↳ @childLabel</td>
                         <td><code>@child.Url</code></td>
                         <td class="sort-cell">
                             <div class="sort-controls">

@@ -37,9 +37,9 @@
             <tr data-tier-key="t@(i)">
                 <td>
                     <input type="hidden" data-tier-id value="@t.Id" />
-                    <input type="number" class="form-control" data-tier-min value="@t.MinQuantity" readonly style="max-width:6rem" />
+                    <input type="number" class="form-control input-xs" data-tier-min value="@t.MinQuantity" readonly />
                 </td>
-                <td><input type="number" class="form-control" data-tier-max value="@t.MaxQuantity" min="1" style="max-width:6rem" /></td>
+                <td><input type="number" class="form-control input-xs" data-tier-max value="@t.MaxQuantity" min="1" /></td>
                 <td><button type="button" class="btn-icon btn-icon--danger" data-remove-tier title="Xóa mức" aria-label="Xóa mức"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></td>
             </tr>
         }
@@ -48,7 +48,7 @@
     <button type="button" class="btn-secondary" data-add-tier>Thêm mức</button>
 
     <h3 class="detail-section-title">SKU trong nhóm</h3>
-    <div class="discount-products" data-products style="display:flex;flex-wrap:wrap;gap:0.25rem 1rem;max-height:12rem;overflow:auto">
+    <div class="discount-products" data-products>
         @foreach (var s in Model.SkuOptions)
         {
             var taken = s.GroupName is not null;
@@ -79,7 +79,7 @@
                     @for (var i = 0; i < input.Tiers.Count; i++)
                     {
                         input.Tiers[i].Percents.TryGetValue(vid, out var v);
-                        <td><input type="number" class="form-control" data-cell="t@(i)|@vid" value="@Pct(v)" min="0" max="100" step="0.01" required style="max-width:6rem" /></td>
+                        <td><input type="number" class="form-control input-xs" data-cell="t@(i)|@vid" value="@Pct(v)" min="0" max="100" step="0.01" required /></td>
                     }
                 </tr>
             }

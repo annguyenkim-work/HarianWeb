@@ -13,7 +13,7 @@
     <a class="btn-secondary" asp-action="Index">Về kho</a>
 </div>
 
-<form method="get" class="filter-bar filter-bar--row" style="margin-bottom:1rem">
+<form method="get" class="filter-bar filter-bar--row filter-follow">
     <label>Loại
         <select name="kind" class="form-control">
             @if (kind == StockHistoryFilterKind.All)
@@ -81,7 +81,7 @@
 
 @if (Model.Count == 0)
 {
-    <p class="muted">Không có bản ghi trong khoảng đã chọn.</p>
+    <p class="empty-note">Không có bản ghi trong khoảng đã chọn.</p>
 }
 
 <partial name="_AdminPager" />

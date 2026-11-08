@@ -132,6 +132,32 @@
   const isPreview = document.querySelector('.product-detail')?.dataset?.preview === 'true';
   const priceEl = document.getElementById('variant-price');
   const skuEl = document.getElementById('variant-sku');
+  const stockEl = document.getElementById('variant-stock');
+  const stockIn = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Products.InStock"].Value));
+  const stockOut = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Products.OutOfStock"].Value));
+
+  function paintStock(qty, low) {
+    if (!stockEl) return;
+    if (qty === undefined || qty === null || qty === '') {
+      stockEl.hidden = true;
+      return;
+    }
+    const n = Number(qty);
+    if (!Number.isFinite(n)) { stockEl.hidden = true; return; }
+    const threshold = Number(low);
+    const lowAt = Number.isFinite(threshold) && threshold > 0 ? threshold : 5;
+    stockEl.hidden = false;
+    if (n <= 0) {
+      stockEl.className = 'badge-danger';
+      stockEl.textContent = stockOut;
+    } else if (n <= lowAt) {
+      stockEl.className = 'badge-warn';
+      stockEl.textContent = stockIn.replace('{0}', String(n));
+    } else {
+      stockEl.className = 'badge-ok';
+      stockEl.textContent = stockIn.replace('{0}', String(n));
+    }
+  }
   const cartVariant = document.getElementById('cart-variant-id');
   const bookLink = document.getElementById('book-link');
   const radios = document.querySelectorAll('input[name="variantId"]');
@@ -149,7 +175,8 @@
     if (!radio) return;
     goToVariantGallery(radio);
     if (priceEl) priceEl.textContent = radio.dataset.priceText || '-';
-    if (skuEl) skuEl.textContent = 'SKU: ' + (radio.dataset.sku || '');
+    if (skuEl) skuEl.textContent = radio.dataset.sku || '';
+    paintStock(radio.dataset.available, radio.dataset.low);
     const meta = document.getElementById('variant-color-meta');
     if (meta) {
       const meaning = radio.dataset.colorMeaning || '';
@@ -184,7 +211,8 @@
     }
     const data = await res.json();
     if (priceEl) priceEl.textContent = data.priceText;
-    if (skuEl) skuEl.textContent = 'SKU: ' + data.sku;
+    if (skuEl) skuEl.textContent = data.sku || '';
+    paintStock(data.availableQty, data.lowStockThreshold);
     const meta = document.getElementById('variant-color-meta');
     if (meta) {
       const meaning = data.colorMeaning || '';

@@ -22,7 +22,7 @@
 
 @if (Model.UnconfiguredSkus.Count > 0)
 {
-    <div data-unconfigured style="border:1px solid #f0c36d;background:#fff8e1;border-radius:8px;padding:0.75rem 1rem;margin:1rem 0">
+    <div class="callout-warn" data-unconfigured>
         <strong>SKU chưa có chiết khấu đại lý</strong> (đơn đại lý tính 0%):
         <ul>
             @foreach (var s in Model.UnconfiguredSkus)
@@ -41,15 +41,15 @@
 
 @if (total == 0)
 {
-    <p class="muted">Chưa có nhóm chiết khấu.</p>
+    <p class="empty-note">Chưa có nhóm chiết khấu.</p>
 }
 
 @for (var i = 0; i < total; i++)
 {
     var g = Model.Groups[i];
-    <section class="discount-group" data-group-id="@g.Id" style="margin:1.5rem 0">
+    <section class="discount-group" data-group-id="@g.Id">
         <div class="admin-toolbar">
-            <h2 style="font-size:1.1rem">
+            <h2 class="section-title-inline">
                 <span class="sort-controls__pos">@(i + 1)</span> @g.Name
             </h2>
             @if (canManage)
@@ -62,7 +62,7 @@
                         <button name="direction" value="1" type="submit" class="btn-icon" title="Down" aria-label="Down" @(i >= total - 1 ? "disabled" : null)><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
                     </form>
                     <button type="button" class="btn-icon btn-edit-group" data-id="@g.Id" title="Sửa" aria-label="Sửa"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-                    <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Xóa nhóm này? % riêng của đại lý trong nhóm cũng bị xóa.');">
+                    <form asp-action="Delete" method="post" class="inline" data-confirm="Xóa nhóm này? % riêng của đại lý trong nhóm cũng bị xóa.">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@g.Id" />
                         <button type="submit" class="btn-icon btn-icon--danger" title="Xóa" aria-label="Xóa"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>

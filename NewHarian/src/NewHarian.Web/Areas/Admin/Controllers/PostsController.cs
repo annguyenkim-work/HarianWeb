@@ -32,12 +32,12 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
 
         if (id is null)
         {
-            return View(new SitePostSaveRequest { Kind = kind, IsPublished = false });
+            return PartialView("_PostForm", new SitePostSaveRequest { Kind = kind, IsPublished = false });
         }
 
         var p = await posts.GetAsync(id.Value, ct);
         if (p is null || p.Kind != kind) return NotFound();
-        return View(new SitePostSaveRequest
+        return PartialView("_PostForm", new SitePostSaveRequest
         {
             Id = p.Id,
             Kind = p.Kind,
@@ -79,11 +79,15 @@ public class PostsController(IAdminSitePostService posts, IMediaStorage media) :
         var (ok, error, _) = await posts.SaveAsync(model, ct);
         if (!ok)
         {
-            this.FlashError(error);
-            return View(model);
+            ModelState.AddModelError(string.Empty, error ?? "Không lưu được bài viết.");
+            return PartialView("_PostForm", model);
         }
-        this.FlashSuccess(model.Kind == PostKind.Job ? "Đã lưu tin tuyển dụng." : "Đã lưu tin tức.");
-        return RedirectToAction(nameof(Index), new { kind = model.Kind, area = "Admin" });
+        return Json(new
+        {
+            ok = true,
+            message = model.Kind == PostKind.Job ? "Đã lưu tin tuyển dụng." : "Đã lưu tin tức.",
+            redirect = Url.Action(nameof(Index), new { kind = model.Kind, area = "Admin" })
+        });
     }
 
     [HttpPost]

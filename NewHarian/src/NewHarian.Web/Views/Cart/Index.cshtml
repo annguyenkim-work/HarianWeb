@@ -22,8 +22,10 @@
 
 @if (Model.Lines.Count == 0)
 {
-    <p class="muted">@Localizer["Cart.Empty"]</p>
-    <a asp-controller="Products" asp-action="Index" class="btn-primary">@Localizer["Nav.Products"]</a>
+    <div class="empty-state" role="status">
+        <h2>@Localizer["Cart.Empty"]</h2>
+        <a asp-controller="Products" asp-action="Index" class="btn-primary">@Localizer["Nav.Products"]</a>
+    </div>
 }
 else
 {
@@ -55,7 +57,7 @@ else
                         }
                     </td>
                     <td>@i.DisplayName</td>
-                    <td>@i.Sku</td>
+                    <td><span class="badge-code">@i.Sku</span></td>
                     <td>
                         <form asp-action="Update" method="post" class="inline-form js-cart-qty">
                             @Html.AntiForgeryToken()
@@ -63,7 +65,7 @@ else
                             <input type="number" name="quantity" value="@i.Quantity" min="1" class="qty-input" />
                         </form>
                     </td>
-                    <td class="js-line-total">@i.LineTotal.ToString("N0") VNĐ</td>
+                    <td class="num js-line-total">@i.LineTotal.ToString("N0") VNĐ</td>
                     @if (Model.IsDealer)
                     {
                         <td data-line-discount>
@@ -83,11 +85,11 @@ else
         </table>
 
         <aside class="cart-summary">
-            <p><strong>@Localizer["Cart.Subtotal"]:</strong> <span id="cart-subtotal">@Model.SubTotal.ToString("N0") VNĐ</span></p>
+            <p><strong>@Localizer["Cart.Subtotal"]:</strong> <span id="cart-subtotal" class="num">@Model.SubTotal.ToString("N0") VNĐ</span></p>
             @if (Model.IsDealer)
             {
-                <p>@Localizer["Checkout.DealerDiscount"]: <span id="cart-discount" data-cart-discount>-@Model.DiscountAmount.ToString("N0") VNĐ</span></p>
-                <p><strong>@Localizer["Checkout.Total"]:</strong> <span id="cart-net" data-cart-net>@Model.NetSubTotal.ToString("N0") VNĐ</span></p>
+                <p>@Localizer["Checkout.DealerDiscount"]: <span id="cart-discount" class="num" data-cart-discount>-@Model.DiscountAmount.ToString("N0") VNĐ</span></p>
+                <p><strong>@Localizer["Checkout.Total"]:</strong> <span id="cart-net" class="num" data-cart-net>@Model.NetSubTotal.ToString("N0") VNĐ</span></p>
             }
             <p class="muted">@Localizer["Cart.ShipHint"]</p>
             <partial name="_DealerCodeBox" model="dealerBox" />

@@ -1,0 +1,8 @@
+@model NewHarian.Application.Catalog.StockBadgeModel
+@{
+    var level = NewHarian.Application.Catalog.StockBadge.Level(Model.Available, Model.LowThreshold);
+    var text = level == NewHarian.Application.Catalog.StockBadgeLevel.Out
+        ? Localizer["Products.OutOfStock"].Value
+        : string.Format(Localizer["Products.InStock"].Value, Model.Available);
+}
+<span class="@NewHarian.Application.Catalog.StockBadge.CssClass(level)">@text</span>

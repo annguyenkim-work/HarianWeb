@@ -29,12 +29,16 @@
   <data name="Home.Intro" xml:space="preserve"><value>Website thương mại - nền tảng Sprint 0.</value></data>
   <data name="Home.Categories" xml:space="preserve"><value>Tôi sẽ giúp bạn</value></data>
   <data name="Home.Featured" xml:space="preserve"><value>Chúng tôi có gì</value></data>
+  <data name="Home.CategoriesEmpty" xml:space="preserve"><value>Chưa có danh mục.</value></data>
+  <data name="Home.FeaturedEmpty" xml:space="preserve"><value>Chưa có sản phẩm nổi bật.</value></data>
   <data name="Products.HubIntro" xml:space="preserve"><value>Danh sách sản phẩm (hàng hóa).</value></data>
   <data name="Services.HubIntro" xml:space="preserve"><value>Danh sách dịch vụ - đặt lịch, không mua qua giỏ hàng.</value></data>
   <data name="Products.Items" xml:space="preserve"><value>mục</value></data>
   <data name="Products.From" xml:space="preserve"><value>Từ</value></data>
   <data name="Products.PriceOnRequest" xml:space="preserve"><value>Giá liên hệ</value></data>
   <data name="Products.BookLabel" xml:space="preserve"><value>Đặt lịch</value></data>
+  <data name="Products.InStock" xml:space="preserve"><value>Còn {0}</value></data>
+  <data name="Products.OutOfStock" xml:space="preserve"><value>Hết hàng</value></data>
   <data name="Products.BookCta" xml:space="preserve"><value>Đặt lịch</value></data>
   <data name="Products.Variant" xml:space="preserve"><value>Quy cách</value></data>
   <data name="Products.ServiceOption" xml:space="preserve"><value>Hình thức</value></data>
@@ -79,6 +83,7 @@
   <data name="Orders.Step.Shipped" xml:space="preserve"><value>Đang giao</value></data>
   <data name="Orders.Step.Delivered" xml:space="preserve"><value>Đã giao</value></data>
   <data name="Orders.Step.Cancelled" xml:space="preserve"><value>Đã hủy</value></data>
+  <data name="Orders.Step.Refunded" xml:space="preserve"><value>Đã hoàn tiền</value></data>
   <data name="Orders.Step.Updated" xml:space="preserve"><value>Cập nhật</value></data>
   <data name="Orders.Cancel" xml:space="preserve"><value>Hủy đơn hàng</value></data>
   <data name="Orders.CancelConfirm" xml:space="preserve"><value>Bạn chắc chắn muốn hủy đơn? Đơn chưa thanh toán sẽ bị hủy.</value></data>
@@ -181,6 +186,9 @@
   <data name="Checkout.DealerCode.Expired" xml:space="preserve"><value>Mã đại lý đã hết hiệu lực. Vui lòng nhập lại mã.</value></data>
   <data name="Checkout.DealerCode.TooMany" xml:space="preserve"><value>Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.</value></data>
   <data name="Checkout.DealerDiscount" xml:space="preserve"><value>Chiết khấu đại lý</value></data>
+  <data name="Checkout.PromoCode" xml:space="preserve"><value>Mã giảm giá</value></data>
+  <data name="Checkout.PromoHint" xml:space="preserve"><value>Nếu có mã, nhập vào đây. Chỉ áp dụng cho khách lẻ.</value></data>
+  <data name="Checkout.PromoDiscount" xml:space="preserve"><value>Mã giảm giá</value></data>
   <data name="Checkout.DealerUnconfigured" xml:space="preserve"><value>Chưa có chiết khấu đại lý</value></data>
   <data name="Checkout.Invoice" xml:space="preserve"><value>Thông tin xuất hóa đơn</value></data>
   <data name="Checkout.InvoiceName" xml:space="preserve"><value>Tên đơn vị</value></data>
@@ -247,4 +255,5 @@
   <data name="Catalog.Pagination" xml:space="preserve"><value>Phân trang</value></data>
   <data name="Catalog.Breadcrumb" xml:space="preserve"><value>Đường dẫn</value></data>
   <data name="Catalog.RemoveFilter" xml:space="preserve"><value>Bỏ lọc {0}</value></data>
+  <data name="News.Empty" xml:space="preserve"><value>Chưa có bài viết.</value></data>
 </root>

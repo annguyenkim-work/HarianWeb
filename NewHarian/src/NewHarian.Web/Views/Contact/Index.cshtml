@@ -13,15 +13,27 @@
 <main class="content-main content-main--full">
 @if (TempData["Error"] is string err) { <p class="text-danger">@err</p> }
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-<form method="post" class="form-stack form-table" style="max-width:640px">
-    @Html.AntiForgeryToken()
-    <label class="hp" aria-hidden="true"><input asp-for="Website" tabindex="-1" autocomplete="off" /></label>
-    <label>@Localizer["Contact.Name"] * <input asp-for="Name" class="form-control" required maxlength="200" /></label>
-    <label>@Localizer["Contact.Email"] * <input asp-for="Email" type="email" class="form-control" required maxlength="200" /></label>
-    <label>@Localizer["Contact.Phone"] <input asp-for="Phone" class="form-control" maxlength="20" /></label>
-    @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "Address", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.Address })
-    <label>@Localizer["Contact.Message"] * <textarea asp-for="Message" class="form-control" rows="6" required></textarea></label>
-    <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>
-</form>
+<div class="contact-split">
+    <aside class="contact-aside">
+        @if (cmsPage?.Blocks is { Count: > 0 })
+        {
+            foreach (var block in cmsPage.Blocks)
+            {
+                <partial name="_ContentBlock" model="block" />
+            }
+        }
+        @await Component.InvokeAsync("CompanyContact")
+    </aside>
+    <form method="post" class="form-stack">
+        @Html.AntiForgeryToken()
+        <label class="hp" aria-hidden="true"><input asp-for="Website" tabindex="-1" autocomplete="off" /></label>
+        <label>@Localizer["Contact.Name"] * <input asp-for="Name" class="form-control" required maxlength="200" /></label>
+        <label>@Localizer["Contact.Email"] * <input asp-for="Email" type="email" class="form-control" required maxlength="200" /></label>
+        <label>@Localizer["Contact.Phone"] <input asp-for="Phone" class="form-control" maxlength="20" /></label>
+        @await Html.PartialAsync("~/Views/Shared/_AddressFields.cshtml", new AddressFieldsModel { ProvinceField = "ProvinceCode", CommuneField = "CommuneCode", LineField = "Address", ProvinceValue = Model.ProvinceCode, CommuneValue = Model.CommuneCode, LineValue = Model.Address })
+        <label>@Localizer["Contact.Message"] * <textarea asp-for="Message" class="form-control" rows="6" required></textarea></label>
+        <button type="submit" class="btn-primary">@Localizer["Contact.Continue"]</button>
+    </form>
+</div>
 </main>
 <style>.hp{position:absolute;left:-9999px;height:0;overflow:hidden}</style>

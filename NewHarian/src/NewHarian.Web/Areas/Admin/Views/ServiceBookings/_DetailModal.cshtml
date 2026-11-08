@@ -76,7 +76,7 @@
     <textarea name="internalNotes" class="form-control" rows="2">@Model.InternalNotes</textarea>
 </label>
 
-<div class="order-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+<div class="order-actions">
 @if (ServiceBookingStatusPolicy.CanTransition(Model.Status, ServiceBookingStatus.Confirmed))
 {
     <button type="button" class="btn-primary" data-action="status" data-status="Confirmed" data-id="@Model.Id">Xác nhận lịch</button>

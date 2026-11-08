@@ -6,15 +6,15 @@
     var addressText = AddressFormat.Join(Model.Address, addr.CommuneName, addr.ProvinceName);
 }
 <section class="page-hero"><h1>@Localizer["Contact.Confirm"]</h1></section>
-<main class="content-main content-main--full" style="max-width:640px">
+<main class="content-main content-main--full content-main--sheet">
     <dl class="confirm-dl">
         <dt>@Localizer["Contact.Name"]</dt><dd>@Model.Name</dd>
         <dt>@Localizer["Contact.Email"]</dt><dd>@Model.Email</dd>
         <dt>@Localizer["Contact.Phone"]</dt><dd>@(Model.Phone ?? "-")</dd>
         <dt>@Localizer["Contact.Address"]</dt><dd>@addressText</dd>
-        <dt>@Localizer["Contact.Message"]</dt><dd style="white-space:pre-wrap">@Model.Message</dd>
+        <dt>@Localizer["Contact.Message"]</dt><dd class="pre-wrap">@Model.Message</dd>
     </dl>
-    <form action="/contact/submit" method="post" class="form-inline" style="gap:1rem"
+    <form action="/contact/submit" method="post" class="form-inline action-row"
           data-submit-once
           data-busy-label="@Localizer["Common.Processing"]">
         @Html.AntiForgeryToken()

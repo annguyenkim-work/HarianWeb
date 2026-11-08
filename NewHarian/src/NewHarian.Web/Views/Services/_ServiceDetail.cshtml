@@ -111,7 +111,9 @@
                     {
                         <p class="price" id="variant-price">@(defaultVariant is { } dv ? MoneyFormat.Vnd(dv.Price) : "-")</p>
                     }
-                    <p class="muted" id="variant-sku">SKU: @(defaultVariant?.Sku)</p>
+                    <p class="product-codes">
+                        <span class="badge-code" id="variant-sku">@(defaultVariant?.Sku)</span>
+                    </p>
                 </div>
             }
 

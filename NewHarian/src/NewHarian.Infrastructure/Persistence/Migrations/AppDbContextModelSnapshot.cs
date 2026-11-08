@@ -1461,6 +1461,17 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PromoCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int?>("PromoCodeId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("PromoDiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
                     b.Property<DateTime?>("ShippedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1518,6 +1529,8 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OrderNumber")
                         .IsUnique();
+
+                    b.HasIndex("PromoCodeId");
 
                     b.HasIndex("ShippingProvinceId");
 
@@ -2017,6 +2030,54 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ProductViewDaily", (string)null);
+                });
+
+            modelBuilder.Entity("NewHarian.Domain.Entities.PromoCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxUses")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UsedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ValidTo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "ValidFrom", "ValidTo");
+
+                    b.ToTable("PromoCodes", (string)null);
                 });
 
             modelBuilder.Entity("NewHarian.Domain.Entities.Service", b =>
@@ -3047,10 +3108,17 @@ namespace NewHarian.Infrastructure.Persistence.Migrations
                         .HasForeignKey("DealerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("NewHarian.Domain.Entities.PromoCode", "AppliedPromo")
+                        .WithMany()
+                        .HasForeignKey("PromoCodeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("NewHarian.Domain.Entities.ShippingProvince", "ShippingProvince")
                         .WithMany()
                         .HasForeignKey("ShippingProvinceId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AppliedPromo");
 
                     b.Navigation("Dealer");
 

@@ -12,7 +12,7 @@
 <p class="muted">Placeholder có sẵn: <code>@Model.PlaceholdersHelp</code></p>
 <p class="muted">Ví dụ: viết <code>{{CustomerName}}</code> trong nội dung; khi gửi sẽ thay bằng tên khách.</p>
 
-<form asp-action="Edit" method="post" id="email-template-form" class="form-stack" style="max-width:960px">
+<form asp-action="Edit" method="post" id="email-template-form" class="form-stack admin-sheet--form">
     @Html.AntiForgeryToken()
     <input type="hidden" name="Id" value="@Model.Id" />
     <div asp-validation-summary="All" class="text-danger"></div>
@@ -25,7 +25,7 @@
         <textarea name="BodyHtml" class="form-control richtext" rows="16">@Model.BodyHtml</textarea>
     </label>
 
-    <div class="modal__actions" style="justify-content:flex-start">
+    <div class="modal__actions modal__actions--start">
         <button type="submit" class="btn-primary">Lưu</button>
         <a class="btn-secondary" asp-action="Index">Hủy</a>
     </div>
@@ -35,10 +35,8 @@
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
 (() => {
-  if (!window.tinymce) return;
-  tinymce.init({
-    selector: '#email-template-form textarea.richtext',
-    height: 420,
+  if (!window.AdminRichText) return;
+  AdminRichText.init(document.querySelectorAll('#email-template-form textarea.richtext'), {
     menubar: false,
     plugins: 'lists link image table code',
     toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',

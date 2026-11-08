@@ -84,6 +84,8 @@
                                        @(v.Id == defaultVariant?.Id ? "checked" : null)
                                        data-price-text="@priceText"
                                        data-sku="@v.Sku"
+                                       data-available="@v.AvailableQty"
+                                       data-low="@v.LowStockThreshold"
                                        data-color-meaning="@v.ColorMeaning"
                                        data-gallery-slide-index="@v.GallerySlideIndex"
                                        data-image-url="@(v.ImageUrl ?? "")" />
@@ -111,7 +113,17 @@
                     {
                         <p class="price" id="variant-price">@(defaultVariant is { } dv ? MoneyFormat.Vnd(dv.Price) : "-")</p>
                     }
-                    <p class="muted" id="variant-sku">SKU: @(defaultVariant?.Sku)</p>
+                    <p class="product-codes">
+                        <span class="badge-code" id="variant-sku">@(defaultVariant?.Sku)</span>
+                        @if (defaultVariant?.AvailableQty is int stockQty)
+                        {
+                            var stockLevel = NewHarian.Application.Catalog.StockBadge.Level(stockQty, defaultVariant.LowStockThreshold);
+                            var stockText = stockLevel == NewHarian.Application.Catalog.StockBadgeLevel.Out
+                                ? Localizer["Products.OutOfStock"].Value
+                                : string.Format(Localizer["Products.InStock"].Value, stockQty);
+                            <span id="variant-stock" class="@NewHarian.Application.Catalog.StockBadge.CssClass(stockLevel)">@stockText</span>
+                        }
+                    </p>
                     <div id="variant-color-meta"
                          @(string.IsNullOrWhiteSpace(defaultVariant?.ColorMeaning) ? "hidden" : null)>
                         <p id="variant-color-meaning" class="variant-color-meaning">@defaultVariant?.ColorMeaning</p>

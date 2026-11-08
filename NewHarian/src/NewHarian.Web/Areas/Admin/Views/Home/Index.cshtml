@@ -1,7 +1,7 @@
 @model NewHarian.Application.Dashboard.AdminDashboardDto
 @using System.Text.Json
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Tổng quan";
     var showRevenue = ViewBag.ShowRevenue == true;
     var k = Model.Kpis;
     var startVal = Model.Range.Start.ToString("yyyy-MM-dd");
@@ -41,6 +41,7 @@
         const int w = 120, h = 28, pad = 2;
         var min = series.Min();
         var max = series.Max();
+        if (min == max) return "";
         var span = max - min;
         if (span == 0) span = 1;
         var pts = new System.Text.StringBuilder();
@@ -56,8 +57,10 @@
 }
 
 <div class="admin-toolbar">
-    <h1>Dashboard</h1>
-    <p class="muted" style="margin:0">@User.Identity?.Name</p>
+    <div>
+        <h1>Tổng quan</h1>
+        <p class="muted u-m0">@User.Identity?.Name</p>
+    </div>
 </div>
 
 <form method="get" class="dash-range filter-bar filter-bar--row">
@@ -186,7 +189,7 @@
             <canvas id="chart-revenue-category" height="140"></canvas>
             @if (Model.RevenueByCategory is null || Model.RevenueByCategory.Count == 0)
             {
-                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
+                <p class="empty-note empty-note--inline">Không có dữ liệu trong khoảng đã chọn.</p>
             }
         </section>
     </div>
@@ -198,7 +201,7 @@
             <canvas id="chart-top-products" height="160"></canvas>
             @if (Model.TopProducts is null || Model.TopProducts.Count == 0)
             {
-                <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
+                <p class="empty-note empty-note--inline">Không có dữ liệu trong khoảng đã chọn.</p>
             }
         </section>
 
@@ -218,7 +221,7 @@
             </div>
             @if (Model.RevenueBySource is null || Model.RevenueBySource.Count == 0)
             {
-                <p class="muted">Không có doanh thu ghi nhận trong khoảng đã chọn.</p>
+                <p class="empty-note empty-note--inline">Không có doanh thu ghi nhận trong khoảng đã chọn.</p>
             }
         </section>
 
@@ -266,7 +269,7 @@
                 </div>
                 @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
                 {
-                    <p class="muted">Không có đơn trong khoảng đã chọn.</p>
+                    <p class="empty-note empty-note--inline">Không có đơn trong khoảng đã chọn.</p>
                 }
             </section>
         }
@@ -281,7 +284,7 @@
                 <canvas id="chart-payment-method" height="100"></canvas>
                 @if (Model.RevenueByPaymentMethod is null || Model.RevenueByPaymentMethod.Count == 0)
                 {
-                    <p class="muted">Không có dữ liệu trong khoảng đã chọn.</p>
+                    <p class="empty-note empty-note--inline">Không có dữ liệu trong khoảng đã chọn.</p>
                 }
             </section>
 
@@ -292,7 +295,7 @@
                     <canvas id="chart-orders-status" height="100"></canvas>
                     @if (Model.OrdersByStatus is null || Model.OrdersByStatus.Count == 0)
                     {
-                        <p class="muted">Không có đơn trong khoảng đã chọn.</p>
+                        <p class="empty-note empty-note--inline">Không có đơn trong khoảng đã chọn.</p>
                     }
                 </section>
             }
@@ -316,7 +319,7 @@
                 <canvas id="chart-bookings-status" height="90"></canvas>
                 @if (Model.BookingsByStatus is null || Model.BookingsByStatus.Count == 0)
                 {
-                    <p class="muted">Không có booking trong khoảng đã chọn.</p>
+                    <p class="empty-note empty-note--inline">Không có booking trong khoảng đã chọn.</p>
                 }
             </section>
         </div>
@@ -346,7 +349,7 @@
   const bookingValues = @Html.Raw(JsonSerializer.Serialize(bookingValues, jsonOpts));
   const bookingGmvLabels = @Html.Raw(JsonSerializer.Serialize(bookingGmvLabels, jsonOpts));
   const bookingGmvValues = @Html.Raw(JsonSerializer.Serialize(bookingGmvValues, jsonOpts));
-  const palette = ['#2d6a4f','#1d3557','#457b9d','#e9c46a','#f4a261','#e76f51','#6c757d','#264653'];
+  const palette = ['#0b132b','#0f172a','#d4af37','#b48c36','#475569','#64748b','#1e293b','#e9dcb8'];
   const money = v => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
 
   const trendEl = document.getElementById('chart-orders-trend');
@@ -359,8 +362,8 @@
             type: 'line',
             label: 'Doanh thu',
             data: trendRevenue,
-            borderColor: '#2d6a4f',
-            backgroundColor: 'rgba(45,106,79,0.12)',
+            borderColor: '#0b132b',
+            backgroundColor: 'rgba(11,19,43,0.12)',
             fill: true,
             tension: 0.25,
             yAxisID: 'yMoney'
@@ -369,7 +372,7 @@
             type: 'bar',
             label: 'Số đơn',
             data: trendOrders,
-            backgroundColor: 'rgba(29,53,87,0.45)',
+            backgroundColor: 'rgba(212,175,55,0.55)',
             yAxisID: 'yCount',
             order: 2
           }
@@ -411,7 +414,7 @@
     const el = document.getElementById(id);
     if (!el || !labels.length) return;
     // Top rank (last index after reverse) highlighted blue like the mock.
-    const colors = values.map((_, i) => i === values.length - 1 ? '#2563eb' : '#2d6a4f');
+    const colors = values.map((_, i) => i === values.length - 1 ? '#d4af37' : '#0b132b');
     new Chart(el, {
       type: 'bar',
       data: {
@@ -502,7 +505,7 @@
     });
   }
 
-  lineMoneyChart(document.getElementById('chart-bookings-gmv'), bookingGmvLabels, bookingGmvValues, '#1d3557', 'rgba(29,53,87,0.12)');
+  lineMoneyChart(document.getElementById('chart-bookings-gmv'), bookingGmvLabels, bookingGmvValues, '#0f172a', 'rgba(15,23,42,0.12)');
 
   function doughnut(id, labels, values, moneyMode) {
     const el = document.getElementById(id);

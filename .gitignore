@@ -39,3 +39,8 @@ docs/
 _build_hdr/
 build-log.txt
 ef-migrate.txt
+/.github
+/.specify
+/specs/001-product-capability-map
+/.cursorrules
+/README.md

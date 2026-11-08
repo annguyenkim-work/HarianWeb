@@ -7,7 +7,13 @@
     var companyName = brandMap.GetValueOrDefault("company.name");
     if (string.IsNullOrWhiteSpace(companyName)) companyName = brandName;
     var logoUrl = brandMap.GetValueOrDefault("company.logo") ?? "";
-    var navGroups = AdminNavigation.For(User);
+    var navMenu = AdminNavigation.For(User);
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var currentKind = Context.Request.Query["kind"].ToString();
+    var narrow = string.Equals(ViewData["AdminWidth"] as string, "narrow", StringComparison.Ordinal);
+    var onDashboard = string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -15,12 +21,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] - @brandName Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
 </head>
 <body class="admin-body@(User.Identity?.IsAuthenticated == true ? " admin-body--authed" : "")">
     <header class="admin-header">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <button type="button" class="admin-menu-btn" id="admin-menu-btn" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Mở menu">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
+        }
         <a class="admin-brand" asp-area="Admin" asp-controller="Home" asp-action="Index" title="@companyName">
             @if (!string.IsNullOrWhiteSpace(logoUrl))
             {
@@ -34,33 +49,19 @@
         </a>
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <nav class="admin-nav" aria-label="Admin">
-                @foreach (var group in navGroups)
-                {
-                    <div class="admin-nav__group">
-                        <button type="button" class="admin-nav__toggle" aria-expanded="false" aria-haspopup="true">@group.Title</button>
-                        <div class="admin-nav__dropdown" role="menu">
-                            @foreach (var item in group.Items)
-                            {
-                                <a role="menuitem" asp-area="Admin" asp-controller="@item.Controller" asp-action="@item.Action" asp-all-route-data="item.RouteValues">@item.Label</a>
-                            }
-                        </div>
-                    </div>
-                }
-            </nav>
             <div class="admin-header__end">
                 <div class="admin-notify" id="admin-notify">
-                    <button type="button" class="admin-notify__btn" id="admin-notify-btn" aria-label="Notifications" aria-expanded="false" aria-haspopup="true" title="Notifications">
+                    <button type="button" class="admin-notify__btn" id="admin-notify-btn" aria-label="Thông báo" aria-expanded="false" aria-haspopup="true" title="Thông báo">
                         <i class="fa-solid fa-bell" aria-hidden="true"></i>
                         <span class="admin-notify__badge" id="admin-notify-badge" hidden>0</span>
                     </button>
                     <div class="admin-notify__panel" id="admin-notify-panel" hidden>
                         <div class="admin-notify__head">
-                            <strong>Notifications</strong>
-                            <button type="button" class="btn-link" id="admin-notify-read-all">Mark all as read</button>
+                            <strong>Thông báo</strong>
+                            <button type="button" class="btn-link" id="admin-notify-read-all">Đánh dấu đã đọc</button>
                         </div>
                         <ul class="admin-notify__list" id="admin-notify-list"></ul>
-                        <p class="admin-notify__empty muted" id="admin-notify-empty" hidden>No notifications</p>
+                        <p class="admin-notify__empty muted" id="admin-notify-empty" hidden>Không có thông báo</p>
                     </div>
                 </div>
                 @if (User.HasPermission(Permissions.MyProfile.Edit))
@@ -77,66 +78,183 @@
 
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <aside class="admin-sidebar" aria-label="Menu nhanh bên trái">
-            <div class="admin-sidebar__rail" aria-hidden="true"></div>
+        <aside class="admin-sidebar" id="admin-sidebar" aria-label="Menu quản trị">
             <div class="admin-sidebar__panel">
-                <a class="admin-sidebar__brand" asp-area="Admin" asp-controller="Home" asp-action="Index" title="@companyName">
-                    @if (!string.IsNullOrWhiteSpace(logoUrl))
+                <div class="admin-sidebar__top">
+                    <p class="admin-sidebar__title">Menu</p>
+                    <button type="button" class="admin-sidebar__close" id="admin-sidebar-close" aria-label="Đóng menu">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <nav class="admin-sidebar__nav">
+                    @if (onDashboard)
                     {
-                        <img src="@logoUrl" alt="@brandName" class="admin-sidebar__logo" />
+                        <a class="admin-nav__link" asp-area="Admin" asp-controller="Home" asp-action="Index" aria-current="page" title="Tổng quan">
+                            <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
+                            <span class="admin-nav__text">Tổng quan</span>
+                        </a>
                     }
                     else
                     {
-                        <span>@brandName</span>
+                        <a class="admin-nav__link" asp-area="Admin" asp-controller="Home" asp-action="Index" title="Tổng quan">
+                            <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
+                            <span class="admin-nav__text">Tổng quan</span>
+                        </a>
                     }
-                </a>
-                <p class="admin-sidebar__title">Menu nhanh</p>
-                <nav class="admin-sidebar__nav">
-                    @foreach (var group in navGroups)
+                    @{ var sectionIndex = 0; }
+                    @foreach (var navSection in navMenu.Sections)
                     {
-                        <div class="admin-sidebar__section">
-                            <p class="admin-sidebar__heading">@group.Title</p>
-                            @foreach (var item in group.Items)
+                        var open = navSection.Children.Any(item => AdminNavigation.IsCurrent(item, currentController, currentAction, currentKind));
+                        var subId = $"admin-nav-sub-{sectionIndex++}";
+                        var expanded = open ? "true" : "false";
+                        <div class="admin-nav__group@(open ? " is-open is-current" : "")">
+                            <button type="button" class="admin-nav__link" aria-expanded="@expanded" aria-controls="@subId" title="@navSection.Label">
+                                <i class="fa-solid @navSection.Icon" aria-hidden="true"></i>
+                                <span class="admin-nav__text">@navSection.Label</span>
+                                <i class="fa-solid fa-chevron-down admin-nav__chevron" aria-hidden="true"></i>
+                            </button>
+                            <div class="admin-nav__sub" id="@subId">
+                                @foreach (var item in navSection.Children)
+                                {
+                                    var current = AdminNavigation.IsCurrent(item, currentController, currentAction, currentKind);
+                                    if (current)
+                                    {
+                                        <a class="admin-nav__sublink" asp-area="Admin" asp-controller="@item.Controller" asp-action="@item.Action" asp-all-route-data="item.RouteValues" aria-current="page">@item.Label</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="admin-nav__sublink" asp-area="Admin" asp-controller="@item.Controller" asp-action="@item.Action" asp-all-route-data="item.RouteValues">@item.Label</a>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (navMenu.Footer.Count > 0)
+                    {
+                        <div class="admin-nav__footer">
+                            @foreach (var link in navMenu.Footer)
                             {
-                                <a asp-area="Admin" asp-controller="@item.Controller" asp-action="@item.Action" asp-all-route-data="item.RouteValues">@item.Label</a>
+                                var current = AdminNavigation.IsCurrent(link.Item, currentController, currentAction, currentKind);
+                                if (current)
+                                {
+                                    <a class="admin-nav__link" asp-area="Admin" asp-controller="@link.Item.Controller" asp-action="@link.Item.Action" asp-all-route-data="@link.Item.RouteValues" aria-current="page" title="@link.Item.Label">
+                                        <i class="fa-solid @link.Icon" aria-hidden="true"></i>
+                                        <span class="admin-nav__text">@link.Item.Label</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a class="admin-nav__link" asp-area="Admin" asp-controller="@link.Item.Controller" asp-action="@link.Item.Action" asp-all-route-data="@link.Item.RouteValues" title="@link.Item.Label">
+                                        <i class="fa-solid @link.Icon" aria-hidden="true"></i>
+                                        <span class="admin-nav__text">@link.Item.Label</span>
+                                    </a>
+                                }
                             }
                         </div>
                     }
                 </nav>
             </div>
         </aside>
+        <div class="admin-nav-backdrop" id="admin-nav-backdrop" hidden></div>
     }
 
-    <main class="admin-main">
+    <main class="admin-main@(narrow ? " admin-main--narrow" : "")">
         @RenderBody()
     </main>
+    <dialog id="admin-confirm" class="modal">
+        <div class="modal__box">
+            <h2>Xác nhận</h2>
+            <p id="admin-confirm-text"></p>
+            <div class="modal__actions">
+                <button type="button" class="btn-secondary" data-confirm-cancel>Hủy</button>
+                <button type="button" class="btn-primary" data-confirm-ok>Đồng ý</button>
+            </div>
+        </div>
+    </dialog>
     <partial name="_AdminToasts" />
     <script src="~/js/money-format.js" asp-append-version="true"></script>
     <script src="~/js/admin-toast.js" asp-append-version="true"></script>
+    <script src="~/js/admin-lang-tabs.js" asp-append-version="true"></script>
+    <script src="~/js/admin-richtext.js" asp-append-version="true"></script>
     <script src="~/js/admin-fetch-guard.js" asp-append-version="true"></script>
     <script src="~/lib/microsoft/signalr/signalr.min.js" asp-append-version="true"></script>
     <script>
     (() => {
-      document.querySelectorAll('.admin-nav__group').forEach(g => {
-        const btn = g.querySelector('.admin-nav__toggle');
-        btn?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const open = g.classList.toggle('is-open');
-          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-          document.querySelectorAll('.admin-nav__group').forEach(o => {
-            if (o !== g) {
-              o.classList.remove('is-open');
-              o.querySelector('.admin-nav__toggle')?.setAttribute('aria-expanded', 'false');
-            }
+      const menuBtn = document.getElementById('admin-menu-btn');
+      const sidebar = document.getElementById('admin-sidebar');
+      const backdrop = document.getElementById('admin-nav-backdrop');
+      const closeBtn = document.getElementById('admin-sidebar-close');
+      function setNavOpen(open) {
+        document.body.classList.toggle('admin-body--nav-open', open);
+        if (backdrop) backdrop.hidden = !open;
+        menuBtn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      menuBtn?.addEventListener('click', () => setNavOpen(!document.body.classList.contains('admin-body--nav-open')));
+      closeBtn?.addEventListener('click', () => setNavOpen(false));
+      backdrop?.addEventListener('click', () => setNavOpen(false));
+      sidebar?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setNavOpen(false)));
+      sidebar?.querySelectorAll('.admin-nav__group > .admin-nav__link').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const group = btn.parentElement;
+          const willOpen = !group.classList.contains('is-open');
+          sidebar.querySelectorAll('.admin-nav__group.is-open').forEach(other => {
+            if (other === group) return;
+            other.classList.remove('is-open');
+            other.querySelector('.admin-nav__link')?.setAttribute('aria-expanded', 'false');
           });
+          group.classList.toggle('is-open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
       });
-      document.addEventListener('click', () => {
-        document.querySelectorAll('.admin-nav__group.is-open').forEach(g => {
-          g.classList.remove('is-open');
-          g.querySelector('.admin-nav__toggle')?.setAttribute('aria-expanded', 'false');
-        });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('admin-body--nav-open')) setNavOpen(false);
       });
+
+      const confirmDialog = document.getElementById('admin-confirm');
+      const confirmText = document.getElementById('admin-confirm-text');
+      window.adminConfirm = function (message) {
+        if (!confirmDialog || typeof confirmDialog.showModal !== 'function')
+          return Promise.resolve(window.confirm(message));
+        confirmText.textContent = message || '';
+        confirmDialog.showModal();
+        return new Promise(resolve => {
+          const okBtn = confirmDialog.querySelector('[data-confirm-ok]');
+          const cancelBtn = confirmDialog.querySelector('[data-confirm-cancel]');
+          let result = false;
+          let settled = false;
+          const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            okBtn?.removeEventListener('click', onOk);
+            cancelBtn?.removeEventListener('click', onCancel);
+            confirmDialog.removeEventListener('close', onClose);
+            resolve(value);
+          };
+          const onOk = () => { result = true; confirmDialog.close(); };
+          const onCancel = () => { result = false; confirmDialog.close(); };
+          const onClose = () => finish(result);
+          okBtn?.addEventListener('click', onOk);
+          cancelBtn?.addEventListener('click', onCancel);
+          confirmDialog.addEventListener('close', onClose);
+        });
+      };
+      document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        const msg = form.dataset.confirm;
+        if (!msg || form.dataset.confirmed === '1') {
+          if (form.dataset.confirmed === '1') delete form.dataset.confirmed;
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        window.adminConfirm(msg).then(ok => {
+          if (!ok) return;
+          form.dataset.confirmed = '1';
+          if (typeof form.requestSubmit === 'function') form.requestSubmit();
+          else form.submit();
+        });
+      }, true);
 
       const root = document.getElementById('admin-notify');
       if (!root || typeof signalR === 'undefined') return;

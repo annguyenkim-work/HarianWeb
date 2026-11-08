@@ -1,6 +1,7 @@
 @model NewHarian.Application.Settings.BrandSettingsDto
 @{
     ViewData["Title"] = "Thương hiệu & logo";
+    ViewData["AdminWidth"] = "narrow";
     Layout = "_AdminLayout";
 }
 
@@ -11,7 +12,7 @@
 
 <p class="muted">Cấu hình logo và nội dung footer (2 cột: giới thiệu + liên hệ). Trên trang chủ, menu trong suốt nằm trên slide (không dùng ảnh nền menu).</p>
 
-<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:640px">
+<form method="post" enctype="multipart/form-data" class="form-stack admin-sheet">
     @Html.AntiForgeryToken()
     <label>Tên thương hiệu (header) *
         <input asp-for="BrandName" class="form-control" required placeholder="Harian" />
@@ -27,21 +28,26 @@
     {
         <div>
             <p>Logo hiện tại:</p>
-            <img src="@Model.LogoUrl" alt="Logo" style="max-height:64px;max-width:220px;object-fit:contain" />
+            <img src="@Model.LogoUrl" alt="Logo" class="brand-logo-preview" />
             <input type="hidden" asp-for="LogoUrl" />
         </div>
     }
 
     <h2>Giới thiệu footer</h2>
-    <label>Tiếng Việt
-        <textarea asp-for="TaglineVi" class="form-control" rows="3" placeholder="Chúng tôi hỗ trợ toàn diện..."></textarea>
-    </label>
-    <label>English
-        <textarea asp-for="TaglineEn" class="form-control" rows="3"></textarea>
-    </label>
-    <label>日本語
-        <textarea asp-for="TaglineJa" class="form-control" rows="3"></textarea>
-    </label>
+    <div class="lang-tabs" data-lang-tabs>
+        <partial name="_LangTabBar" model="@("brand-lang")" />
+        <div class="lang-tabs__panel is-active" id="brand-lang-panel-vi" role="tabpanel" aria-labelledby="brand-lang-tab-vi" data-lang-panel="vi">
+            <label>Nội dung
+                <textarea asp-for="TaglineVi" class="form-control" rows="3" placeholder="Chúng tôi hỗ trợ toàn diện..."></textarea>
+            </label>
+        </div>
+        <div class="lang-tabs__panel" id="brand-lang-panel-en" role="tabpanel" aria-labelledby="brand-lang-tab-en" data-lang-panel="en" hidden>
+            <label>Nội dung <textarea asp-for="TaglineEn" class="form-control" rows="3"></textarea></label>
+        </div>
+        <div class="lang-tabs__panel" id="brand-lang-panel-ja" role="tabpanel" aria-labelledby="brand-lang-tab-ja" data-lang-panel="ja" hidden>
+            <label>Nội dung <textarea asp-for="TaglineJa" class="form-control" rows="3"></textarea></label>
+        </div>
+    </div>
 
     <h2>Liên hệ (footer)</h2>
     <label>Địa chỉ <input asp-for="Address" class="form-control" /></label>
@@ -54,10 +60,10 @@
     <button type="submit" class="btn-primary">Lưu</button>
 </form>
 
-<div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap">
+<div class="form-actions form-actions--loose">
 @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
 {
-    <form asp-action="ClearLogo" method="post" class="inline" onsubmit="return confirm('Gỡ logo?');">
+    <form asp-action="ClearLogo" method="post" class="inline" data-confirm="Gỡ logo?">
         @Html.AntiForgeryToken()
         <button type="submit" class="btn-link">Gỡ logo</button>
     </form>

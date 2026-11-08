@@ -62,7 +62,8 @@ public static class RolePermissionMap
                 Permissions.Dealers.Create,
                 Permissions.Dealers.Approve,
                 Permissions.Dealers.Edit,
-                Permissions.Dealers.ManageDiscounts),
+                Permissions.Dealers.ManageDiscounts,
+                Permissions.PromoCodes.Manage),
 
             // Matrix denies SKU suggest to Sales Staff, but the manual order form needs it; FEFO preview stays hidden.
             [AppRoles.SalesStaff] = Set(

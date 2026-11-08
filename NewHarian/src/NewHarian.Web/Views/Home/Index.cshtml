@@ -98,7 +98,9 @@ else
         <h2>@Localizer["Home.Categories"]</h2>
         @if (categories.Count == 0)
         {
-            <p class="muted">-</p>
+            <div class="empty-state" role="status">
+                <h2>@Localizer["Home.CategoriesEmpty"]</h2>
+            </div>
         }
         else
         {
@@ -128,7 +130,9 @@ else
         <h2>@Localizer["Home.Featured"]</h2>
         @if (featured.Count == 0)
         {
-            <p class="muted">-</p>
+            <div class="empty-state" role="status">
+                <h2>@Localizer["Home.FeaturedEmpty"]</h2>
+            </div>
         }
         else
         {
@@ -149,6 +153,19 @@ else
                             <span class="card-thumb-empty" aria-hidden="true"></span>
                         }
                         <h3>@p.Name</h3>
+                        @if (!string.IsNullOrWhiteSpace(p.Sku) || p.AvailableQty is int)
+                        {
+                            <p class="product-codes">
+                                @if (!string.IsNullOrWhiteSpace(p.Sku))
+                                {
+                                    <span class="badge-code">@p.Sku</span>
+                                }
+                                @if (p.AvailableQty is int homeQty)
+                                {
+                                    <partial name="_StockBadge" model="new NewHarian.Application.Catalog.StockBadgeModel(homeQty, p.LowStockThreshold)" />
+                                }
+                            </p>
+                        }
                         @if (p.Kind == NewHarian.Domain.Enums.CatalogKind.Service && p.HidePrice)
                         {
                             <p class="card-meta">@Localizer["Products.PriceOnRequest"]</p>

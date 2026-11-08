@@ -117,35 +117,55 @@
         actions.appendChild(del);
         head.appendChild(actions);
 
-        var grid = document.createElement('div');
-        grid.className = 'table-row-card__grid';
-
-        var fields = [
-          { f: 'label.vi', label: 'Nhãn (VI) *' },
-          { f: 'value.vi', label: 'Nội dung (VI) *' },
-          { f: 'label.en', label: 'Label (EN)' },
-          { f: 'value.en', label: 'Value (EN)' },
-          { f: 'label.ja', label: 'ラベル (JA)' },
-          { f: 'value.ja', label: '内容 (JA)' }
+        var tabs = document.createElement('div');
+        tabs.className = 'lang-tabs';
+        tabs.setAttribute('data-lang-tabs', '');
+        var bar = document.createElement('div');
+        bar.className = 'lang-tabs__bar';
+        bar.setAttribute('role', 'tablist');
+        bar.setAttribute('aria-label', 'Ngôn ngữ');
+        var langs = [
+          { code: 'vi', name: 'Tiếng Việt' },
+          { code: 'en', name: 'English' },
+          { code: 'ja', name: '日本語' }
         ];
-
-        fields.forEach(function (field) {
-          var parts = field.f.split('.');
-          var group = parts[0];
-          var lang = parts[1];
-          var lab = document.createElement('label');
-          lab.appendChild(document.createTextNode(field.label + ' '));
-          var input = document.createElement('input');
-          input.className = 'form-control';
-          input.setAttribute('data-f', field.f);
-          input.setAttribute('data-i', String(idx));
-          input.value = loc(row[group], lang);
-          lab.appendChild(input);
-          grid.appendChild(lab);
+        langs.forEach(function (lang, langIndex) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'lang-tabs__tab' + (langIndex === 0 ? ' is-active' : '');
+          btn.setAttribute('role', 'tab');
+          btn.setAttribute('data-lang-tab', lang.code);
+          btn.setAttribute('aria-selected', langIndex === 0 ? 'true' : 'false');
+          if (langIndex !== 0) btn.tabIndex = -1;
+          btn.textContent = lang.name;
+          bar.appendChild(btn);
+        });
+        tabs.appendChild(bar);
+        langs.forEach(function (lang, langIndex) {
+          var panel = document.createElement('div');
+          panel.className = 'lang-tabs__panel' + (langIndex === 0 ? ' is-active' : '');
+          panel.setAttribute('role', 'tabpanel');
+          panel.setAttribute('data-lang-panel', lang.code);
+          if (langIndex !== 0) panel.hidden = true;
+          var fields = document.createElement('div');
+          fields.className = 'lang-tabs__fields lang-tabs__fields--pair';
+          [['label', 'Nhãn'], ['value', 'Nội dung']].forEach(function (pair) {
+            var lab = document.createElement('label');
+            lab.appendChild(document.createTextNode(pair[1] + (lang.code === 'vi' ? ' *' : '')));
+            var input = document.createElement('input');
+            input.className = 'form-control';
+            input.setAttribute('data-f', pair[0] + '.' + lang.code);
+            input.setAttribute('data-i', String(idx));
+            input.value = loc(row[pair[0]], lang.code);
+            lab.appendChild(input);
+            fields.appendChild(lab);
+          });
+          panel.appendChild(fields);
+          tabs.appendChild(panel);
         });
 
         card.appendChild(head);
-        card.appendChild(grid);
+        card.appendChild(tabs);
         list.appendChild(card);
       });
     }

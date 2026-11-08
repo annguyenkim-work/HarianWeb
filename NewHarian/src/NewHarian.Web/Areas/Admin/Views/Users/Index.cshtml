@@ -1,10 +1,13 @@
 @model IReadOnlyList<AdminUserListItemDto>
 @using NewHarian.Application.Abstractions
-@{ ViewData["Title"] = "Users"; Layout = "_AdminLayout"; }
+@{ ViewData["Title"] = "Tài khoản"; Layout = "_AdminLayout"; }
 
 <div class="admin-toolbar">
-    <h1>Users</h1>
-    <button type="button" class="btn-icon btn-primary" id="btn-add-user" title="Add new" aria-label="Add new"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+    <div>
+        <h1>Tài khoản</h1>
+        <p class="muted u-m0">Tài khoản đăng nhập Admin và vai trò.</p>
+    </div>
+    <button type="button" class="btn-icon btn-primary" id="btn-add-user" title="Thêm" aria-label="Thêm"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
 </div>
 
 

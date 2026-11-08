@@ -150,11 +150,12 @@
     }
   }
 
-  function initEditors() {
+  function initEditors(scope) {
     if (!window.tinymce) return;
-    tinymce.init({
-      selector: '#prod-modal-body textarea.richtext',
-      height: 280,
+    const root = scope || document.getElementById('prod-modal-body');
+    if (!root) return;
+    if (!window.AdminRichText) return;
+    AdminRichText.init(root.querySelectorAll('textarea.richtext'), {
       menubar: false,
       plugins: 'lists link table code autoresize image media',
       toolbar: 'undo redo | styles | bold italic underline | bullist numlist | link image media table | removeformat | code',
@@ -185,6 +186,12 @@
       content_style: 'body { font-family: Segoe UI, sans-serif; font-size: 14px; } img, video, iframe { max-width: 100%; height: auto; }'
     });
   }
+
+  document.addEventListener('admin-lang-shown', (e) => {
+    const root = e.target;
+    if (!(root instanceof Element) || !root.closest('#prod-modal-body')) return;
+    initEditors(root);
+  });
 
   function syncVariantRows(form) {
     const rows = [...form.querySelectorAll('#variants-list .variant-row')];
@@ -479,7 +486,14 @@
         if (!list || !row || list.children.length <= 1) return;
         const idInput = row.querySelector('input[name$=".Id"]');
         const hasSavedId = idInput?.value && idInput.value !== '0';
-        if (hasSavedId && !confirm('Xóa variant này? Thay đổi có hiệu lực sau khi Lưu.')) return;
+        if (hasSavedId) {
+          adminConfirm('Xóa quy cách này? Thay đổi có hiệu lực sau khi Lưu.').then(ok => {
+            if (!ok) return;
+            row.remove();
+            syncVariantRows(form);
+          });
+          return;
+        }
         row.remove();
         syncVariantRows(form);
       }
@@ -605,7 +619,7 @@
   document.querySelectorAll('.js-archive-prod').forEach(form => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!confirm('Archive sản phẩm này? (không xóa dữ liệu)')) return;
+      if (!await adminConfirm('Lưu trữ sản phẩm này? Dữ liệu không bị xóa.')) return;
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
       const data = await res.json().catch(() => null);
       if (data?.ok) { adminToast.reloadWith(data.message); return; }

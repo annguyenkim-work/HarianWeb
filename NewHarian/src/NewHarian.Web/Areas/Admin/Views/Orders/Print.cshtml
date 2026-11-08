@@ -30,6 +30,7 @@
             gap: 0.35rem 1.5rem;
             margin-bottom: 1.25rem;
         }
+        .print-span { grid-column: 1 / -1; }
         .label { color: #666; font-size: 0.8rem; }
         .value { font-weight: 600; }
         table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
@@ -93,7 +94,7 @@
         }
         @if (Model.Invoice is not null)
         {
-            <div style="grid-column: 1 / -1" data-print-invoice>
+            <div class="print-span" data-print-invoice>
                 <div class="label">Thông tin xuất hóa đơn</div>
                 <div class="value">@Model.Invoice.BuyerName / MST @Model.Invoice.TaxCode / @Model.Invoice.Address / @(Model.Invoice.Email ?? "-")</div>
             </div>
@@ -114,7 +115,7 @@
             <div class="label">Trạng thái</div>
             <div class="value">@Model.Status</div>
         </div>
-        <div style="grid-column: 1 / -1">
+        <div class="print-span">
             <div class="label">Địa chỉ</div>
             <div class="value">@AddressFormat.Join(Model.ShippingAddress, Model.ShippingDistrict, Model.ProvinceName)</div>
         </div>

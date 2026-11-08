@@ -121,7 +121,9 @@ public class ProductsController(ICatalogService catalog) : Controller
             price = v.Price,
             priceText = MoneyFormat.Vnd(v.Price),
             colorMeaning = v.ColorMeaning,
-            gallerySlideIndex = v.GallerySlideIndex
+            gallerySlideIndex = v.GallerySlideIndex,
+            availableQty = v.AvailableQty,
+            lowStockThreshold = v.LowStockThreshold
         });
     }
 

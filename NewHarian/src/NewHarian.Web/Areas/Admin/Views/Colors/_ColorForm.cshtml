@@ -1,83 +1,36 @@
 @model NewHarian.Application.Catalog.ColorDefinitionSaveRequest
 
 <form asp-area="Admin" asp-controller="Colors" asp-action="Save" method="post" id="color-edit-form">
-
     @Html.AntiForgeryToken()
-
     <input type="hidden" asp-for="Id" />
-
     <h2>@(Model.Id.HasValue ? "Sửa màu" : "Thêm màu")</h2>
-
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-
-
-    <div class="form-grid">
-
-        <label>
-
-            Tên màu (VI) *
-
-            <input asp-for="NameVi" class="form-control" required />
-
-        </label>
-
-        <label class="full">
-
-            Ý nghĩa (VI)
-
-            <textarea asp-for="MeaningVi" class="form-control" rows="3"></textarea>
-
-        </label>
-
-
-
-        <label>
-
-            Tên màu (EN)
-
-            <input asp-for="NameEn" class="form-control" />
-
-        </label>
-
-        <label class="full">
-
-            Ý nghĩa (EN)
-
-            <textarea asp-for="MeaningEn" class="form-control" rows="3"></textarea>
-
-        </label>
-
-
-
-        <label>
-
-            Tên màu (JA)
-
-            <input asp-for="NameJa" class="form-control" />
-
-        </label>
-
-        <label class="full">
-
-            Ý nghĩa (JA)
-
-            <textarea asp-for="MeaningJa" class="form-control" rows="3"></textarea>
-
-        </label>
-
+    <div class="lang-tabs" data-lang-tabs>
+        <partial name="_LangTabBar" model="@("color-lang")" />
+        <p class="lang-tabs__hint">Tên English hoặc 日本語 để trống sẽ dùng tên tiếng Việt.</p>
+        <div class="lang-tabs__panel is-active" id="color-lang-panel-vi" role="tabpanel" aria-labelledby="color-lang-tab-vi" data-lang-panel="vi">
+            <div class="lang-tabs__fields">
+                <label>Tên màu * <input asp-for="NameVi" class="form-control" required /></label>
+                <label>Ý nghĩa <textarea asp-for="MeaningVi" class="form-control" rows="3"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="color-lang-panel-en" role="tabpanel" aria-labelledby="color-lang-tab-en" data-lang-panel="en" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tên màu <input asp-for="NameEn" class="form-control" /></label>
+                <label>Ý nghĩa <textarea asp-for="MeaningEn" class="form-control" rows="3"></textarea></label>
+            </div>
+        </div>
+        <div class="lang-tabs__panel" id="color-lang-panel-ja" role="tabpanel" aria-labelledby="color-lang-tab-ja" data-lang-panel="ja" hidden>
+            <div class="lang-tabs__fields">
+                <label>Tên màu <input asp-for="NameJa" class="form-control" /></label>
+                <label>Ý nghĩa <textarea asp-for="MeaningJa" class="form-control" rows="3"></textarea></label>
+            </div>
+        </div>
     </div>
-
-
 
     <div class="modal__actions">
-
         <button type="button" data-close class="btn-secondary">Hủy</button>
-
         <button type="submit" class="btn-primary">Lưu</button>
-
     </div>
-
 </form>
-
-

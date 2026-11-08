@@ -29,12 +29,16 @@
   <data name="Home.Intro" xml:space="preserve"><value>コマースサイト。</value></data>
   <data name="Home.Categories" xml:space="preserve"><value>サポートします</value></data>
   <data name="Home.Featured" xml:space="preserve"><value>取扱商品</value></data>
+  <data name="Home.CategoriesEmpty" xml:space="preserve"><value>カテゴリはまだありません。</value></data>
+  <data name="Home.FeaturedEmpty" xml:space="preserve"><value>おすすめ商品はまだありません。</value></data>
   <data name="Products.HubIntro" xml:space="preserve"><value>製品一覧です。</value></data>
   <data name="Services.HubIntro" xml:space="preserve"><value>サービス一覧 - 予約のみ（カート決済なし）。</value></data>
   <data name="Products.Items" xml:space="preserve"><value>件</value></data>
   <data name="Products.From" xml:space="preserve"><value></value></data>
   <data name="Products.PriceOnRequest" xml:space="preserve"><value>価格はお問い合わせ</value></data>
   <data name="Products.BookLabel" xml:space="preserve"><value>予約</value></data>
+  <data name="Products.InStock" xml:space="preserve"><value>残り {0}</value></data>
+  <data name="Products.OutOfStock" xml:space="preserve"><value>在庫なし</value></data>
   <data name="Products.BookCta" xml:space="preserve"><value>予約する</value></data>
   <data name="Products.Variant" xml:space="preserve"><value>規格</value></data>
   <data name="Products.ServiceOption" xml:space="preserve"><value>形式</value></data>
@@ -79,6 +83,7 @@
   <data name="Orders.Step.Shipped" xml:space="preserve"><value>配送中</value></data>
   <data name="Orders.Step.Delivered" xml:space="preserve"><value>配達完了</value></data>
   <data name="Orders.Step.Cancelled" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="Orders.Step.Refunded" xml:space="preserve"><value>返金済み</value></data>
   <data name="Orders.Step.Updated" xml:space="preserve"><value>更新</value></data>
   <data name="Orders.Cancel" xml:space="preserve"><value>注文をキャンセル</value></data>
   <data name="Orders.CancelConfirm" xml:space="preserve"><value>未払い注文をキャンセルしますか？</value></data>
@@ -181,6 +186,9 @@
   <data name="Checkout.DealerCode.Expired" xml:space="preserve"><value>販売店コードの有効期限が切れました。もう一度入力してください。</value></data>
   <data name="Checkout.DealerCode.TooMany" xml:space="preserve"><value>入力回数が多すぎます。15分後に再度お試しください。</value></data>
   <data name="Checkout.DealerDiscount" xml:space="preserve"><value>販売店割引</value></data>
+  <data name="Checkout.PromoCode" xml:space="preserve"><value>割引コード</value></data>
+  <data name="Checkout.PromoHint" xml:space="preserve"><value>コードがある場合は入力してください。一般のお客様のみ利用できます。</value></data>
+  <data name="Checkout.PromoDiscount" xml:space="preserve"><value>割引コード</value></data>
   <data name="Checkout.DealerUnconfigured" xml:space="preserve"><value>販売店割引なし</value></data>
   <data name="Checkout.Invoice" xml:space="preserve"><value>請求書情報</value></data>
   <data name="Checkout.InvoiceName" xml:space="preserve"><value>会社名</value></data>
@@ -247,4 +255,5 @@
   <data name="Catalog.Pagination" xml:space="preserve"><value>ページ</value></data>
   <data name="Catalog.Breadcrumb" xml:space="preserve"><value>パンくず</value></data>
   <data name="Catalog.RemoveFilter" xml:space="preserve"><value>{0}の絞り込みを解除</value></data>
+  <data name="News.Empty" xml:space="preserve"><value>記事はまだありません。</value></data>
 </root>

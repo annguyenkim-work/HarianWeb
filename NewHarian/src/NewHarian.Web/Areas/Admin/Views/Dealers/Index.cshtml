@@ -138,7 +138,7 @@
       'issue-code': '@Url.Action("IssueCode")'
     };
     if (!urls[action]) return;
-    if (btn.dataset.confirm && !confirm(btn.dataset.confirm)) return;
+    if (btn.dataset.confirm && !await adminConfirm(btn.dataset.confirm)) return;
     const fd = new FormData();
     fd.append('__RequestVerificationToken', token);
     fd.append('id', id);

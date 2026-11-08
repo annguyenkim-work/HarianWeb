@@ -160,7 +160,7 @@
             </div>
         }
     </div>
-    <div id="dealer-discount-summary" class="js-dealer-only" hidden style="margin:0.5rem 0"></div>
+    <div id="dealer-discount-summary" class="js-dealer-only help-note" hidden></div>
     @if (canOverride)
     {
         <p class="muted js-dealer-only" hidden>Sửa tay % chiết khấu dòng bắt buộc ghi chú nội bộ (lý do).</p>
@@ -169,10 +169,9 @@
     <button type="button" class="btn-secondary" id="btn-add-line">+ Thêm dòng</button>
     @if (User.HasPermission(Permissions.Orders.PreviewStockPick))
     {
-        <button type="button" class="btn-secondary" id="btn-preview-stock-pick" style="margin-left:0.35rem">Xem gợi ý lấy hàng</button>
+        <button type="button" class="btn-secondary" id="btn-preview-stock-pick">Xem gợi ý lấy hàng</button>
 
-        <div id="manual-order-stock-pick" class="order-stock-pick" hidden
-             style="margin:0.75rem 0;padding:0.75rem;border:1px solid #ddd;border-radius:6px"></div>
+        <div id="manual-order-stock-pick" class="order-stock-pick" hidden></div>
     }
 
     <div class="modal__actions">

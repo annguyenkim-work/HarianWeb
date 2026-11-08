@@ -108,6 +108,11 @@ public static class Permissions
         public const string ManageDiscounts = "Dealers.ManageDiscounts";
     }
 
+    public static class PromoCodes
+    {
+        public const string Manage = "PromoCodes.Manage";
+    }
+
     public static class Applications
     {
         public const string View = "Applications.View";

@@ -24,7 +24,7 @@
     <p class="text-danger">Đây là kiểu khối cũ. Nên tạo mới bằng một trong bốn kiểu hỗ trợ, rồi xóa khối này.</p>
 }
 
-<form method="post" enctype="multipart/form-data" class="form-stack" style="max-width:860px" id="block-form">
+<form method="post" enctype="multipart/form-data" class="form-stack admin-sheet--xl" id="block-form">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="PageId" />
@@ -63,47 +63,70 @@
                 <input asp-for="LinkUrl" class="form-control" placeholder="/products hoặc https://example.com" />
             </label>
             <h3>Chữ trên nút</h3>
-            <label>Tiếng Việt * <input asp-for="TitleVi" class="form-control" placeholder="Xem sản phẩm" /></label>
-            <label>English <input asp-for="TitleEn" class="form-control" placeholder="View products" /></label>
-            <label>日本語 <input asp-for="TitleJa" class="form-control" placeholder="製品を見る" /></label>
+            <div class="lang-tabs" data-lang-tabs>
+                <partial name="_LangTabBar" model="@("cta-lang")" />
+                <div class="lang-tabs__panel is-active" id="cta-lang-panel-vi" role="tabpanel" aria-labelledby="cta-lang-tab-vi" data-lang-panel="vi">
+                    <label>Chữ trên nút * <input asp-for="TitleVi" class="form-control" placeholder="Xem sản phẩm" /></label>
+                </div>
+                <div class="lang-tabs__panel" id="cta-lang-panel-en" role="tabpanel" aria-labelledby="cta-lang-tab-en" data-lang-panel="en" hidden>
+                    <label>Chữ trên nút <input asp-for="TitleEn" class="form-control" placeholder="View products" /></label>
+                </div>
+                <div class="lang-tabs__panel" id="cta-lang-panel-ja" role="tabpanel" aria-labelledby="cta-lang-tab-ja" data-lang-panel="ja" hidden>
+                    <label>Chữ trên nút <input asp-for="TitleJa" class="form-control" placeholder="製品を見る" /></label>
+                </div>
+            </div>
         </section>
     }
 
     @if (isTable)
     {
         <section class="table-editor">
-            <div class="admin-toolbar" style="margin:0">
-                <h2 style="margin:0">Các dòng bảng</h2>
+            <div class="admin-toolbar toolbar-flush">
+                <h2 class="u-m0">Các dòng bảng</h2>
                 <button type="button" class="btn-secondary" id="btn-add-row">+ Thêm dòng</button>
             </div>
-            <p class="muted">Mỗi dòng gồm <strong>Nhãn</strong> (cột trái) và <strong>Nội dung</strong> (cột phải), nhập đủ Vi / En / Ja nếu cần.</p>
+            <p class="muted">Mỗi dòng có tab ngôn ngữ. Nhãn là cột trái, nội dung là cột phải.</p>
             <div id="table-rows" class="table-rows"></div>
         </section>
         <h2>Tiêu đề khối (tuỳ chọn)</h2>
-        <label>Tiếng Việt <input asp-for="TitleVi" class="form-control" /></label>
-        <label>English <input asp-for="TitleEn" class="form-control" /></label>
-        <label>日本語 <input asp-for="TitleJa" class="form-control" /></label>
+        <div class="lang-tabs" data-lang-tabs>
+            <partial name="_LangTabBar" model="@("table-lang")" />
+            <div class="lang-tabs__panel is-active" id="table-lang-panel-vi" role="tabpanel" aria-labelledby="table-lang-tab-vi" data-lang-panel="vi">
+                <label>Tiêu đề <input asp-for="TitleVi" class="form-control" /></label>
+            </div>
+            <div class="lang-tabs__panel" id="table-lang-panel-en" role="tabpanel" aria-labelledby="table-lang-tab-en" data-lang-panel="en" hidden>
+                <label>Tiêu đề <input asp-for="TitleEn" class="form-control" /></label>
+            </div>
+            <div class="lang-tabs__panel" id="table-lang-panel-ja" role="tabpanel" aria-labelledby="table-lang-tab-ja" data-lang-panel="ja" hidden>
+                <label>Tiêu đề <input asp-for="TitleJa" class="form-control" /></label>
+            </div>
+        </div>
     }
 
     @if (useRichText || (!isSupported && !isCta))
     {
-        <h2>Tiếng Việt</h2>
-        <label>Tiêu đề <input asp-for="TitleVi" class="form-control" /></label>
-        <label>Nội dung
-            <textarea asp-for="BodyVi" class="form-control richtext" rows="8"></textarea>
-        </label>
-
-        <h2>English</h2>
-        <label>Title <input asp-for="TitleEn" class="form-control" /></label>
-        <label>Content
-            <textarea asp-for="BodyEn" class="form-control richtext" rows="6"></textarea>
-        </label>
-
-        <h2>日本語</h2>
-        <label>タイトル <input asp-for="TitleJa" class="form-control" /></label>
-        <label>本文
-            <textarea asp-for="BodyJa" class="form-control richtext" rows="6"></textarea>
-        </label>
+        <div class="lang-tabs" data-lang-tabs>
+            <partial name="_LangTabBar" model="@("block-lang")" />
+            <p class="lang-tabs__hint">Nội dung ở tab khác vẫn được lưu.</p>
+            <div class="lang-tabs__panel is-active" id="block-lang-panel-vi" role="tabpanel" aria-labelledby="block-lang-tab-vi" data-lang-panel="vi">
+                <div class="lang-tabs__fields">
+                    <label>Tiêu đề <input asp-for="TitleVi" class="form-control" /></label>
+                    <label>Nội dung <textarea asp-for="BodyVi" class="form-control richtext" rows="8"></textarea></label>
+                </div>
+            </div>
+            <div class="lang-tabs__panel" id="block-lang-panel-en" role="tabpanel" aria-labelledby="block-lang-tab-en" data-lang-panel="en" hidden>
+                <div class="lang-tabs__fields">
+                    <label>Tiêu đề <input asp-for="TitleEn" class="form-control" /></label>
+                    <label>Nội dung <textarea asp-for="BodyEn" class="form-control richtext" rows="6"></textarea></label>
+                </div>
+            </div>
+            <div class="lang-tabs__panel" id="block-lang-panel-ja" role="tabpanel" aria-labelledby="block-lang-tab-ja" data-lang-panel="ja" hidden>
+                <div class="lang-tabs__fields">
+                    <label>Tiêu đề <input asp-for="TitleJa" class="form-control" /></label>
+                    <label>Nội dung <textarea asp-for="BodyJa" class="form-control richtext" rows="6"></textarea></label>
+                </div>
+            </div>
+        </div>
     }
 
     <button type="submit" class="btn-primary">Lưu</button>
@@ -114,12 +137,13 @@
 {
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+function initBlockEditors(scope) {
   if (!window.tinymce) return;
+  var root = scope || document.getElementById('block-form');
+  if (!root) return;
   var token = document.querySelector('#block-form input[name="__RequestVerificationToken"]')?.value;
-  tinymce.init({
-    selector: '#block-form textarea.richtext',
-    height: 360,
+  if (!window.AdminRichText) return;
+  AdminRichText.init(root.querySelectorAll('textarea.richtext'), {
     menubar: false,
     plugins: 'lists link table code autoresize image media',
     toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media table | removeformat | code',
@@ -154,12 +178,18 @@ document.addEventListener('DOMContentLoaded', function () {
     media_live_embeds: true,
     content_style: 'body { font-family: Segoe UI, sans-serif; font-size: 14px; } img, video, iframe { max-width: 100%; height: auto; }'
   });
+}
+document.addEventListener('DOMContentLoaded', function () {
+  initBlockEditors();
   var form = document.getElementById('block-form');
   if (form) {
     form.addEventListener('submit', function () {
-      tinymce.triggerSave();
+      if (window.tinymce) tinymce.triggerSave();
     });
   }
+});
+document.addEventListener('admin-lang-shown', function (e) {
+  if (e.target instanceof Element && e.target.closest('#block-form')) initBlockEditors(e.target);
 });
 </script>
 }

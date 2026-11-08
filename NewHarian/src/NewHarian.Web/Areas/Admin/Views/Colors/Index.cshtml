@@ -62,7 +62,7 @@
 
                 <button type="button" class="btn-icon btn-edit-color" data-id="@c.Id" title="Update" aria-label="Update"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
 
-                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Xóa màu này?');">
+                <form asp-action="Delete" method="post" class="inline" data-confirm="Xóa màu này?">
 
                     @Html.AntiForgeryToken()
 
