@@ -76,7 +76,8 @@ public class GuestPaperUiTests : IClassFixture<NewHarianWebApplicationFactory>
         Assert.Contains("--guest-navy: #0b132b", css);
         Assert.Contains("body:not(.admin-body) .btn-primary", css);
         Assert.Contains("Plus Jakarta Sans", css);
-        Assert.DoesNotContain("rgba(0, 0, 0, 0.92)", css);
+        Assert.Contains("rgba(0, 0, 0, 0.92)", css);
+        Assert.Contains("background: #000", css);
     }
 
     [Fact]
